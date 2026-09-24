@@ -1,0 +1,19 @@
+# data and artifacts (large / licensed)
+data/
+checkpoints/
+*.ckpt
+*.pt
+runs/
+wandb/
+results/**/*.mp4
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# local-only
+.lavish/
+notes/private/
+.env
