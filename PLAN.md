@@ -70,7 +70,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 
 ## Phase 3 — Two-ear model + one-ear experiment + coffee shop → **M3**
 
-- [ ] **C3.0 Spike: binaural route.** Route A (FOA → ears via spaudiopy MagLS) vs Route B (dry clips × HRIR + reverb).
+- [x] **C3.0 Spike: binaural route.** (2026-10-22, 1370df2; Route B chosen, ARCHITECTURE §5.6) Route A (FOA → ears via spaudiopy MagLS) vs Route B (dry clips × HRIR + reverb).
   Cue sanity (90° left: louder + earlier on the left) and a blur measurement for A. *Done when:* decision + 3-line
   rationale in ARCHITECTURE §5.6; spike code deleted or moved under `binaural/`.
 - [ ] **C3.1 HRTF sets + binaural generator.** Download HUTUBS (+ SADIE II), SOFA loading, chosen route, multi-subject
