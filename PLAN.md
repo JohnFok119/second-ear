@@ -32,7 +32,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 
 ## Phase 1 — Classical heat map → **M1**
 
-- [ ] **C1.1 Features.** STFT (24 kHz, hop 20 ms), log-mel, FOA active intensity vectors, GCC-PHAT, binaural ILD/IPD.
+- [x] **C1.1 Features.** (2026-10-22, ddc65a7) STFT (24 kHz, hop 20 ms), log-mel, FOA active intensity vectors, GCC-PHAT, binaural ILD/IPD.
   *Done when:* shape tests + a synthetic-signal test per feature.
 - [ ] **C1.2 ClassicalLocalizer.** Intensity-vector histogram → class-agnostic heat map per 100 ms frame.
   Optional SRP-PHAT (pyroomacoustics) behind a flag. *Done when:* synthetic plane wave peaks within 5°; runs on a
