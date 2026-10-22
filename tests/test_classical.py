@@ -55,7 +55,7 @@ def test_shapes():
 
 
 def test_real_clip():
-    wavs = sorted(DATA.glob("*.wav")) if DATA.exists() else []
+    wavs = sorted(DATA.rglob("*.wav")) if DATA.exists() else []
     if not wavs:
         pytest.skip("STARSS23 foa_dev not downloaded")
     import soundfile as sf

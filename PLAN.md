@@ -32,7 +32,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 - [x] **C0.1 Repo scaffold.** (2026-10-22, e91c1b9) `uv` project (Python 3.11), `src/secondear/` package with empty modules per
   ARCHITECTURE §5, ruff, pytest, GitHub Actions CI (lint + tests on push/PR), `.gitignore` for `data/`,
   `checkpoints/`, `runs/`. *Done when:* `uv run pytest` passes an empty test locally and CI is green on `main`.
-- [ ] **C0.2 STARSS23 download + parser.** Resumable downloader (direct Zenodo URLs, byte-size check) for
+- [x] **C0.2 STARSS23 download + parser.** (2026-10-22, dccac24; foa_dev md5 verified, 2 real clips load) Resumable downloader (direct Zenodo URLs, byte-size check) for
   `foa_dev.zip` + `metadata_dev.zip`; unzip to `data/starss23/`. Parser: metadata CSV → `Event` list; clip loader
   (FOA wav → `[4, n]` float32 at 24 kHz). Verify from the README: azimuth/elevation sign, channel order, SN3D/N3D;
   write them into ARCHITECTURE §3 and pin in tests. *Done when:* parser tests pass on 2 real clips; conventions recorded.
