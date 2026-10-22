@@ -22,4 +22,5 @@ notes/private/
 .pytest_cache/
 .ruff_cache/
 web/clips/*.mp3
+!web/clips/coffee_shop.mp3
 web/clips/*.wav
