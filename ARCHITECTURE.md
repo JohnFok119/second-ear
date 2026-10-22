@@ -69,10 +69,13 @@ HOW, so a visitor with no context can click around and get it.
 **Download scope now:** `foa_dev.zip` (3.4 GB) + `metadata_dev.zip`. `mic_dev`, `video_dev`,
 eval sets only when a chunk needs them.
 
-**Conventions (from the STARSS23 README; pinned in tests at C0.2):** azimuth −180..180,
-0 = front, positive = counter-clockwise (90 = left). Elevation −90..90 (positive = up,
-verify). 24 kHz, 16-bit. FOA normalization (SN3D vs N3D) and channel order: verify in C0.2,
-record here, test it.
+**Conventions (verified against the STARSS23 README, 2026-10-22; pin in tests at C0.2):**
+- Label CSV rows: `frame, class, source, azimuth_deg, elevation_deg, distance_cm`; frame = 100 ms, all indices 0-based.
+- Azimuth −180..180, 0 = front, **positive = counter-clockwise (90 = left)**. Elevation −90..90, 0 = front, positive = up.
+- FOA channel order is **ACN: W, Y, Z, X** with **SN3D** normalization: `W = 1`, `Y = sin(az)·cos(el)`, `Z = sin(el)`, `X = cos(az)·cos(el)`
+  (README steering vectors; max gain 1 ⇒ SN3D). For spaudiopy (N3D) multiply Y, Z, X by √3.
+- 24 kHz, 16-bit wav; clip names `fold{N}_room{R}_mix{M}.wav`; metadata folders `dev-train-sony`, `dev-train-tau`, `dev-test-sony`, `dev-test-tau`.
+- 12 clips (`fold3_room21_mix001–012`) have no video.
 
 Storage: `data/` is git-ignored; expect ≈ 4 GB raw + ≈ 5–10 GB rendered binaural + scenes.
 
