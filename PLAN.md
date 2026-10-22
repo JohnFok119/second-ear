@@ -26,7 +26,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   `foa_dev.zip` + `metadata_dev.zip`; unzip to `data/starss23/`. Parser: metadata CSV → `Event` list; clip loader
   (FOA wav → `[4, n]` float32 at 24 kHz). Verify from the README: azimuth/elevation sign, channel order, SN3D/N3D;
   write them into ARCHITECTURE §3 and pin in tests. *Done when:* parser tests pass on 2 real clips; conventions recorded.
-- [ ] **C0.3 Core contract.** `core.py`: `Grid`, `Event`, `Prediction`, `Localizer`, `heatmap_to_events`,
+- [x] **C0.3 Core contract.** (2026-10-22, 7a60cf0) `core.py`: `Grid`, `Event`, `Prediction`, `Localizer`, `heatmap_to_events`,
   `events_to_heatmap` (von Mises–Fisher on unit vectors), `accdoa_to_events`. *Done when:* tests cover ±180° wrap,
   peak recovery within one cell, multiple sources, class-agnostic mode.
 
