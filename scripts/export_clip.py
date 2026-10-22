@@ -10,6 +10,7 @@ from secondear.core import FRAME_S
 from secondear.eval.agnostic import count_clip, summarize
 from secondear.export.viewer_json import prediction_to_viewer, write_viewer_json
 from secondear.io.starss23 import clip_paths, load_foa, read_metadata
+from secondear.viz.panorama import render_panorama_gif
 from secondear.viz.radar import render_radar_gif
 
 
@@ -21,10 +22,12 @@ def main() -> None:
     ap.add_argument("--seconds", type=float, default=30)
     ap.add_argument("--out-json", default=None)
     ap.add_argument("--out-gif", default=None)
+    ap.add_argument("--out-pano", default=None)
     a = ap.parse_args()
     stem = a.clip
     out_json = a.out_json or f"web/clips/{stem}.json"
     out_gif = a.out_gif or f"results/classical/radar_{stem}.gif"
+    out_pano = a.out_pano or f"results/classical/pano_{stem}.gif"
 
     wav, csv = clip_paths(Path(a.root), stem)
     audio, fs = load_foa(wav)
@@ -36,6 +39,7 @@ def main() -> None:
     metrics = summarize(count_clip(pred.events, truth, n_frames))
     write_viewer_json(prediction_to_viewer(pred, truth, stem, metrics=metrics), out_json)
     render_radar_gif(pred, truth, out_gif, title=f"{stem} · classical")
+    render_panorama_gif(pred, truth, out_pano, title=f"{stem} · classical")
 
 
 if __name__ == "__main__":
