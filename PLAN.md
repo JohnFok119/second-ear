@@ -59,7 +59,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 - [x] **C2.1 Baseline bar.** (2026-10-22, 8ccac39; 52 tests, truth-vs-truth perfect on a real clip; scaler storage decided in C2.2) Vendor DCASE 2023 baseline model + `SELD_evaluation_metrics.py` (license kept), adapt to
   torch 2.x, `BaselineLocalizer` adapter, feature pipeline per its recipe. *Done when:* one training step + one
   `predict` return a valid `Prediction`; official metric wrapper runs on dev-test truth vs truth (= perfect score).
-- [ ] **C2.2 Train baseline.** Local GPU, checkpoint every epoch, TensorBoard, spend 0. *Done when:* dev-test F20
+- [x] **C2.2 Train baseline.** (2026-10-23; best epoch 96: F20 15.6 %, LE 52.4°, LR 26.7 % vs published 29.9 % / 21.6° / 47.7 %; gap = no DCASE synthetic data, STARSS23 dev-train only, decisions 2026-10-22) Local GPU, checkpoint every epoch, TensorBoard, spend 0. *Done when:* dev-test F20
   within ~10 % of 29.9 % (or gap written up); `results/baseline/metrics.json`.
 - [x] **C2.3 Dense targets.** (2026-10-22, 877fdea; FWHM 15°, kappa 81.0, max-combine) Labels → per-class spherical Gaussian maps, kappa for 10–20° blobs.
   *Done when:* peak, wrap, overlap tests.
