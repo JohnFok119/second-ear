@@ -61,7 +61,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   `predict` return a valid `Prediction`; official metric wrapper runs on dev-test truth vs truth (= perfect score).
 - [ ] **C2.2 Train baseline.** Local GPU, checkpoint every epoch, TensorBoard, spend 0. *Done when:* dev-test F20
   within ~10 % of 29.9 % (or gap written up); `results/baseline/metrics.json`.
-- [ ] **C2.3 Dense targets.** Labels → per-class spherical Gaussian maps, kappa for 10–20° blobs.
+- [x] **C2.3 Dense targets.** (2026-10-22, 877fdea; FWHM 15°, kappa 81.0, max-combine) Labels → per-class spherical Gaussian maps, kappa for 10–20° blobs.
   *Done when:* peak, wrap, overlap tests.
 - [ ] **C2.4 Heat-map model.** Baseline encoder + map head; focal BCE; config YAML. *Done when:* overfits one clip,
   then full training finishes; `results/heatmap_foa/metrics.json`; table vs baseline and classical.
