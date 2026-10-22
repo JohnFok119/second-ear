@@ -1,126 +1,104 @@
-# SecondEar — Build Plan
+# SecondEar — Build Plan (v2, 2026-10-22)
 
-Design: [ARCHITECTURE.md](ARCHITECTURE.md). One chunk ≈ one build session. Check off when its
-**Done when** passes, commit, then clear context before the next chunk.
+Design: [ARCHITECTURE.md](ARCHITECTURE.md). Sources: [docs/research/2026-10-22-sources.md](docs/research/2026-10-22-sources.md).
+One chunk ≈ one crew session. A chunk is done only when its **Done when** check passes; then tick it,
+commit, merge to `main` (standing go, this repo only), clear context, next chunk.
 
-Every chunk ends with a **Learn** checkpoint: a short LEARNING.md entry, in your own words, that
-you could say out loud in an interview. If you can't write it, the chunk isn't done.
+**Run rules (Johnny, 2026-10-22)**
+- Hands-off. First Mate plans, briefs, verifies; crew (Sonnet; Haiku for mechanical) builds. Johnny is pinged by
+  push notification at each milestone page (M1–M4) and for critical blockers only.
+- Showcase rule at every milestone: WHAT are we showing, HOW, would a stranger get it by clicking around?
+- $0 cloud. Local RTX 4000 (8 GB). Checkpoint every epoch. Johnny keeps the PC awake.
+- Every phase ends with a plain-English `LEARNING.md` section (what was built, why, what the numbers mean).
+- Resume after a session ends: open a session here and say "continue"; this file + the spine carry the state.
 
-Weeks are ceilings, not targets — if ahead, pull the next chunk forward.
-
-**Gates**
-- **v1 ship — 2026-10-25.** Chunks C0.x–C2.x. Resume-ready.
-- **Hardware decision — 2026-10-25.** Recommended: in-ear binaural mics (match the two-ear model).
-- **Hard stop on Phase 3 — 2026-11-08.** Whatever state the learned heat map is in, move to Phase 4.
-- **Two-ear phase is protected.** If time runs short, cut from Phase 3 first, then Phase 5 polish.
-
----
-
-## Phase 0 — Setup & fundamentals (week 0–1 · Sep 23 – Oct 4)
-
-- [ ] **C0.1 Repo scaffold.** `uv` env, package layout per ARCHITECTURE §5, ruff, pytest,
-  GitHub Actions CI (lint + tests), `.gitignore` for `data/`. Public GitHub repo from day 1.
-  *Done when:* CI green on an empty test. *Learn:* why CI and a lockfile matter for ML repos.
-- [ ] **C0.2 STARSS23 download + metadata parser.** Script pulls dev set (FOA, MIC, metadata,
-  video) from Zenodo. Parser → `Event` list. Verify azimuth/elevation conventions and FOA channel
-  order from the dataset README; encode them in tests.
-  *Done when:* parser tests pass on 2 real clips; conventions written in ARCHITECTURE §3.
-  *Learn:* what one row of metadata means physically.
-- [ ] **C0.3 Fundamentals notebook (you drive, Claude tutors).** Waveform → STFT → log-mel;
-  time delay between two capsules via GCC-PHAT; FOA intensity vector pointing at one labeled
-  source. *Done when:* notebook plots a DOA estimate within ~15° of a label.
-  *Learn:* spectrogram, phase, why time delay encodes direction.
-
-## Phase 1 — Classical heat map + visualizer (weeks 1–2 · Sep 28 – Oct 11)
-
-- [ ] **C1.1 Core contract.** `Grid`, `Event`, `Prediction`, `Localizer`,
-  `heatmap_to_events`, `events_to_heatmap` (von Mises–Fisher blobs), `accdoa_to_events`.
-  *Done when:* tests cover ±180° wrap-around, peak recovery within one grid cell, multiple sources.
-  *Learn:* why one shared output contract keeps comparisons fair.
-- [ ] **C1.2 ClassicalLocalizer.** FOA intensity-vector histogram → class-agnostic heat map per
-  100 ms frame. Optional SRP-PHAT on MIC. *Done when:* synthetic plane-wave test peaks within 5°.
-  *Learn:* intensity vectors vs. beamforming, and where each breaks (reverb, overlap).
-- [ ] **C1.3 Visualizer.** 360° equirectangular overlay (heat map + hollow ground-truth markers),
-  polar radar, mp4 export. *Done when:* a 30 s clip renders with markers visibly tracking sources.
-  *Learn:* equirectangular projection (how a sphere is unrolled onto a rectangle).
-- [ ] **C1.4 Class-agnostic eval + demo video #1.** Peak picking → localization error and recall
-  on the dev-test fold; `results/classical/metrics.json`. *Done when:* numbers + a 60 s demo video
-  exist. *Learn:* precision/recall for localization; why a threshold trades them off.
-
-## Phase 2 — Reproduce the DCASE baseline → **v1 ship** (weeks 3–4 · Oct 12 – Oct 25)
-
-- [ ] **C2.1 Baseline running.** Clone the official DCASE Task 3 audio baseline (2024 or 2023 —
-  whichever runs cleanly), pin versions, run feature extraction on STARSS23, wrap with a
-  `BaselineLocalizer` adapter. *Done when:* one training step + one `predict` return a valid
-  `Prediction`. *Learn:* CRNN (convolutional + recurrent network) and multi-ACCDOA, in plain words.
-- [ ] **C2.2 Train on rented GPU.** Baseline recipe, checkpoint every epoch, experiment tracking,
-  spend logged. *Done when:* training finishes; loss curves saved. *Learn:* reading loss curves —
-  overfitting, learning rate, when to stop.
-- [ ] **C2.3 Official evaluation + overlays.** Official metric code; compare to published
-  baseline numbers; overlay predictions on video on top of the classical map.
-  *Done when:* metrics within ~10% of published, or the gap is explained.
-  *Learn:* what F-score at 20°, DOA error and localization recall each reward.
-- [ ] **C2.4 v1 ship.** README: personal story (2 lines), demo GIF/video, numbers table
-  (classical vs baseline), how to run, limitations. Draft resume bullets. Pin repo on GitHub.
-  **Make the hardware decision.** *Done when:* README live; resume updated.
-  *Learn:* a 60-second spoken project pitch.
-
-## Phase 3 — Learned heat map, 4-channel (weeks 5–6 · Oct 26 – Nov 8, **hard stop**)
-
-- [ ] **C3.1 Dense targets.** Labels → per-class spherical Gaussian maps; `kappa` chosen so a
-  blob is ~10–20° wide. *Done when:* tests for peak location, wrap-around, overlapping sources.
-  *Learn:* heat-map regression (same idea as keypoints in pose estimation).
-- [ ] **C3.2 Heat-map model.** Reuse baseline encoder; map-decoder head; focal BCE loss; config.
-  *Done when:* overfits 1 clip (sanity) then trains on the full set. *Learn:* why class imbalance
-  (mostly empty cells) needs a focal loss.
-- [ ] **C3.3 Train + compare.** Decode peaks → official metrics; table vs baseline and classical.
-  One improvement round at most. *Done when:* results table committed. *Learn:* a fair
-  comparison (same data, same metric, same encoder).
-- [ ] **C3.4 Side-by-side video** (cut first if short on time). Classical vs learned map.
-  *Done when:* side-by-side video exported for one 30 s clip. *Learn:* where the classical and
-  learned maps disagree, and why (reverb, overlapping sources).
-
-## Phase 4 — Two-ear model (weeks 7–9 · Nov 9 – Nov 29, **protected**)
-
-- [ ] **C4.0 Spike: binaural data route** (throwaway). Route A (FOA → binaural via HRTFs) vs
-  Route B (dry clips × HRIRs + reverb). Pick by cue sanity: source at 90° left must be louder
-  and earlier on the left; check how blurry Route A cues are. *Done when:* decision + 3-line
-  rationale in ARCHITECTURE §5.6. *Learn:* how an HRTF encodes direction, and why first-order
-  Ambisonics blurs it.
-- [ ] **C4.1 Binaural dataset generator.** Chosen route, labels preserved, multi-HRTF
-  augmentation (SADIE II / HUTUBS / SONICOM subjects). *Done when:* cue-sanity tests pass;
-  dataset generated. *Learn:* ITD and ILD — the two-ear cues the author's brain lacks.
-- [ ] **C4.2 Two-ear training.** Binaural features (log-mel L/R, ILD, IPD) → heat-map model
-  (fallback: ACCDOA head if Phase 3 didn't finish). *Done when:* trained model + metrics.
-  *Learn:* why heat maps can show front-back ambiguity and regression cannot.
-- [ ] **C4.3 One-ear experiment.** Two ears vs left-only vs right-only vs classical ITD.
-  Localization error, recall, detection F-score, front-back confusion rate.
-  *Done when:* results table + 2-paragraph interpretation. *Learn:* how to explain the result
-  honestly, including what didn't work.
-- [ ] **C4.4 "What one ear sees" video** + optional live demo (binaural mics → real-time radar,
-  < 0.5 s latency). *Done when:* side-by-side video exported. *Learn:* the latency budget —
-  where each millisecond goes, from microphone to screen.
-
-## Phase 5 — Ship & story (week 10 · Nov 30 – Dec 6)
-
-- [ ] **C5.1 Hosted demo.** Gradio app on Hugging Face Spaces: upload a clip → heat-map video.
-  Clip licenses checked. *Done when:* public URL works on CPU. *Learn:* what changes when
-  strangers run your model (input checks, CPU speed, cold start).
-- [ ] **C5.2 Write-up.** Project page / blog: story, method, results, limitations, lessons.
-  Final README, resume bullets with real numbers, 2-minute demo video.
-  *Done when:* write-up published, README final, resume updated with real numbers.
-  *Learn:* a 2-minute spoken walkthrough of the whole project.
-- [ ] **C5.3 Polish.** Tests green, CI badge, reproducible configs, short model card.
-  *Done when:* a fresh clone → `uv sync` → tests pass → one eval script reproduces a committed
-  results JSON. *Learn:* what a model card says, and why it matters.
+**Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
+model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
 
 ---
 
-## Crew routing (for build sessions)
+## Phase 0 — Foundation
+
+- [ ] **C0.1 Repo scaffold.** `uv` project (Python 3.11), `src/secondear/` package with empty modules per
+  ARCHITECTURE §5, ruff, pytest, GitHub Actions CI (lint + tests on push/PR), `.gitignore` for `data/`,
+  `checkpoints/`, `runs/`. *Done when:* `uv run pytest` passes an empty test locally and CI is green on `main`.
+- [ ] **C0.2 STARSS23 download + parser.** Resumable downloader (direct Zenodo URLs, byte-size check) for
+  `foa_dev.zip` + `metadata_dev.zip`; unzip to `data/starss23/`. Parser: metadata CSV → `Event` list; clip loader
+  (FOA wav → `[4, n]` float32 at 24 kHz). Verify from the README: azimuth/elevation sign, channel order, SN3D/N3D;
+  write them into ARCHITECTURE §3 and pin in tests. *Done when:* parser tests pass on 2 real clips; conventions recorded.
+- [ ] **C0.3 Core contract.** `core.py`: `Grid`, `Event`, `Prediction`, `Localizer`, `heatmap_to_events`,
+  `events_to_heatmap` (von Mises–Fisher on unit vectors), `accdoa_to_events`. *Done when:* tests cover ±180° wrap,
+  peak recovery within one cell, multiple sources, class-agnostic mode.
+
+## Phase 1 — Classical heat map → **M1**
+
+- [ ] **C1.1 Features.** STFT (24 kHz, hop 20 ms), log-mel, FOA active intensity vectors, GCC-PHAT, binaural ILD/IPD.
+  *Done when:* shape tests + a synthetic-signal test per feature.
+- [ ] **C1.2 ClassicalLocalizer.** Intensity-vector histogram → class-agnostic heat map per 100 ms frame.
+  Optional SRP-PHAT (pyroomacoustics) behind a flag. *Done when:* synthetic plane wave peaks within 5°; runs on a
+  real clip end to end.
+- [ ] **C1.3 Export + radar.** `export/`: `Prediction` + metadata → `web/clips/<clip>.json` (format in ARCHITECTURE
+  §5.8). `viz/`: polar radar mp4/GIF with truth markers. *Done when:* one 30 s clip exports; radar GIF shows markers
+  tracking sources.
+- [ ] **C1.4 Class-agnostic eval → M1.** Localization error + recall on dev-test; `results/classical/metrics.json`.
+  M1 page: what the classical method is, the GIF, the numbers, what is next. Push notification to Johnny.
+  *Done when:* numbers + GIF + page + LEARNING.md §Phase 1.
+
+## Phase 2 — Learned 4-channel model → **M2**
+
+- [ ] **C2.1 Baseline bar.** Vendor DCASE 2023 baseline model + `SELD_evaluation_metrics.py` (license kept), adapt to
+  torch 2.x, `BaselineLocalizer` adapter, feature pipeline per its recipe. *Done when:* one training step + one
+  `predict` return a valid `Prediction`; official metric wrapper runs on dev-test truth vs truth (= perfect score).
+- [ ] **C2.2 Train baseline.** Local GPU, checkpoint every epoch, TensorBoard, spend 0. *Done when:* dev-test F20
+  within ~10 % of 29.9 % (or gap written up); `results/baseline/metrics.json`.
+- [ ] **C2.3 Dense targets.** Labels → per-class spherical Gaussian maps, kappa for 10–20° blobs.
+  *Done when:* peak, wrap, overlap tests.
+- [ ] **C2.4 Heat-map model.** Baseline encoder + map head; focal BCE; config YAML. *Done when:* overfits one clip,
+  then full training finishes; `results/heatmap_foa/metrics.json`; table vs baseline and classical.
+- [ ] **C2.5 M2 page.** Classical vs baseline vs ours on the same clip (GIFs) + table + plain-English reading of
+  the numbers. Push notification. *Done when:* page + LEARNING.md §Phase 2.
+
+## Phase 3 — Two-ear model + one-ear experiment + coffee shop → **M3**
+
+- [ ] **C3.0 Spike: binaural route.** Route A (FOA → ears via spaudiopy MagLS) vs Route B (dry clips × HRIR + reverb).
+  Cue sanity (90° left: louder + earlier on the left) and a blur measurement for A. *Done when:* decision + 3-line
+  rationale in ARCHITECTURE §5.6; spike code deleted or moved under `binaural/`.
+- [ ] **C3.1 HRTF sets + binaural generator.** Download HUTUBS (+ SADIE II), SOFA loading, chosen route, multi-subject
+  augmentation, labels preserved. *Done when:* cue tests pass; binaural dev set generated.
+- [ ] **C3.2 Two-ear model.** Binaural features → heat-map model (same encoder). *Done when:* trained;
+  `results/heatmap_binaural/metrics.json`.
+- [ ] **C3.3 One-ear experiment.** Two / left / right / classical ITD; error, recall, F-score, front-back confusion;
+  human row (Aruffo 2025). *Done when:* `results/one_ear/table.md` + 2-paragraph interpretation.
+- [ ] **C3.4 Coffee-shop scene.** Scene file (`web/scenes/coffee_shop.json`), one FSD50K dev part downloaded, CC0/CC-BY
+  clips picked and credited, Route B render → binaural audio + labels; run two-ear and one-ear models; export viewer
+  JSON for 3 ear modes + mp3. *Done when:* 30 s scene renders; 3 JSONs + audio in `web/clips/`.
+- [ ] **C3.5 M3 page.** The one-ear table with the human row, GIFs, honest limitations, the coffee-shop renders.
+  Push notification. *Done when:* page + LEARNING.md §Phase 3.
+
+## Phase 4 — Viewer + ship → **M4**
+
+- [ ] **C4.1 Viewer core.** `web/index.html` + modules: coffee shop from the scene file, seated listener, labeled
+  sources, perception ring from JSON, ear-mode switch, synced audio, orbit (default) + sit camera, metrics panel,
+  one-line captions for a stranger. *Done when:* plays the scene in Chrome and Firefox; no console errors.
+- [ ] **C4.2 Floor bars.** Wave simulation from the scene timeline on a 10 cm grid; furniture reflects; "What I
+  hear" weighting; click to clap. **Clarity pass:** bar count, decay, colors tuned until a wavefront reads at a
+  glance (Johnny: round-1 version looked cluttered). *Done when:* 60 fps on a laptop; a clap visibly bounces off the
+  counter; a side-by-side GIF before/after the clarity pass in the M4 page.
+- [ ] **C4.3 Deploy.** GitHub Actions → GitHub Pages for `web/`; enable Pages on the repo. Portfolio card branch in
+  `jyfok-portfolio` (text: deaf in one ear + viewer link), pushed, not merged. *Done when:* public URL works; branch
+  pushed.
+- [ ] **C4.4 README + write-up + LEARNING.md + resume.** README: story (deaf in one ear), GIFs, numbers table, how to
+  run, limitations, credits, model card. Resume bullets with real numbers → spine + `personal\private\resume\`
+  (new .tex copy, nothing overwritten). *Done when:* fresh clone → `uv sync` → tests pass → one script reproduces a
+  committed results JSON; M4 page + push notification.
+
+---
+
+## Crew routing
 
 | Chunk type | Model |
 |---|---|
-| Scaffold, parsers, scripts, viz, README polish | Sonnet |
-| Downloads, test runs, wide searches, formatting | Haiku |
-| Core contract (C1.1), map decoder + targets (C3.1–3.2), binaural spike (C4.0) | Sonnet, captain reviews closely |
-| Learning chunks (C0.3 and every *Learn*) | You, with Claude as tutor — not delegated |
+| Scaffold, downloads, parsers, exports, README polish | Sonnet (downloads: Haiku) |
+| Core contract (C0.3), targets + model (C2.3–2.4), spike (C3.0), scene (C3.4), viewer (C4.1–4.2) | Sonnet, First Mate reviews closely |
+| Training runs | Herdr pane started by the First Mate; crew writes the script |
+| Milestone pages, LEARNING.md, decisions | First Mate |

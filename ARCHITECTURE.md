@@ -1,31 +1,43 @@
-# SecondEar — Architecture
+# SecondEar — Architecture (v2, 2026-10-22)
 
-> A model that turns microphone audio into a labeled heat map of where sounds are
-> around the listener — a *visual second ear* for people with single-sided deafness.
+> A model that turns microphone audio into a labeled map of where sounds are around a
+> listener, an experiment that measures what one ear loses, and a 3D coffee-shop viewer
+> that shows both. Build steps: [PLAN.md](PLAN.md). Verified facts and URLs:
+> [docs/research/2026-10-22-sources.md](docs/research/2026-10-22-sources.md).
 
-Status: design draft, 2026-09-23. Build steps live in [PLAN.md](PLAN.md).
+v1 (2026-09-23) is superseded. Dropped: dates, the resume gate, the hardware gate, the
+live-mic demo, the hosted Gradio demo, the "author drives" learning chunks. The run is
+hands-off: the First Mate plans and verifies, crew builds, Johnny reads milestone pages.
 
 ---
 
 ## 1. Goal
 
 **Problem.** With one ear, the brain loses the two-ear cues it uses to tell where a sound
-comes from (interaural time and level differences). Direction and group conversation
-become hard. The author of this project is deaf in one ear.
+comes from (interaural time and level differences). The author is deaf in one ear.
 
-**What we build.** A system that listens through several microphones and draws, ~10 times
-per second, a heat map on a sphere around the listener: bright where sound is coming from,
-labeled with *what* the sound is (speech, footsteps, door, phone, …).
+**Three deliverables, each presentable alone:**
 
-**Personal payoff (protected phase).** A *two-ear* version: a model that takes audio from
-microphones at both ears (binaural) and draws the map — and an experiment that measures and
-shows what is lost when only one ear is available.
+1. **A trained sound-localization model** (SELD: sound event localization and detection),
+   trained on real room recordings (STARSS23), evaluated with the official DCASE metrics
+   next to the published baseline.
+2. **The one-ear experiment.** Render the same recordings into left/right ear audio with
+   public head filters (HRTFs), train a two-ear model, mute one ear, measure the damage
+   (direction error, recall, detection F-score, front-back confusion). Put the curve next
+   to published human single-sided-deafness numbers (22.4° vs 3.7° azimuth error, Aruffo 2025).
+3. **The 3D viewer.** A static web page: a coffee shop, listener seated at a table. The
+   floor is a grid of bars whose height is loudness at that spot right now (a wave
+   simulation). A ring around the head shows where the model thinks each sound is. Switch
+   two ears / left only / right only.
 
-**Non-goals.** Not a medical device, does not restore hearing, no speech recognition,
-no mobile app. Assistive awareness only.
+**Research framing (honest):** a computational simulation of single-sided deafness as an open
+localization benchmark. Not a treatment, not a clinical tool.
 
-**Constraints.** ~10 weeks, 10–20 h/week, ≤ ~$100 cloud spend, Windows dev machine,
-v1 must be resume-ready by ~2026-10-25 (job applications are live).
+**Non-goals.** No hardware, no live microphone demo, no medical claims, no speech
+recognition, no mobile app, no cloud spend (local RTX 4000, 8 GB VRAM).
+
+**Showcase rule (Johnny, 2026-10-22).** At every checkpoint ask WHAT we are showcasing and
+HOW, so a visitor with no context can click around and get it.
 
 ---
 
@@ -33,15 +45,15 @@ v1 must be resume-ready by ~2026-10-25 (job applications are live).
 
 | Term | Meaning |
 |---|---|
-| **SELD** | Sound Event Localization and Detection — detect *what* sound is active and estimate *where* it is, over time. |
-| **DOA** | Direction of arrival — azimuth (left/right angle) and elevation (up/down angle) of a sound. |
-| **FOA** | First-order Ambisonics — 4-channel format encoding the sound field around one point (W, Y, Z, X). |
-| **MIC** | 4 raw capsules of a spherical (tetrahedral) microphone array. |
-| **Binaural** | 2 channels recorded at (or simulated for) the two ears. |
-| **HRTF / HRIR** | Head-related transfer function / impulse response — how the head and outer ear filter sound from each direction. Measured per person; stored in SOFA files. |
-| **ACCDOA** | Activity-coupled Cartesian DOA — standard DCASE output: per class, a 3-D vector whose direction is the DOA and whose length is "how active". |
-| **Heat map** | Dense grid over azimuth × elevation; value = confidence a sound (of a class) is there. |
-| **Beamforming / SRP-PHAT** | Classical, non-learned localization: scan directions and measure how well microphone signals align. |
+| **SELD** | Sound Event Localization and Detection: *what* sound is active and *where*, per 100 ms frame. |
+| **DOA** | Direction of arrival: azimuth (left/right angle) + elevation (up/down). |
+| **FOA** | First-order Ambisonics: 4 channels (W, Y, Z, X) describing the sound field at one point. |
+| **Binaural** | 2 channels at (or simulated for) the two ears. |
+| **HRTF / HRIR** | Head-related transfer function / impulse response: how a head and outer ear filter sound from each direction. Stored per person in SOFA files. |
+| **ACCDOA** | Activity-coupled Cartesian DOA: DCASE output format, per class a 3-D vector (direction = DOA, length = activity). |
+| **Heat map** | Grid over azimuth × elevation; value = confidence a sound (of a class) is there. |
+| **Intensity vector** | FOA trick: per time-frequency bin, W × (X, Y, Z) points at the source. Classical localization with no training. |
+| **ILD / ITD / IPD** | Interaural level / time / phase difference: the two-ear cues. |
 
 ---
 
@@ -49,54 +61,50 @@ v1 must be resume-ready by ~2026-10-25 (job applications are live).
 
 | Source | What | Used for |
 |---|---|---|
-| **STARSS23** (Zenodo; NeurIPS 2023 D&B) | Real recordings in rooms (Tampere, Tokyo). 4-ch FOA + 4-ch MIC at 24 kHz, 360° equirectangular video (1920×960, 29.97 fps), labels for 13 classes: class + azimuth + elevation (+ distance) per 100 ms frame. | Training, evaluation, video overlays |
-| **DCASE Task 3 synthetic sets** | Official synthetic spatial mixtures released with the baselines. | Baseline training (as the baseline recipe prescribes) |
-| **SpatialScaper** (github.com/marl/SpatialScaper) | Library that places/moves sound events in measured rooms, outputs FOA/MIC + labels. | Extra training data if needed |
-| **DCASE 2025 Task 3 stereo set** | 30k × 5 s stereo clips from STARSS23, azimuth + distance labels. | Optional two-channel reference point |
-| **HRTF sets (SOFA)**: SADIE II, HUTUBS, SONICOM | Measured ear/head filters for many people. | Rendering binaural training data; multi-HRTF augmentation |
-| **FSD50K** | Dry single-source sound clips. | Direct binaural synthesis (Route B, §6.4) |
+| **STARSS23** (Zenodo 7880637, MIT) | Real rooms (Tampere, Tokyo). FOA + MIC at 24 kHz, 360° video, labels for 13 classes: class, azimuth, elevation, distance per 100 ms. Dev set ≈ 7.5 h. | Training, official metrics |
+| **HUTUBS** (96 subjects, CC BY 4.0, 1.27 GB) | Measured HRIRs, SOFA. | Two-ear rendering + multi-head augmentation |
+| **SADIE II** (20 subjects, Apache 2.0) | Measured HRIRs, SOFA. | Same |
+| **FSD50K** (CC BY, per-clip licenses) | Dry single-source clips. | Coffee-shop scene sounds (choose CC0/CC-BY clips only) |
 
-Conventions to verify in the first data step (and encode in tests): DCASE azimuth range
-[-180°, 180°] with 0° = front and positive = counter-clockwise (left); elevation
-[-90°, 90°]; FOA channel order/normalization as stated in the dataset README.
+**Download scope now:** `foa_dev.zip` (3.4 GB) + `metadata_dev.zip`. `mic_dev`, `video_dev`,
+eval sets only when a chunk needs them.
 
-Storage: expect tens of GB (audio + video + synthetic). `data/` is git-ignored.
+**Conventions (from the STARSS23 README; pinned in tests at C0.2):** azimuth −180..180,
+0 = front, positive = counter-clockwise (90 = left). Elevation −90..90 (positive = up,
+verify). 24 kHz, 16-bit. FOA normalization (SN3D vs N3D) and channel order: verify in C0.2,
+record here, test it.
 
-Licensing: check STARSS23 / FSD50K licenses before redistributing any clip in a public demo.
+Storage: `data/` is git-ignored; expect ≈ 4 GB raw + ≈ 5–10 GB rendered binaural + scenes.
 
 ---
 
 ## 4. System overview
 
 ```
-             ┌──────────────┐    ┌───────────┐    ┌────────────────────┐    ┌────────────┐
- audio  ───▶ │  features/   │──▶ │ localizer │──▶ │  Prediction        │──▶ │ eval/      │ → metrics JSON
- (N ch)      │ STFT, mel,   │    │ (one of 4)│    │  (common contract) │    │ viz/       │ → videos, radar
-             │ IV, GCC, ILD │    └───────────┘    └────────────────────┘    └────────────┘
-             └──────────────┘
- localizers: ClassicalLocalizer · BaselineLocalizer · HeatmapLocalizer(4-ch) · HeatmapLocalizer(binaural)
+ audio (N ch) ─▶ features ─▶ localizer (one of 4) ─▶ Prediction ─▶ eval  → results/*.json
+                                                                 ├▶ export → web/clips/*.json
+                                                                 └▶ viz   → mp4 / GIF
+ localizers: Classical · Baseline (DCASE 2023) · HeatmapLocalizer(FOA) · HeatmapLocalizer(binaural)
 ```
 
-**Central design decision: one prediction contract, many localizers.** Every localizer —
-classical math, reproduced baseline, our heat-map model, our two-ear model — returns the same
-`Prediction` object. Evaluation and visualization only ever consume `Prediction`. This keeps
-comparisons fair (same metric code for everything), lets each localizer be built and tested
-alone, and means the visualizer is written once.
+**Central decision: one prediction contract, many localizers.** Every localizer returns the
+same `Prediction`. Metrics, viewer export and video are written once. That makes
+"classical vs baseline vs ours vs ours-with-one-ear" a fair table.
 
 ### 4.1 The contract (`src/secondear/core.py`)
 
 ```python
-FRAME_S = 0.1  # DCASE label resolution: 100 ms
+FRAME_S = 0.1  # DCASE label resolution
 
 @dataclass(frozen=True)
 class Grid:
-    az_deg: np.ndarray   # e.g. -180..175 step 5  -> 72 bins
-    el_deg: np.ndarray   # e.g. -90..90 step 5    -> 37 bins
+    az_deg: np.ndarray   # -180..175 step 5 -> 72 bins
+    el_deg: np.ndarray   # -90..90 step 5   -> 37 bins
 
 @dataclass
 class Event:
-    frame: int           # index of 100 ms frame
-    cls: int | None      # class id; None for class-agnostic (classical) localizers
+    frame: int
+    cls: int | None      # None for class-agnostic localizers
     az_deg: float
     el_deg: float
     dist_m: float | None = None
@@ -105,8 +113,8 @@ class Event:
 @dataclass
 class Prediction:
     grid: Grid
-    heatmap: np.ndarray | None   # [frames, classes_or_1, n_el, n_az], values in [0, 1]
-    events: list[Event]          # sparse detections (peaks or ACCDOA decode)
+    heatmap: np.ndarray | None   # [frames, classes_or_1, n_el, n_az] in [0, 1]
+    events: list[Event]
 
 class Localizer(Protocol):
     name: str
@@ -114,140 +122,132 @@ class Localizer(Protocol):
     def predict(self, audio: np.ndarray, fs: int) -> Prediction: ...
 ```
 
-Conversions live beside the contract and are unit-tested:
-- `heatmap_to_events(pred, threshold, min_sep_deg)` — peak picking on the sphere.
-- `events_to_heatmap(events, grid, kappa)` — render events as spherical Gaussian blobs.
-- `accdoa_to_events(...)` — decode DCASE-style output.
+Conversions beside it, unit-tested: `heatmap_to_events` (peak picking on the sphere),
+`events_to_heatmap` (von Mises–Fisher blobs on unit vectors, no seam at ±180°),
+`accdoa_to_events`.
 
 ---
 
 ## 5. Components
 
-Repository layout:
-
 ```
 second-ear/
   src/secondear/
     core.py        # Grid, Event, Prediction, Localizer + conversions
-    io/            # STARSS23 download, metadata parser, clip loader, video reader
+    io/            # STARSS23 download (resumable), metadata parser, clip loader
     features/      # STFT, log-mel, FOA intensity vectors, GCC-PHAT, binaural ILD/IPD
     classical/     # intensity-vector histogram map; optional SRP-PHAT (pyroomacoustics)
     targets/       # labels -> ACCDOA; labels -> dense heat-map targets
-    models/        # baseline adapter; heat-map model (encoder + map decoder)
-    train/         # training loop, checkpointing, experiment tracking
-    eval/          # DCASE metric wrapper, class-agnostic metrics, front-back confusion
-    binaural/      # FOA->binaural rendering, HRIR synthesis, SOFA loading
-    viz/           # 360° video overlay, polar radar, side-by-side renders
+    models/        # baseline (vendored DCASE 2023 CRNN + adapter); heat-map model
+    train/         # loop, checkpoint every epoch, TensorBoard
+    eval/          # vendored SELD_evaluation_metrics.py wrapper; class-agnostic; front-back confusion
+    binaural/      # SOFA loading, FOA->binaural (spaudiopy MagLS), direct HRIR synthesis
+    scene/         # coffee-shop scene file -> placed dry clips -> binaural audio + labels
+    export/        # Prediction + scene -> web/clips/<name>.json (+ mp3)
+    viz/           # polar radar mp4/GIF; 360° overlay only if video_dev is downloaded
+  web/             # static viewer: index.html + three.js (pinned CDN), clips/, scenes/
   configs/         # one YAML per experiment
-  scripts/         # download / generate / train / eval / render entry points
-  notebooks/       # learning notebooks (fundamentals)
+  scripts/         # download / generate / train / eval / export entry points
   tests/
-  results/         # metrics JSON + small figures (tracked); videos -> release assets
+  results/         # metrics JSON + small figures (tracked)
+  docs/research/   # verified sources
   README.md  ARCHITECTURE.md  PLAN.md  LEARNING.md
 ```
 
-### 5.1 `io/` — data access
-- Parse DCASE metadata CSV (`frame, class, source, azimuth, elevation[, distance]`) into `Event`s.
-- Load FOA or MIC audio by clip id; load the matching 360° video.
-- Split handling follows the dataset's official dev-train / dev-test folds.
+### 5.1 `io/`
+Resumable download by direct Zenodo URL (`https://zenodo.org/api/records/7880637/files/<name>/content`),
+size check against the record's byte counts. Metadata CSV (`frame, class, source, azimuth,
+elevation, distance`) → `Event`s. Official dev-train / dev-test folds.
 
 ### 5.2 `features/`
-- STFT at 24 kHz; hop 20 ms (5 feature frames per 100 ms label frame).
-- **FOA:** log-mel (4 ch) + normalized active intensity vectors (3 ch) → 7 channels.
-- **MIC:** log-mel + GCC-PHAT between capsule pairs (or whatever the chosen baseline uses).
-- **Binaural:** log-mel L/R + interaural level difference (ILD) + interaural phase difference
-  (IPD, as cos/sin) or GCC-PHAT between ears.
+STFT at 24 kHz, hop 20 ms (5 feature frames per label frame). FOA: log-mel (4) + normalized
+active intensity vectors (3). MIC (if ever): log-mel + GCC-PHAT. Binaural: log-mel L/R + ILD +
+IPD (cos/sin) or GCC-PHAT between ears.
 
-### 5.3 `classical/` — ClassicalLocalizer (no learning)
-- **Primary:** FOA intensity-vector method. Per time-frequency bin, the active intensity
-  vector points along the sound's direction; histogram those directions (energy-weighted)
-  onto the `Grid` per 100 ms frame → class-agnostic heat map.
-- **Optional:** SRP-PHAT on MIC format via `pyroomacoustics.doa`.
-- Sanity test: a synthetic plane wave from a known direction peaks within 5°.
+### 5.3 `classical/` — ClassicalLocalizer
+FOA intensity vector per time-frequency bin, energy-weighted histogram onto the `Grid` per
+100 ms → class-agnostic heat map. Sanity test: a synthetic plane wave from a known direction
+peaks within 5°.
 
-### 5.4 `models/BaselineLocalizer` — reproduced DCASE baseline
-- Use the official DCASE Task 3 audio-only baseline (2023 or 2024 edition — pick the one
-  whose code runs cleanly on STARSS23; 2024 adds distance). CRNN, multi-ACCDOA output.
-- Wrapped by an adapter so it returns `Prediction` (events from ACCDOA decode; heat map by
-  rendering events as blobs).
-- Trained with the baseline's own recipe; evaluated with the official metric code.
+### 5.4 `models/` — BaselineLocalizer
+Vendor the DCASE 2023 baseline's model + metrics files (tested on torch 1.10; we run on torch
+2.x, one training step proves it). CRNN, multi-ACCDOA. Adapter returns `Prediction`.
+Reference numbers (dev-test, FOA): F20 29.9 %, LE 21.6°, LR 47.7 %.
 
-### 5.5 `models/HeatmapLocalizer` — our model
-- **Encoder:** reuse the baseline's convolutional + recurrent/conformer encoder on the
-  feature stack (keeps the comparison fair: same encoder, different output head).
-- **Decoder (map head):** per 100 ms frame, predict `[classes, n_el, n_az]` logits.
-  Start simple: a linear/MLP projection to a coarse grid, then upsample.
-- **Targets (`targets/`):** each labeled event becomes a spherical Gaussian (von Mises–Fisher
-  kernel) centered on its DOA in its class channel: `exp(kappa * (u·v − 1))`. Computed on unit
-  vectors, so there is no seam at ±180°.
-- **Loss:** per-cell binary cross-entropy with focal weighting (most cells are empty).
-- **Decode:** `heatmap_to_events` → DCASE metrics, directly comparable to the baseline.
+### 5.5 `models/` — HeatmapLocalizer
+Same encoder as the baseline (fair comparison), map head: per frame `[classes, n_el, n_az]`
+logits, coarse grid then upsample. Targets: per-event von Mises–Fisher blob
+`exp(kappa·(u·v − 1))` in its class channel, kappa so a blob is ~10–20° wide. Loss: per-cell
+focal BCE (most cells empty). Decode with `heatmap_to_events` → official metrics.
 
-**Why heat maps rather than ACCDOA vectors for the two-ear model.** Two ears cannot always tell
-front from back: a sound at 30° front-left and one at 150° back-left produce almost the same
-cues. A regression output (ACCDOA) facing that ambiguity averages the two candidates and points
-somewhere wrong in between, with low confidence. A heat map can show *both* candidate
-blobs — being honest about the uncertainty, which is exactly what the one-ear/two-ear experiment
-needs to show.
+**Why a heat map, not an arrow.** Two ears confuse 30° front-left with 150° back-left. A
+regression head averages the two and points wrong. A heat map lights both candidates,
+which is the ambiguity the one-ear experiment should show.
 
-### 5.6 `binaural/` — two-ear data (protected phase)
-Two candidate routes; a throwaway spike picks one (PLAN C4.0):
-- **Route A — FOA → binaural.** Render STARSS23 FOA through HRTFs with an Ambisonics binaural
-  decoder (e.g. `spaudiopy`'s MagLS). Keeps real scenes and labels. Risk: first-order
-  Ambisonics is spatially blurry, so rendered cues are approximate.
-- **Route B — direct synthesis.** Place dry FSD50K clips at chosen directions by convolving
-  with HRIRs; add room reverberation. Exact cues, unlimited labels, but synthetic scenes.
-- **Either route:** augment across many measured heads (SADIE II / HUTUBS / SONICOM subjects)
-  so the model does not overfit one person's ears — needed for a live demo on the author's own
-  ears.
-- Cue sanity test: a source at 90° left must be louder and earlier in the left channel.
+### 5.6 `binaural/` and `scene/`
+- **Route A (real rooms → ears):** STARSS23 FOA → SN3D→N3D rescale (X/Y/Z × √3) →
+  `spaudiopy.decoder.magls_bin(hrirs, 1)` → `sh2bin`. Keeps real scenes and labels; first-order
+  Ambisonics is spatially blurry (measure it in the spike).
+- **Route B (built scenes):** dry clips convolved with HRIRs at chosen directions + room
+  reverb (pyroomacoustics). Exact cues, full control. **This route builds the coffee-shop
+  scene regardless**; the spike (C3.0) decides whether training data uses A, B or both.
+- Multi-head augmentation: HUTUBS + SADIE II subjects, so no single person's ears are learned.
+- Cue sanity test: a source at 90° left is louder and earlier in the left channel.
+- **Scene file** (`web/scenes/coffee_shop.json`): room size, furniture boxes (for the wave
+  sim's reflectors), listener position + facing, sources with position, clip, on/off times.
+  One file drives rendering, labels, the viewer and the floor simulation.
 
 ### 5.7 `eval/`
-- **Official DCASE metrics** (location-aware F-score at 20°, DOA error, localization recall;
-  distance error if the 2024 baseline is used) — wrapped, never re-implemented.
-- **Class-agnostic localization** metrics so the classical method (no class labels) can be
-  compared on localization alone.
-- **Front-back confusion rate** (two-ear phase): share of detections whose front-back mirror
-  (`az → 180° − az`) is within 20° of truth while the prediction itself is > 45° off.
-- Every run writes `results/<experiment>/metrics.json` + config hash.
+Official DCASE metrics (vendored, never re-implemented): F20, DOA/localization error,
+localization recall. Class-agnostic localization metrics for the classical method.
+**Front-back confusion rate:** share of detections whose front-back mirror is within 20° of
+truth while the prediction itself is > 45° off. Every run writes
+`results/<experiment>/metrics.json` + config hash.
 
-### 5.8 `viz/`
-- **360° overlay:** heat map alpha-blended on the equirectangular video frame, ground-truth
-  markers (hollow) and predictions (filled, labeled) — mp4 via ffmpeg.
-- **Polar radar:** top-down circle around the listener; azimuth only; labeled blobs.
-- **Side-by-side:** classical vs learned; two ears vs left-only vs right-only.
+### 5.8 `web/` — the viewer
+Static, no build step, Three.js pinned from jsDelivr with an import map. Deployed by a
+GitHub Actions workflow to GitHub Pages; the portfolio links or iframes it.
+- **Scene:** coffee shop from the scene file: walls, counter, tables, door, speaker, seated
+  listener (head, ears, nose), labeled source dots that glow when active.
+- **Floor bars (physics layer):** 2D finite-difference wave simulation on a 10 cm grid
+  driven by the scene timeline; furniture cells are rigid; envelope per cell rises on a
+  wavefront and decays. Drawn as an `InstancedMesh` of boxes, inferno colors. Click the floor
+  to clap. Must read clearly: fewer, bigger bars or stronger decay if it looks cluttered
+  (Johnny's round-1 note).
+- **Ring/dome around the head (perception layer):** the model's heat map for that frame,
+  from the exported JSON, as a shader on a sphere around the head.
+- **Controls:** Ears (both / left only / right only), Floor shows (the room / what I hear),
+  Camera (orbit default / sit in the chair), play / scrub, synced audio.
+- **Metrics panel:** real evaluation numbers for the chosen ear mode.
+- **Export format:** per clip `{scene, fps: 10, frames: [{t, heat: uint8[37*72] per class or merged, events:[...]}], metrics: {...}}`,
+  gzip-friendly, a few MB per clip. Ship 1 coffee-shop scene (3 ear modes) + optionally 1
+  real STARSS23 clip.
 
 ---
 
-## 6. Two-ear experiment design (protected)
+## 6. Two-ear experiment
 
 | Condition | Input | Expected |
 |---|---|---|
-| Two ears | L + R binaural | Good azimuth; some front-back confusion; weak elevation |
-| Left only | L (R zeroed) | Detection (*what*) mostly intact; localization (*where*) collapses except weak spectral cues |
-| Right only | R (L zeroed) | Same as left only, mirrored |
-| Classical ITD | L + R, cross-correlation delay | Azimuth only, no class labels |
+| Two ears | L + R | Good azimuth; some front-back confusion; weak elevation |
+| Left only | L (R zeroed) | *What* mostly intact; *where* collapses, far side lost |
+| Right only | R (L zeroed) | Mirror |
+| Classical ITD | cross-correlation delay | Azimuth only, no labels; sanity bar |
+| Humans | literature | 22.4° (one ear) vs 3.7° (two) azimuth error; no front-back rate published |
 
-Report: localization error, localization recall, detection F-score, front-back confusion rate,
-plus side-by-side videos — "what one ear sees".
-
-Live demo (only if hardware is bought at the week-4 decision): in-ear binaural microphones →
-laptop → real-time radar. Target end-to-end latency < 0.5 s. Known gap: training HRTFs ≠ the
-author's ears; mitigated by multi-HRTF augmentation.
+Report: localization error, recall, detection F-score, front-back confusion, per condition,
+plus the human row, plus the viewer's three ear modes on the same scene.
 
 ---
 
 ## 7. Tech stack
 
-Python 3.11 · `uv` for environments · PyTorch + torchaudio · numpy / scipy · soundfile ·
-librosa · pyroomacoustics (classical DOA) · spaudiopy + sofar (Ambisonics, HRTF/SOFA) ·
-opencv + ffmpeg (video) · matplotlib · TensorBoard or Weights & Biases (experiment tracking) ·
-pytest · ruff · GitHub Actions CI · Gradio on Hugging Face Spaces (hosted demo).
+Python 3.11 · `uv` · PyTorch (CUDA) + torchaudio · numpy / scipy · soundfile · librosa ·
+pyroomacoustics 0.10 · spaudiopy 0.2 + sofar 1.3 · matplotlib · TensorBoard · pytest · ruff ·
+GitHub Actions (CI + Pages) · Three.js 0.186 (pinned CDN).
 
-**Compute split.** Local Windows machine: data, features, classical method, visualization,
-tests. Rented single GPU (~$0.30–0.80/h, 24 GB class) or Colab: training runs, with
-checkpointing so disconnects lose little. Budget ≈ $10–20 (baseline) + $10–20 (heat map) +
-$20–40 (two-ear).
+**Compute:** local RTX 4000, 8 GB VRAM. Batch size and sequence length shrink before anything
+else; cloud spend is $0 by decision.
 
 ---
 
@@ -255,23 +255,19 @@ $20–40 (two-ear).
 
 | Risk | Mitigation |
 |---|---|
-| Scope vs. starting skill level | Phases ordered so every stopping point is presentable; hard stop on the learned-heat-map phase protects the two-ear phase. |
-| "Understanding debt" — code the author cannot explain in interviews | Every chunk ends with a LEARNING.md checkpoint in the author's own words. |
-| Binaural data realism (blurry FOA rendering; HRTF ≠ real ears) | Spike picks the route; multi-HRTF augmentation; report as a limitation. |
+| 8 GB VRAM too small for the baseline recipe | Small CRNN; cut batch, then sequence length; mixed precision. |
+| DCASE 2023 code rot (torch 1.10) | Vendor only model + metrics files; pin; one training step before committing. |
+| Rendered ears ≠ real ears; FOA blur | Spike measures blur; multi-head HRTFs; reported as a limitation. |
 | Front-back confusion | Expected; heat map shows it; measured explicitly. |
-| Mic geometry mismatch for a live demo | A model trained on one mic layout does not transfer to another. Buy binaural in-ear mics (match the two-ear model), not a flat USB array. |
-| Baseline code rot / environment issues | Pick whichever DCASE edition runs cleanly; pin versions. |
-| Colab disconnects / spend creep | Checkpoint every epoch; log spend per run in `results/`. |
-| Dataset licensing for public demo | Check before publishing; fall back to own recordings. |
+| Clip licensing in the public viewer | STARSS23 is MIT; FSD50K clips chosen CC0/CC-BY only, credited. |
+| Viewer unclear to a stranger | Showcase rule at every milestone; the floor's clarity pass in C4.2; one-line captions in the UI. |
+| Understanding debt for interviews | LEARNING.md per phase, plain words. |
 
 ---
 
 ## 9. Success criteria
 
-- **v1 (≈ 2026-10-25):** classical heat-map video + reproduced baseline with official metrics
-  within ~10% of published baseline numbers; README with story, demo video, numbers table.
-- **Learned heat map:** matches or beats the baseline on DCASE metrics (or documents why not);
-  beats classical on class-agnostic localization.
-- **Two-ear:** measured gap between two ears and one ear (localization error, recall,
-  front-back confusion) + side-by-side video.
-- **Ship (≈ 2026-12-06):** hosted demo, write-up, CI green, reproducible configs.
+- **M1:** classical heat map on real clips; class-agnostic numbers; radar GIF.
+- **M2:** baseline within ~10 % of published F20 (or gap explained); heat-map model table vs baseline and classical.
+- **M3:** one-ear table with the human row + 2-paragraph interpretation; coffee-shop scene rendered and scored in 3 ear modes.
+- **M4:** viewer live on GitHub Pages; README with story, GIFs, numbers, how to run, limitations; fresh clone → `uv sync` → tests pass → one script reproduces a results JSON.
