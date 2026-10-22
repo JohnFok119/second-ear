@@ -87,7 +87,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 
 ## Phase 4 — Viewer + ship → **M4**
 
-- [ ] **C4.1 Viewer core.** `web/index.html` + modules: coffee shop from the scene file, seated listener, labeled
+- [x] **C4.1 Viewer core.** (2026-10-23, 3ad8e76; headless Chrome renders orbit + chair, no console messages; Firefox not installed here, check owed at M4; `?t=` seek flaky in orbit headless, fix in C4.2) `web/index.html` + modules: coffee shop from the scene file, seated listener, labeled
   sources, perception ring from JSON, ear-mode switch, synced audio, orbit (default) + sit camera, metrics panel,
   one-line captions for a stranger. *Done when:* plays the scene in Chrome and Firefox; no console errors.
 - [ ] **C4.2 Floor bars.** Wave simulation from the scene timeline on a 10 cm grid; furniture reflects; "What I
