@@ -23,9 +23,13 @@ def render_panorama_gif(
     fps: int = 10,
     title: str = "",
     max_seconds: float | None = None,
-    dpi: int = 44,
+    dpi: int = 72,
+    step: int = 2,
 ) -> Path:
-    """Render the prediction and truth as a flat equirectangular GIF (left on the left)."""
+    """Render the prediction and truth as a flat equirectangular GIF (left on the left).
+
+    Every `step`-th label frame is drawn, played at fps / step so the GIF stays real time.
+    """
     out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     n_frames = max(pred.n_frames, max((e.frame for e in truth), default=-1) + 1)
@@ -69,19 +73,8 @@ def render_panorama_gif(
         "cyan x = where the method points\n"
         "bright = method thinks sound comes from here"
     )
-    ax.text(
-        0.99,
-        0.98,
-        legend,
-        transform=ax.transAxes,
-        ha="right",
-        va="top",
-        fontsize=6,
-        color="white",
-        zorder=6,
-        bbox={"facecolor": "black", "alpha": 0.5, "edgecolor": "none", "pad": 2},
-    )
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.1, 1, 1))
+    fig.text(0.5, 0.02, legend.replace("\n", "   ·   "), ha="center", va="bottom", fontsize=7)
 
     by_pred: dict[int, list[Event]] = {}
     by_truth: dict[int, list[Event]] = {}
@@ -118,7 +111,8 @@ def render_panorama_gif(
         ax.set_title(f"{title}  t = {f * FRAME_S:.1f} s".strip(), fontsize=9)
         return []
 
-    anim = FuncAnimation(fig, draw, frames=max(n_frames, 1), blit=False)
-    anim.save(str(out), writer=PillowWriter(fps=fps), dpi=dpi)
+    frames = range(0, max(n_frames, 1), step)
+    anim = FuncAnimation(fig, draw, frames=frames, blit=False)
+    anim.save(str(out), writer=PillowWriter(fps=fps / step), dpi=dpi)
     plt.close(fig)
     return out
