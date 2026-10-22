@@ -56,7 +56,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 
 ## Phase 2 — Learned 4-channel model → **M2**
 
-- [ ] **C2.1 Baseline bar.** Vendor DCASE 2023 baseline model + `SELD_evaluation_metrics.py` (license kept), adapt to
+- [x] **C2.1 Baseline bar.** (2026-10-22, 8ccac39; 52 tests, truth-vs-truth perfect on a real clip; scaler storage decided in C2.2) Vendor DCASE 2023 baseline model + `SELD_evaluation_metrics.py` (license kept), adapt to
   torch 2.x, `BaselineLocalizer` adapter, feature pipeline per its recipe. *Done when:* one training step + one
   `predict` return a valid `Prediction`; official metric wrapper runs on dev-test truth vs truth (= perfect score).
 - [ ] **C2.2 Train baseline.** Local GPU, checkpoint every epoch, TensorBoard, spend 0. *Done when:* dev-test F20
