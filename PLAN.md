@@ -12,6 +12,16 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - Every phase ends with a plain-English `LEARNING.md` section (what was built, why, what the numbers mean).
 - Resume after a session ends: open a session here and say "continue"; this file + the spine carry the state.
 
+## Autonomy
+- scope: `personal\second-ear` only (plus one feature branch in `jyfok-portfolio` at C4.3, never merged by the ship); work on `c<chunk>-<slug>` branches; merge to `main` after verify (Johnny's standing go 2026-10-22, this repo only)
+- standing go: commit, push, merge to `main`, dispatch crew without per-batch approval, enable GitHub Pages; no force-push, no other repos' main, no deploy beyond Pages
+- models: First Mate = this session (Fable 5.1, started by Johnny); crew Sonnet, Haiku for mechanical; Fable crew: never
+- stop when: every `- [ ]` in this file is ticked AND `uv run pytest -q` passes AND `gh api repos/JohnFok119/second-ear/pages` returns 200
+- caps: 40 turns per chunk; lookout burn limit applies
+- ping me for: a decision only Johnny can make (listed in decisions.md as "Johnny"), blocked with no other work, milestones M1–M4, done
+- milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
+- cloud: not for this run ($0 cloud, local GPU via `fleet\lease.mjs`)
+
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
 
