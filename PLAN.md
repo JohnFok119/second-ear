@@ -20,7 +20,7 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - caps: 40 turns per chunk; lookout burn limit applies
 - ping me for: a decision only Johnny can make (listed in decisions.md as "Johnny"), blocked with no other work, milestones M1–M4, done
 - milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
-- cloud: not for this run ($0 cloud, local GPU via `fleet\lease.mjs`)
+- cloud: allowed per the cloud rule until 2026-11-04 (Johnny, 2026-10-23), Claude sessions only, kit on branch `cloud-kit`; no GPU in cloud, GPU cloud spend $0 (local GPU via `fleet\lease.mjs`)
 
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
