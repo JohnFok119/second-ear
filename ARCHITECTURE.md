@@ -199,6 +199,16 @@ which is the ambiguity the one-ear experiment should show.
 - **Route B (built scenes):** dry clips convolved with HRIRs at chosen directions + room
   reverb (pyroomacoustics). Exact cues, full control. **This route builds the coffee-shop
   scene regardless**; the spike (C3.0) decides whether training data uses A, B or both.
+- **Decision (C3.0, 2026-10-22): binaural training and test data use Route B.** Numbers in
+  `docs/research/c3.0-spike.md`.
+  1. Route A keeps only 27–40 % of the real time difference between the ears (about ±200–300 µs at ±90° vs ±740 µs for direct
+     HRIRs), with a +50–80 µs offset straight ahead; above 600 Hz MagLS keeps level, not timing.
+  2. Its high-band level difference is off by 6 dB RMS, and front/back spectral contrast drops at lateral angles
+     (45/135: 1.5 vs 3.9 dB); a two-ear model trained on it would learn cues no human ear gets.
+  3. The one-ear experiment compares models with human single-sided-deafness numbers, so the two-ear cues must be
+     realistic; Route B gives exact cues. Route A code stays in `binaural/hrir.py` for reference only.
+  Class sources for Route B: FSD50K clips mapped to the 13 STARSS23 classes with the DCASE 2022
+  `FSD50K_selected.txt` list (Zenodo 6406873, CC-BY-4.0).
 - Multi-head augmentation: HUTUBS + SADIE II subjects, so no single person's ears are learned.
 - Cue sanity test: a source at 90° left is louder and earlier in the left channel.
 - **Scene file** (`web/scenes/coffee_shop.json`): room size, furniture boxes (for the wave
