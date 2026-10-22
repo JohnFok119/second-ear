@@ -18,7 +18,7 @@ export function dirToThree(azDeg, elDeg, facingDeg = 0) {
 const WALL_H = 0.6;
 const WALL_T = 0.08;
 const COLORS = { wall: 0xf1e4c8, floor: 0x5b4636, counter: 0x8a5a3b, table: 0xb07a4f,
-  door: 0x6b4423, speaker: 0x222222, skin: 0xe8c9a0, chair: 0x3d5a73 };
+  door: 0x6b4423, speaker: 0x5a5a5a, skin: 0xe8c9a0, chair: 0x3d5a73 };
 
 function box(x0, y0, z0, x1, y1, z1, color) {
   const m = new THREE.Mesh(
@@ -61,8 +61,13 @@ export function buildScene(scene3, def) {
     const g0 = Math.min(gap[1], gap[3]), g1 = Math.max(gap[1], gap[3]);
     scene3.add(box(W, -t, 0, W + t, g0, WALL_H, COLORS.wall));
     scene3.add(box(W, g1, 0, W + t, D + t, WALL_H, COLORS.wall));
-    const door = box(W - 0.03, g0, 0, W + 0.03, g1, 2.1, COLORS.door);
-    door.material.transparent = true; door.material.opacity = 0.55;
+    // door frame (two posts + lintel) with a faint slab only as tall as the walls
+    const DOOR_H = 2.1, P = 0.05;
+    scene3.add(box(W - P / 2, g0 - P, 0, W + P / 2, g0, DOOR_H, COLORS.door));
+    scene3.add(box(W - P / 2, g1, 0, W + P / 2, g1 + P, DOOR_H, COLORS.door));
+    scene3.add(box(W - P / 2, g0 - P, DOOR_H, W + P / 2, g1 + P, DOOR_H + P, COLORS.door));
+    const door = box(W - 0.02, g0, 0, W + 0.02, g1, WALL_H, COLORS.door);
+    door.material.transparent = true; door.material.opacity = 0.25;
     scene3.add(door);
   } else {
     scene3.add(box(W, -t, 0, W + t, D + t, WALL_H, COLORS.wall));
@@ -80,10 +85,14 @@ export function buildScene(scene3, def) {
   }
 
   const sourceObjs = [];
+  let speaker = null;
   for (const s of def.sources) {
     const [x, y, z] = s.pos;
     if (s.class_name === 'Music') { // the corner speaker
-      scene3.add(box(x - 0.15, y - 0.15, z - 0.25, x + 0.15, y + 0.15, z + 0.25, COLORS.speaker));
+      scene3.add(box(x - 0.03, y - 0.03, 0, x + 0.03, y + 0.03, z - 0.25, 0x777777)); // pole
+      speaker = box(x - 0.15, y - 0.15, z - 0.25, x + 0.15, y + 0.15, z + 0.25, COLORS.speaker);
+      speaker.material.emissive = new THREE.Color(0x000000);
+      scene3.add(speaker);
     }
     const group = new THREE.Group();
     group.position.copy(toThree(x, y, z));
@@ -94,7 +103,7 @@ export function buildScene(scene3, def) {
     label.position.set(0, 0.3, 0);
     group.add(dot, halo, label);
     scene3.add(group);
-    sourceObjs.push({ def: s, dot, halo, label });
+    sourceObjs.push({ def: s, dot, halo, label, speaker: s.class_name === 'Music' ? speaker : null });
   }
 
   // Listener: seated figure, facing scene +x.
@@ -138,6 +147,7 @@ export function updateSources(sourceObjs, t, time) {
     o.halo.material.opacity = on ? 0.35 + 0.15 * Math.sin(time * 8) : 0;
     o.dot.scale.setScalar(on ? 1.25 : 0.8);
     o.label.material.opacity = on ? 1 : 0.55;
+    if (o.speaker) o.speaker.material.emissive.set(on ? 0x553311 : 0x000000);
   }
 }
 

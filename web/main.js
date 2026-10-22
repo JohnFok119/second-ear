@@ -76,7 +76,22 @@ ui.setDuration(def.duration_s);
 audio.addEventListener('play', () => ui.setPlaying(true));
 audio.addEventListener('pause', () => ui.setPlaying(false));
 audio.addEventListener('ended', () => ui.setPlaying(false));
-await loadMode('both');
+// URL params: ?cam=orbit|chair&t=<seconds>&ears=both|left|right&play=0
+const q = new URLSearchParams(location.search);
+const earsParam = ['both', 'left', 'right'].includes(q.get('ears')) ? q.get('ears') : 'both';
+document.querySelector(`input[name=ears][value=${earsParam}]`).checked = true;
+await loadMode(earsParam);
+if (q.get('cam') === 'chair') {
+  document.querySelector('input[name=cam][value=chair]').checked = true;
+  setCamera('chair');
+}
+if (q.has('t')) {
+  const t0 = parseFloat(q.get('t'));
+  if (Number.isFinite(t0)) {
+    if (audio.readyState >= 1) timeline.seek(t0);
+    else audio.addEventListener('loadedmetadata', () => timeline.seek(t0), { once: true });
+  }
+}
 
 function resize() {
   const w = innerWidth, h = innerHeight;

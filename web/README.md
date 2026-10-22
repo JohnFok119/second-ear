@@ -15,3 +15,7 @@ then open http://localhost:8000 and use headphones. Do not open `index.html` as 
   positions shown as the prediction, `metrics.preview = true`); regenerate with
   `uv run python scripts/export_coffee_shop_preview.py`.
 - `clips/coffee_shop.mp3`: 30 s binaural audio.
+
+URL parameters (for screenshots and tests), all optional:
+`?cam=orbit|chair&t=<seconds>&ears=both|left|right&play=0`. They set the state on load; the page
+never autoplays (audio needs a click), so `play=0` is the default behaviour.
