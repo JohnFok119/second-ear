@@ -1,0 +1,366 @@
+{
+  "name": "coffee_shop",
+  "duration_s": 30.0,
+  "fs": 24000,
+  "room": {
+    "size": [
+      8.0,
+      6.0,
+      3.0
+    ],
+    "rt60": 0.5
+  },
+  "furniture": [
+    {
+      "type": "counter",
+      "box": [
+        0.5,
+        4.6,
+        5.0,
+        5.4,
+        1.0
+      ]
+    },
+    {
+      "type": "table",
+      "box": [
+        1.6,
+        1.1,
+        2.4,
+        1.9,
+        0.75
+      ]
+    },
+    {
+      "type": "table",
+      "box": [
+        4.1,
+        1.1,
+        4.9,
+        1.9,
+        0.75
+      ]
+    },
+    {
+      "type": "table",
+      "box": [
+        6.1,
+        2.6,
+        6.9,
+        3.4,
+        0.75
+      ]
+    },
+    {
+      "type": "table",
+      "box": [
+        2.1,
+        2.8,
+        2.9,
+        3.6,
+        0.75
+      ]
+    }
+  ],
+  "door": {
+    "type": "door",
+    "box": [
+      8.0,
+      0.5,
+      8.0,
+      1.5
+    ]
+  },
+  "listener": {
+    "pos": [
+      4.5,
+      2.1,
+      1.2
+    ],
+    "facing_deg": 0.0,
+    "head_height": 1.2
+  },
+  "hrir_subject": "hutubs/pp8",
+  "sources": [
+    {
+      "id": "barista",
+      "label": "Barista",
+      "class": 0,
+      "class_name": "Female speech",
+      "pos": [
+        2.5,
+        5.0,
+        1.6
+      ],
+      "intervals": [
+        [
+          0,
+          6
+        ],
+        [
+          14,
+          19
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "21412",
+        "license": "CC0",
+        "uploader": "Heigh-hoo",
+        "url": "https://freesound.org/s/21412/"
+      }
+    },
+    {
+      "id": "coffee_machine",
+      "label": "Coffee machine",
+      "class": 5,
+      "class_name": "Domestic sounds",
+      "pos": [
+        1.0,
+        5.0,
+        1.2
+      ],
+      "intervals": [
+        [
+          3,
+          11
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "1942",
+        "license": "CC-BY-3.0",
+        "uploader": "RHumphries",
+        "url": "https://freesound.org/s/1942/"
+      }
+    },
+    {
+      "id": "door",
+      "label": "Door",
+      "class": 7,
+      "class_name": "Door open/close",
+      "pos": [
+        7.9,
+        1.0,
+        1.0
+      ],
+      "intervals": [
+        [
+          8,
+          10
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "993",
+        "license": "CC-BY-3.0",
+        "uploader": "RHumphries",
+        "url": "https://freesound.org/s/993/"
+      }
+    },
+    {
+      "id": "bell",
+      "label": "Door bell",
+      "class": 11,
+      "class_name": "Bell",
+      "pos": [
+        7.9,
+        1.0,
+        2.2
+      ],
+      "intervals": [
+        [
+          8.2,
+          9.5
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "2539",
+        "license": "CC0",
+        "uploader": "eliasheuninck",
+        "url": "https://freesound.org/s/2539/"
+      }
+    },
+    {
+      "id": "footsteps",
+      "label": "Footsteps",
+      "class": 6,
+      "class_name": "Walk, footsteps",
+      "pos": [
+        6.5,
+        1.0,
+        0.1
+      ],
+      "intervals": [
+        [
+          10,
+          14
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "9923",
+        "license": "CC0",
+        "uploader": "Heigh-hoo",
+        "url": "https://freesound.org/s/9923/"
+      }
+    },
+    {
+      "id": "friend",
+      "label": "Friend",
+      "class": 1,
+      "class_name": "Male speech",
+      "pos": [
+        5.2,
+        1.5,
+        1.2
+      ],
+      "intervals": [
+        [
+          20,
+          27
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "8380",
+        "license": "CC-BY-3.0",
+        "uploader": "LS",
+        "url": "https://freesound.org/s/8380/"
+      }
+    },
+    {
+      "id": "laughter",
+      "label": "Laughter",
+      "class": 4,
+      "class_name": "Laughter",
+      "pos": [
+        6.5,
+        3.4,
+        1.2
+      ],
+      "intervals": [
+        [
+          22,
+          25
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "1042",
+        "license": "CC-BY-3.0",
+        "uploader": "RHumphries",
+        "url": "https://freesound.org/s/1042/"
+      }
+    },
+    {
+      "id": "music",
+      "label": "Speaker music",
+      "class": 8,
+      "class_name": "Music",
+      "pos": [
+        0.3,
+        0.3,
+        2.6
+      ],
+      "intervals": [
+        [
+          0,
+          8
+        ],
+        [
+          10,
+          30
+        ]
+      ],
+      "gain_db": -12.0,
+      "clip": {
+        "fname": "17206",
+        "license": "CC0",
+        "uploader": "Heigh-hoo",
+        "url": "https://freesound.org/s/17206/"
+      }
+    },
+    {
+      "id": "phone",
+      "label": "Telephone",
+      "class": 3,
+      "class_name": "Telephone",
+      "pos": [
+        2.5,
+        3.2,
+        0.8
+      ],
+      "intervals": [
+        [
+          27,
+          30
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "14575",
+        "license": "CC-BY-3.0",
+        "uploader": "LS",
+        "url": "https://freesound.org/s/14575/"
+      }
+    }
+  ],
+  "credits": [
+    {
+      "title": "Freesound 21412 (Barista)",
+      "uploader": "Heigh-hoo",
+      "license": "CC0",
+      "url": "https://freesound.org/s/21412/"
+    },
+    {
+      "title": "Freesound 1942 (Coffee machine)",
+      "uploader": "RHumphries",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/1942/"
+    },
+    {
+      "title": "Freesound 993 (Door)",
+      "uploader": "RHumphries",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/993/"
+    },
+    {
+      "title": "Freesound 2539 (Door bell)",
+      "uploader": "eliasheuninck",
+      "license": "CC0",
+      "url": "https://freesound.org/s/2539/"
+    },
+    {
+      "title": "Freesound 9923 (Footsteps)",
+      "uploader": "Heigh-hoo",
+      "license": "CC0",
+      "url": "https://freesound.org/s/9923/"
+    },
+    {
+      "title": "Freesound 8380 (Friend)",
+      "uploader": "LS",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/8380/"
+    },
+    {
+      "title": "Freesound 1042 (Laughter)",
+      "uploader": "RHumphries",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/1042/"
+    },
+    {
+      "title": "Freesound 17206 (Speaker music)",
+      "uploader": "Heigh-hoo",
+      "license": "CC0",
+      "url": "https://freesound.org/s/17206/"
+    },
+    {
+      "title": "Freesound 14575 (Telephone)",
+      "uploader": "LS",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/14575/"
+    }
+  ]
+}
