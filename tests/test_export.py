@@ -11,7 +11,7 @@ from secondear.export import (
     read_viewer_json,
     write_viewer_json,
 )
-from secondear.viz import render_radar_gif
+from secondear.viz import render_panorama_gif, render_radar_gif
 
 
 def _make():
@@ -53,3 +53,11 @@ def test_radar_gif(tmp_path):
     out = render_radar_gif(pred, ev, tmp_path / "r.gif", title="test")
     assert out.exists() and out.stat().st_size > 5_000
     assert time.time() - t0 < 15
+
+
+def test_panorama_gif(tmp_path):
+    grid, _, _ = _make()
+    ev = [Event(frame=f, cls=0, az_deg=30.0 + 10 * f, el_deg=10.0) for f in range(4)]
+    pred = Prediction(grid, events_to_heatmap(ev, grid, 4, 13), ev)
+    out = render_panorama_gif(pred, ev, tmp_path / "p.gif", title="test")
+    assert out.exists() and out.stat().st_size > 0
