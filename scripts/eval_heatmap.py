@@ -1,4 +1,4 @@
-"""Evaluate the trained heat-map localizer (best.pt and last.pt) on STARSS23 dev-test."""
+"""Evaluate the trained heat-map localizer (best.pt and last.pt): FOA on dev-test, or binaural scenes."""
 
 from __future__ import annotations
 
@@ -11,12 +11,13 @@ import tempfile
 from pathlib import Path
 
 import numpy as np
+import soundfile as sf
 import torch
 
 from secondear.eval.agnostic import Counts, chance_events, count_clip, summarize
 from secondear.eval.official import seld_scores
 from secondear.io.starss23 import clip_paths, list_clips, load_foa, read_metadata
-from secondear.models.heatmap import HeatmapLocalizer
+from secondear.models.heatmap import BinauralHeatmapLocalizer, HeatmapLocalizer
 from secondear.train.baseline import load_scaler
 from secondear.train.heatmap import load_config
 
@@ -34,20 +35,38 @@ def _site(stem: str, root: Path) -> str:
     return "sony" if "sony" in clip_paths(root, stem)[1].parent.name else "tau"
 
 
+def _binaural_stems(root: Path, split: str) -> list[str]:
+    d = root / split
+    return sorted(w.stem for w in d.glob("*.wav") if w.with_suffix(".csv").exists())
+
+
+def _load_binaural(root: Path, split: str, stem: str):
+    data, fs = sf.read(str(root / split / f"{stem}.wav"), dtype="float32", always_2d=True)
+    assert data.shape[1] == 2, f"{stem}: expected 2 channels, got {data.shape[1]}"
+    return np.ascontiguousarray(data.T), fs
+
+
 def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--root", default="data/starss23")
+    ap.add_argument("--root", default=None, help="default data/starss23 or data/binaural")
     ap.add_argument("--config", default="configs/heatmap_foa.yaml")
-    ap.add_argument("--ckpt-dir", default="checkpoints/heatmap_foa")
-    ap.add_argument("--split", default="dev-test")
+    ap.add_argument("--data", choices=["foa", "binaural"], default=None, help="overrides config")
+    ap.add_argument("--ears", choices=["both", "left", "right"], default=None)
+    ap.add_argument("--ckpt-dir", default=None, help="default checkpoints/<experiment>")
+    ap.add_argument("--split", default=None, help="default dev-test (foa) or test (binaural)")
     ap.add_argument("--limit-clips", type=int, default=None)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    ap.add_argument("--out", default="results/heatmap_foa")
+    ap.add_argument("--out", default=None, help="default results/<experiment>")
     a = ap.parse_args()
 
-    root, out, ckpt = Path(a.root), Path(a.out), Path(a.ckpt_dir)
-    train_cfg = load_config(a.config)
+    train_cfg = load_config(a.config, data=a.data, ears=a.ears)
+    binaural = train_cfg["data"] == "binaural"
+    ears = train_cfg["ears"]
+    exp = train_cfg["experiment"]
+    split = a.split or ("test" if binaural else "dev-test")
+    root = Path(a.root or ("data/binaural" if binaural else "data/starss23"))
+    out, ckpt = Path(a.out or f"results/{exp}"), Path(a.ckpt_dir or f"checkpoints/{exp}")
     kw = {
         "threshold": train_cfg["threshold"],
         "coarse_step_deg": train_cfg["coarse_step_deg"],
@@ -58,12 +77,22 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as td:
         last_weights = Path(td) / "last_weights.pt"
         torch.save(last_state["model"], last_weights)
-        locs = {
-            "best": HeatmapLocalizer(ckpt / "best.pt", a.device, mean, scale, **kw),
-            "last": HeatmapLocalizer(last_weights, a.device, mean, scale, **kw),
-        }
+        if binaural:
+            locs = {
+                "best": BinauralHeatmapLocalizer(
+                    ears, ckpt / "best.pt", a.device, mean, scale, name=exp, **kw
+                ),
+                "last": BinauralHeatmapLocalizer(
+                    ears, last_weights, a.device, mean, scale, name=exp, **kw
+                ),
+            }
+        else:
+            locs = {
+                "best": HeatmapLocalizer(ckpt / "best.pt", a.device, mean, scale, **kw),
+                "last": HeatmapLocalizer(last_weights, a.device, mean, scale, **kw),
+            }
 
-    stems = list_clips(root, a.split)[: a.limit_clips]
+    stems = (_binaural_stems(root, split) if binaural else list_clips(root, split))[: a.limit_clips]
     pred = {"best": {}, "last": {}}
     ref = {}
     overall, chance = Counts(), Counts()
@@ -71,9 +100,13 @@ def main() -> None:
     per_clip: dict[str, dict] = {}
     rows = []
     for idx, stem in enumerate(stems):
-        wav, csv_path = clip_paths(root, stem)
-        audio, fs = load_foa(wav)
-        truth = read_metadata(csv_path)
+        if binaural:
+            audio, fs = _load_binaural(root, split, stem)
+            truth = read_metadata(root / split / f"{stem}.csv")
+        else:
+            wav, csv_path = clip_paths(root, stem)
+            audio, fs = load_foa(wav)
+            truth = read_metadata(csv_path)
         ref[stem] = truth
         preds = {k: loc.predict(audio, fs) for k, loc in locs.items()}
         for k, p in preds.items():
@@ -85,10 +118,11 @@ def main() -> None:
         for e in p.events:
             per_frame[e.frame] = per_frame.get(e.frame, 0) + 1
         ch = count_clip(chance_events(per_frame, np.random.default_rng(idx)), truth, n_frames)
-        site = _site(stem, root)
+        site = "binaural" if binaural else _site(stem, root)
         overall.add(c)
         chance.add(ch)
-        by_site[site].add(c)
+        if not binaural:
+            by_site[site].add(c)
         s = summarize(c)
         per_clip[stem] = s
         rows.append([stem, site, n_frames, s["LE_deg"], s["LR"], s["F20"], s["front_back_rate"]])
@@ -98,8 +132,10 @@ def main() -> None:
     official = {k: seld_scores(pred[k], ref, average="macro") for k in ("best", "last")}
 
     cfg = {
-        "model": "SELDnet encoder + coarse-to-fine heat-map head (FOA)",
+        "model": "SELDnet encoder + coarse-to-fine heat-map head "
+        + (f"(binaural, ear_mode={ears})" if binaural else "(FOA)"),
         **train_cfg,
+        **({"ear_mode": ears} if binaural else {}),
         "optimizer": "Adam",
         "loss": "focal_bce",
         "scaler_fit": "dev-train only",
@@ -109,17 +145,17 @@ def main() -> None:
         ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False
     ).stdout.strip()
     metrics = {
-        "experiment": "heatmap_foa",
-        "split": a.split,
+        "experiment": exp,
+        "split": split,
         "n_clips": len(stems),
         "git_sha": sha,
         "config": cfg,
         "config_hash": hashlib.sha1(json.dumps(cfg, sort_keys=True).encode()).hexdigest(),
         "best_epoch": int(last_state["best_epoch"]),
         "official_macro": official,
-        "reference_published": REFERENCE,
+        **({} if binaural else {"reference_published": REFERENCE}),
         "overall": summarize(overall),
-        "by_site": {k: summarize(v) for k, v in by_site.items()},
+        **({} if binaural else {"by_site": {k: summarize(v) for k, v in by_site.items()}}),
         "chance": summarize(chance),
         "per_clip": per_clip,
     }

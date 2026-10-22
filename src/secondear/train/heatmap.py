@@ -18,7 +18,8 @@ from torch.utils.data import DataLoader, Dataset
 
 from secondear.core import Event, Grid, heatmap_to_events
 from secondear.eval.official import seld_scores
-from secondear.models.baseline import N_CLASSES, SEQ_LABEL_FRAMES
+from secondear.models.baseline import N_CLASSES, N_MEL, SEQ_FEAT_FRAMES, SEQ_LABEL_FRAMES
+from secondear.models.binaural import EAR_CHANNELS, channel_columns, chunks_to_input
 from secondear.models.heatmap import HeatmapNet, focal_bce
 from secondear.targets.heatmap import dense_targets
 from secondear.train.baseline import (
@@ -43,7 +44,11 @@ DEFAULT_CONFIG = {
     "seed": 42,
     "amp": True,
     "tail": "pad",
+    "data": "foa",  # "foa" (STARSS23 cache) or "binaural" (scene cache, see models/binaural.py)
+    "ears": "both",  # binaural only: both | left | right
+    "experiment": "heatmap_foa",
 }
+BIN_TRAIN_SPLIT, BIN_TEST_SPLIT = "train", "test"
 EVAL_CHUNKS = 8  # chunks per forward pass at evaluation
 
 
@@ -70,8 +75,47 @@ def chunk_events(events: list[Event], n_chunks: int) -> list[list[Event]]:
     return out
 
 
-def load_clip(f: Path, mean, scale, tail: str):
-    """Cached clip -> (x [N, 7, 250, 64], per-chunk event lists, ref events, n_label_frames)."""
+def splits_for(data: str) -> tuple[str, str]:
+    """(train split, validation split) folder names for a data kind."""
+    if data == "foa":
+        return TRAIN_SPLIT, TEST_SPLIT
+    if data == "binaural":
+        return BIN_TRAIN_SPLIT, BIN_TEST_SPLIT
+    raise ValueError(f"data must be 'foa' or 'binaural', got {data!r}")
+
+
+def n_input_channels(data: str, ears: str) -> int:
+    """Network input channels: 7 for FOA, 5 / 1 / 1 for binaural both / left / right."""
+    return 7 if data == "foa" else len(EAR_CHANNELS[ears])
+
+
+def _binaural_chunks(feat, n_label, mean, scale, tail, ears):
+    """Cached binaural features [T, 320] -> x [N, n_ch, 250, 64] for the ear mode's channels."""
+    cols = channel_columns(ears)
+    n_ch = len(EAR_CHANNELS[ears])
+    if tail == "drop":
+        n_seq = n_label // SEQ_LABEL_FRAMES
+        feat = feat[: n_seq * SEQ_FEAT_FRAMES]
+        if n_seq == 0:
+            return torch.empty(0, n_ch, SEQ_FEAT_FRAMES, N_MEL)
+    elif tail != "pad":
+        raise ValueError(f"tail must be 'pad' or 'drop', got {tail!r}")
+    m = None if mean is None else mean[cols]
+    sc = None if scale is None else scale[cols]
+    return chunks_to_input(feat[:, cols], m, sc, n_ch)
+
+
+def load_clip(f: Path, mean, scale, tail: str, data: str = "foa", ears: str = "both"):
+    """Cached clip -> (x [N, C, 250, 64], per-chunk event lists, ref events, n_label_frames).
+
+    C is 7 for FOA; for binaural it is the ear mode's channel count (5 / 1 / 1).
+    """
+    if data == "binaural":
+        with np.load(f) as z:
+            feat, rows, n_label = z["feat"], z["ref"], int(z["n_label"])
+        x = _binaural_chunks(feat, n_label, mean, scale, tail, ears)
+        ref = events_from_rows(rows)
+        return x, chunk_events(ref, x.shape[0]), ref, n_label
     with np.load(f) as z:
         feat, rows = z["feat"], z["ref"]
         n_label = z["target"].shape[0]
@@ -83,10 +127,20 @@ def load_clip(f: Path, mean, scale, tail: str):
 class HeatmapChunkDataset(Dataset):
     """Normalised 250-frame chunks plus their events; dense targets are built per item."""
 
-    def __init__(self, files, mean, scale, grid: Grid, fwhm_deg: float, tail: str = "pad"):
+    def __init__(
+        self,
+        files,
+        mean,
+        scale,
+        grid: Grid,
+        fwhm_deg: float,
+        tail: str = "pad",
+        data: str = "foa",
+        ears: str = "both",
+    ):
         xs, evs = [], []
         for f in files:
-            x, ev, _, _ = load_clip(f, mean, scale, tail)
+            x, ev, _, _ = load_clip(f, mean, scale, tail, data, ears)
             xs.append(x)
             evs.extend(ev)
         if not xs:
@@ -132,7 +186,9 @@ def evaluate(model, files, mean, scale, cfg, device, average: str = "macro") -> 
     grid = model.fine
     pred, ref, losses = {}, {}, []
     for f in files:
-        x, ev_chunks, ref_events, n_label = load_clip(f, mean, scale, cfg["tail"])
+        x, ev_chunks, ref_events, n_label = load_clip(
+            f, mean, scale, cfg["tail"], cfg.get("data", "foa"), cfg.get("ears", "both")
+        )
         probs, loss_sum = [], 0.0
         for i in range(0, x.shape[0], EVAL_CHUNKS):
             xb = x[i : i + EVAL_CHUNKS].to(device).float()
@@ -155,9 +211,9 @@ def evaluate(model, files, mean, scale, cfg, device, average: str = "macro") -> 
     return {"loss": float(np.mean(losses)), **scores}
 
 
-def find_clip(feat_dir: Path, name: str) -> Path:
-    """Cached clip `name` in dev-train, else dev-test."""
-    for split in (TRAIN_SPLIT, TEST_SPLIT):
+def find_clip(feat_dir: Path, name: str, data: str = "foa") -> Path:
+    """Cached clip `name` in the train split, else the validation split."""
+    for split in splits_for(data):
         p = feat_dir / split / f"{name}.npz"
         if p.exists():
             return p
@@ -183,6 +239,8 @@ def run_training(
     from torch.utils.tensorboard import SummaryWriter
 
     cfg = {**DEFAULT_CONFIG, **(cfg or {})}
+    train_split, test_split = splits_for(cfg["data"])
+    n_ch = n_input_channels(cfg["data"], cfg["ears"])
     feat_dir, ckpt_dir = Path(feat_dir), Path(ckpt_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     seed_everything(cfg["seed"])
@@ -190,16 +248,25 @@ def run_training(
     mean, scale = load_scaler(feat_dir / "scaler.npz")
     shutil.copy(feat_dir / "scaler.npz", ckpt_dir / "scaler.npz")
 
-    model = HeatmapNet(model_params, cfg["coarse_step_deg"], cfg["fine_step_deg"]).to(dev)
+    model = HeatmapNet(
+        model_params, cfg["coarse_step_deg"], cfg["fine_step_deg"], n_channels=n_ch
+    ).to(dev)
     if overfit_clip:
-        one = find_clip(feat_dir, overfit_clip)
+        one = find_clip(feat_dir, overfit_clip, cfg["data"])
         train_files, test_files, average = [one], [one], "micro"
     else:
-        train_files = list_cached(feat_dir, TRAIN_SPLIT, limit_clips)
-        test_files = list_cached(feat_dir, TEST_SPLIT, limit_clips)
+        train_files = list_cached(feat_dir, train_split, limit_clips)
+        test_files = list_cached(feat_dir, test_split, limit_clips)
         average = "macro"
     train_ds = HeatmapChunkDataset(
-        train_files, mean, scale, model.fine, cfg["fwhm_deg"], cfg["tail"]
+        train_files,
+        mean,
+        scale,
+        model.fine,
+        cfg["fwhm_deg"],
+        cfg["tail"],
+        cfg["data"],
+        cfg["ears"],
     )
     gen = torch.Generator().manual_seed(cfg["seed"])
     loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, generator=gen)
