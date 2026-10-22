@@ -37,7 +37,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 - [x] **C1.2 ClassicalLocalizer.** (2026-10-22, 82582f7; coherence-weighted bins) Intensity-vector histogram → class-agnostic heat map per 100 ms frame.
   Optional SRP-PHAT (pyroomacoustics) behind a flag. *Done when:* synthetic plane wave peaks within 5°; runs on a
   real clip end to end.
-- [ ] **C1.3 Export + radar.** `export/`: `Prediction` + metadata → `web/clips/<clip>.json` (format in ARCHITECTURE
+- [x] **C1.3 Export + radar.** (2026-10-22, f123626; real-clip export check still owed once foa_dev lands) `export/`: `Prediction` + metadata → `web/clips/<clip>.json` (format in ARCHITECTURE
   §5.8). `viz/`: polar radar mp4/GIF with truth markers. *Done when:* one 30 s clip exports; radar GIF shows markers
   tracking sources.
 - [ ] **C1.4 Class-agnostic eval → M1.** Localization error + recall on dev-test; `results/classical/metrics.json`.
