@@ -17,3 +17,9 @@ __pycache__/
 .lavish/
 notes/private/
 .env
+
+# added by scaffold
+.pytest_cache/
+.ruff_cache/
+web/clips/*.mp3
+web/clips/*.wav
