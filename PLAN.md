@@ -19,7 +19,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 
 ## Phase 0 — Foundation
 
-- [ ] **C0.1 Repo scaffold.** `uv` project (Python 3.11), `src/secondear/` package with empty modules per
+- [x] **C0.1 Repo scaffold.** (2026-10-22, e91c1b9) `uv` project (Python 3.11), `src/secondear/` package with empty modules per
   ARCHITECTURE §5, ruff, pytest, GitHub Actions CI (lint + tests on push/PR), `.gitignore` for `data/`,
   `checkpoints/`, `runs/`. *Done when:* `uv run pytest` passes an empty test locally and CI is green on `main`.
 - [ ] **C0.2 STARSS23 download + parser.** Resumable downloader (direct Zenodo URLs, byte-size check) for
