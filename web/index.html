@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Second Ear: where do you hear it?</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="view"></canvas>
+
+<header id="title">
+  <h1>Second Ear</h1>
+  <p>A coffee shop, heard through a pair of ears. Use headphones.</p>
+</header>
+
+<div id="preview-banner" hidden>Preview: showing the true positions until model output is exported</div>
+
+<aside id="captions">
+  <h2>What you are seeing</h2>
+  <ul>
+    <li><span class="sw dot"></span>Glowing dots: where each sound really is</li>
+    <li><span class="sw heat"></span>Bright patches on the bubble: where the AI hears sound</li>
+    <li><span class="sw line"></span>Blue lines: the direction the AI picks</li>
+    <li><span class="sw truth"></span>White beads: the true direction</li>
+    <li><span class="sw head"></span>The little figure in the chair is the listener (nose = facing)</li>
+    <li>Switch to Left only to hear like someone deaf in the right ear</li>
+  </ul>
+</aside>
+
+<aside id="metrics">
+  <h2>How well does it do?</h2>
+  <div id="metrics-body"></div>
+</aside>
+
+<div id="loading">Loading...</div>
+<div id="clock-tip" hidden>Press Play (audio needs a click to start)</div>
+
+<footer id="bar">
+  <button id="play" type="button">Play</button>
+  <input id="scrub" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time">
+  <span id="time">0.0 / 30.0 s</span>
+  <fieldset>
+    <legend>Ears</legend>
+    <label><input type="radio" name="ears" value="both" checked>Both</label>
+    <label><input type="radio" name="ears" value="left">Left only</label>
+    <label><input type="radio" name="ears" value="right">Right only</label>
+  </fieldset>
+  <fieldset>
+    <legend>Camera</legend>
+    <label><input type="radio" name="cam" value="orbit" checked>Orbit</label>
+    <label><input type="radio" name="cam" value="chair">Sit in the chair</label>
+  </fieldset>
+</footer>
+
+<audio id="audio" src="clips/coffee_shop.mp3" preload="auto"></audio>
+<script type="module" src="main.js"></script>
+</body>
+</html>
