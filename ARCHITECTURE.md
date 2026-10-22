@@ -99,29 +99,34 @@ same `Prediction`. Metrics, viewer export and video are written once. That makes
 ```python
 FRAME_S = 0.1  # DCASE label resolution
 
+
 @dataclass(frozen=True)
 class Grid:
-    az_deg: np.ndarray   # -180..175 step 5 -> 72 bins
-    el_deg: np.ndarray   # -90..90 step 5   -> 37 bins
+    az_deg: np.ndarray  # -180..175 step 5 -> 72 bins
+    el_deg: np.ndarray  # -90..90 step 5   -> 37 bins
+
 
 @dataclass
 class Event:
     frame: int
-    cls: int | None      # None for class-agnostic localizers
+    cls: int | None  # None for class-agnostic localizers
     az_deg: float
     el_deg: float
     dist_m: float | None = None
     score: float = 1.0
 
+
 @dataclass
 class Prediction:
     grid: Grid
-    heatmap: np.ndarray | None   # [frames, classes_or_1, n_el, n_az] in [0, 1]
+    heatmap: np.ndarray | None  # [frames, classes_or_1, n_el, n_az] in [0, 1]
     events: list[Event]
+
 
 class Localizer(Protocol):
     name: str
     n_channels: int
+
     def predict(self, audio: np.ndarray, fs: int) -> Prediction: ...
 ```
 
