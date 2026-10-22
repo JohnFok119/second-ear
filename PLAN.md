@@ -1,4 +1,4 @@
-# SecondEar — Build Plan (v2, 2026-10-22)
+﻿# SecondEar — Build Plan (v2, 2026-10-22)
 
 Design: [ARCHITECTURE.md](ARCHITECTURE.md). Sources: [docs/research/2026-10-22-sources.md](docs/research/2026-10-22-sources.md).
 One chunk ≈ one crew session. A chunk is done only when its **Done when** check passes; then tick it,
@@ -15,7 +15,7 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 ## Autonomy
 - scope: `personal\second-ear` only (plus one feature branch in `jyfok-portfolio` at C4.3, never merged by the ship); work on `c<chunk>-<slug>` branches; merge to `main` after verify (Johnny's standing go 2026-10-22, this repo only)
 - standing go: commit, push, merge to `main`, dispatch crew without per-batch approval, enable GitHub Pages; no force-push, no other repos' main, no deploy beyond Pages
-- models: First Mate = this session (Fable 5.1, started by Johnny); crew Sonnet, Haiku for mechanical; Fable crew: never
+- models: First Mate Opus 5.5 (ship launched by sail.ps1); crew Sonnet, Haiku for mechanical; Fable only if: never
 - stop when: every `- [ ]` in this file is ticked AND `uv run pytest -q` passes AND `gh api repos/JohnFok119/second-ear/pages` returns 200
 - caps: 40 turns per chunk; lookout burn limit applies
 - ping me for: a decision only Johnny can make (listed in decisions.md as "Johnny"), blocked with no other work, milestones M1–M4, done
