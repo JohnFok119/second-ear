@@ -28,9 +28,21 @@ from secondear.models.baseline import (
     foa_features,
     make_params,
 )
+from secondear.models.binaural import (
+    EAR_CHANNELS,
+    binaural_features,
+    channel_columns,
+    chunks_to_input,
+)
 from secondear.models.dcase2023.seldnet_model import SeldModel
 
-__all__ = ["HeatmapLocalizer", "HeatmapNet", "focal_bce", "upsample_logits"]
+__all__ = [
+    "BinauralHeatmapLocalizer",
+    "HeatmapLocalizer",
+    "HeatmapNet",
+    "focal_bce",
+    "upsample_logits",
+]
 
 
 def upsample_logits(coarse: torch.Tensor, n_el: int, n_az: int) -> torch.Tensor:
@@ -70,8 +82,10 @@ class HeatmapNet(nn.Module):
         coarse_step_deg: float = 10.0,
         fine_step_deg: float = 5.0,
         n_classes: int = N_CLASSES,
+        n_channels: int = N_FEAT_CH,
     ):
-        """`params` overrides entries of the upstream parameter dict (tests shrink the encoder)."""
+        """`params` overrides upstream parameters (tests shrink the encoder); `n_channels` is the
+        input channel count (7 FOA, 5 binaural both ears, 1 one ear)."""
         super().__init__()
         p = make_params()
         p.update(params or {})
@@ -82,7 +96,7 @@ class HeatmapNet(nn.Module):
         self.n_el_f, self.n_az_f = len(self.fine.el_deg), len(self.fine.az_deg)
         if self.n_az_f % self.n_az_c or (self.n_el_f - 1) % (self.n_el_c - 1):
             raise ValueError("fine grid must refine the coarse grid by an integer factor")
-        seld = SeldModel((1, N_FEAT_CH, SEQ_FEAT_FRAMES, N_MEL), (1, SEQ_LABEL_FRAMES, 1), p)
+        seld = SeldModel((1, n_channels, SEQ_FEAT_FRAMES, N_MEL), (1, SEQ_LABEL_FRAMES, 1), p)
         # Encoder = everything in SeldModel.forward before the fnn head.
         self.conv_block_list = seld.conv_block_list
         self.gru = seld.gru
@@ -152,6 +166,59 @@ class HeatmapLocalizer:
         x = features_to_input(feat, self.feat_mean, self.feat_scale).to(self.device)
         with torch.no_grad():
             maps = torch.sigmoid(self.model(x)).cpu().numpy()  # [B, 50, 13, E, A]
+        hm = maps.reshape(-1, *maps.shape[2:])[:n_label].astype(np.float32)
+        events = heatmap_to_events(hm, self.grid, self.threshold)
+        return Prediction(grid=self.grid, heatmap=hm, events=events)
+
+
+class BinauralHeatmapLocalizer:
+    """HeatmapNet on binaural audio [2, n] in one ear mode: `both`, `left` or `right`.
+
+    One-ear modes still take 2-channel audio and ignore the other ear.
+    """
+
+    n_channels = 2
+
+    def __init__(
+        self,
+        ears: str = "both",
+        checkpoint: str | Path | None = None,
+        device: str = "cpu",
+        feat_mean: np.ndarray | None = None,
+        feat_scale: np.ndarray | None = None,
+        threshold: float = 0.5,
+        coarse_step_deg: float = 10.0,
+        fine_step_deg: float = 5.0,
+        params: dict | None = None,
+        name: str | None = None,
+    ):
+        """feat_mean/feat_scale are the full 320-column scaler; the mode's columns are picked."""
+        self.ears = ears
+        self.name = name or {"both": "heatmap_binaural"}.get(ears, f"heatmap_{ears}")
+        self.cols = channel_columns(ears)
+        self.device = torch.device(device)
+        n_ch = len(EAR_CHANNELS[ears])
+        self.model = HeatmapNet(params, coarse_step_deg, fine_step_deg, n_channels=n_ch)
+        self.model = self.model.to(self.device)
+        if checkpoint is not None:
+            state = torch.load(checkpoint, map_location=self.device, weights_only=True)
+            self.model.load_state_dict(state)
+        self.model.eval()
+        self.feat_mean = None if feat_mean is None else np.asarray(feat_mean)[self.cols]
+        self.feat_scale = None if feat_scale is None else np.asarray(feat_scale)[self.cols]
+        self.threshold = threshold
+        self.grid = self.model.fine
+        self.n_ch = n_ch
+
+    def predict(self, audio: np.ndarray, fs: int = FS) -> Prediction:
+        """Binaural [2, n] float32 at 24 kHz -> Prediction (heat map [frames, 13, 37, 72])."""
+        feat = binaural_features(audio, fs)[:, self.cols]
+        n_label = int(audio.shape[1] / float(_FC._label_hop_len))
+        if feat.shape[0] == 0 or n_label == 0:
+            return Prediction(grid=self.grid, heatmap=None, events=[])
+        x = chunks_to_input(feat, self.feat_mean, self.feat_scale, self.n_ch).to(self.device)
+        with torch.no_grad():
+            maps = torch.sigmoid(self.model(x)).cpu().numpy()
         hm = maps.reshape(-1, *maps.shape[2:])[:n_label].astype(np.float32)
         events = heatmap_to_events(hm, self.grid, self.threshold)
         return Prediction(grid=self.grid, heatmap=hm, events=events)

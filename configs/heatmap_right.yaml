@@ -1,0 +1,16 @@
+# Heat-map localizer, binaural scenes, ears=right (PLAN C3.2/C3.3). Loaded by scripts/train_heatmap.py and eval_heatmap.py;
+# command-line flags override these values.
+coarse_step_deg: 10   # network output grid (19 x 36)
+fine_step_deg: 5      # upsampled grid used for targets, loss and decoding (37 x 72)
+fwhm_deg: 15.0        # target blob full width at half maximum
+gamma: 2.0            # focal exponent
+lr: 0.001
+epochs: 100
+batch_size: 32
+threshold: 0.5        # decoding threshold on sigmoid maps
+seed: 42
+amp: true             # mixed precision, cuda only
+tail: pad
+data: binaural      # scene cache data/features/binaural (train / test splits)
+ears: right
+experiment: heatmap_right

@@ -1,4 +1,4 @@
-"""Train the heat-map localizer (FOA) on the cached baseline features. Flags override the config."""
+"""Train the heat-map localizer (FOA or binaural, any ear mode) on cached features. Flags override the config."""
 
 from __future__ import annotations
 
@@ -13,9 +13,11 @@ def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default="configs/heatmap_foa.yaml")
-    ap.add_argument("--features", default="data/features/baseline")
-    ap.add_argument("--ckpt-dir", default="checkpoints/heatmap_foa")
-    ap.add_argument("--runs-dir", default="runs/heatmap_foa")
+    ap.add_argument("--data", choices=["foa", "binaural"], default=None, help="overrides config")
+    ap.add_argument("--ears", choices=["both", "left", "right"], default=None)
+    ap.add_argument("--features", default=None, help="default data/features/<baseline|binaural>")
+    ap.add_argument("--ckpt-dir", default=None, help="default checkpoints/<experiment>")
+    ap.add_argument("--runs-dir", default=None, help="default runs/<experiment>")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--epochs", type=int, default=None)
     ap.add_argument("--batch-size", type=int, default=None)
@@ -23,11 +25,12 @@ def main() -> None:
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--overfit-clip", default=None, help="train+eval on this one clip only")
     a = ap.parse_args()
-    cfg = load_config(a.config, epochs=a.epochs, batch_size=a.batch_size)
+    cfg = load_config(a.config, epochs=a.epochs, batch_size=a.batch_size, data=a.data, ears=a.ears)
+    feats = a.features or f"data/features/{'baseline' if cfg['data'] == 'foa' else 'binaural'}"
     res = run_training(
-        a.features,
-        a.ckpt_dir,
-        a.runs_dir,
+        feats,
+        a.ckpt_dir or f"checkpoints/{cfg['experiment']}",
+        a.runs_dir or f"runs/{cfg['experiment']}",
         cfg,
         device=a.device,
         limit_clips=a.limit_clips,
