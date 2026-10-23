@@ -17,8 +17,10 @@ HEAD = [
 # (row label, experiment dir, source kind); dirs match configs/heatmap_*.yaml `experiment:`
 ROWS = [
     ("Two ears", "heatmap_binaural", "model"),
-    ("Left only", "heatmap_left", "model"),
-    ("Right only", "heatmap_right", "model"),
+    ("Two-ear model, left muted", "heatmap_binaural_mute_left", "model"),
+    ("Two-ear model, right muted", "heatmap_binaural_mute_right", "model"),
+    ("One-ear model, left (trained)", "heatmap_left", "model"),
+    ("One-ear model, right (trained)", "heatmap_right", "model"),
     ("Classical ITD", "classical_itd", "itd"),
 ]
 HUMANS = [
@@ -96,6 +98,11 @@ def main() -> None:
             cells = [_fmt(r[c], c) for c in COLS]
         lines.append(f"| {r['condition']} | " + " | ".join(cells) + " |")
     lines += [
+        "",
+        (
+            "Muted = the two-ear model with one ear silenced at test time (sudden loss); "
+            "trained = a model trained on one ear only (adapted listener)."
+        ),
         "",
         "Notes: models use the official macro LE / LR / F20 (class-aware, best checkpoint). "
         "Classical ITD is class-agnostic, front half only (F20 n/a). Front-back confusion and "

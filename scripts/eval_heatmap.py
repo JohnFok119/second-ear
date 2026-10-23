@@ -54,11 +54,12 @@ def main() -> None:
     ap.add_argument("--config", default="configs/heatmap_foa.yaml")
     ap.add_argument("--data", choices=["foa", "binaural"], default=None, help="overrides config")
     ap.add_argument("--ears", choices=["both", "left", "right"], default=None)
+    ap.add_argument("--mute", choices=["left", "right"], default=None, help="zero one ear at test")
     ap.add_argument("--ckpt-dir", default=None, help="default checkpoints/<experiment>")
     ap.add_argument("--split", default=None, help="default dev-test (foa) or test (binaural)")
     ap.add_argument("--limit-clips", type=int, default=None)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    ap.add_argument("--out", default=None, help="default results/<experiment>")
+    ap.add_argument("--out", default=None, help="default results/<experiment>[_mute_<side>]")
     a = ap.parse_args()
 
     train_cfg = load_config(a.config, data=a.data, ears=a.ears)
@@ -67,8 +68,12 @@ def main() -> None:
     exp = train_cfg["experiment"]
     split = a.split or ("test" if binaural else "dev-test")
     root = Path(a.root or ("data/binaural" if binaural else "data/starss23"))
-    out, ckpt = Path(a.out or f"results/{exp}"), Path(a.ckpt_dir or f"checkpoints/{exp}")
+    if a.mute and not binaural:
+        ap.error("--mute needs binaural data")
+    default_out = f"results/{exp}_mute_{a.mute}" if a.mute else f"results/{exp}"
+    out, ckpt = Path(a.out or default_out), Path(a.ckpt_dir or f"checkpoints/{exp}")
     kw = {
+        **({"mute": a.mute} if a.mute else {}),
         "threshold": train_cfg["threshold"],
         "coarse_step_deg": train_cfg["coarse_step_deg"],
         "fine_step_deg": train_cfg["fine_step_deg"],
@@ -150,6 +155,7 @@ def main() -> None:
     metrics = {
         "experiment": exp,
         "split": split,
+        "mute": a.mute,
         "n_clips": len(stems),
         "git_sha": sha,
         "config": cfg,
