@@ -32,6 +32,9 @@
     <li><span class="sw line"></span>Blue lines: the direction the AI picks</li>
     <li><span class="sw truth"></span>White beads: the true direction</li>
     <li><span class="sw head"></span>The little figure in the chair is the listener (nose = facing)</li>
+    <li><span class="sw bars"></span>Floor bars: how loud the room is at each spot, right now</li>
+    <li>Click the floor to clap</li>
+    <li id="hear-note" hidden>"What I hear" dims the floor on the side your working ear cannot reach</li>
     <li>Switch to Left only to hear like someone deaf in the right ear</li>
   </ul>
 </aside>
@@ -59,9 +62,18 @@
     <label><input type="radio" name="cam" value="orbit" checked>Orbit</label>
     <label><input type="radio" name="cam" value="chair">Sit in the chair</label>
   </fieldset>
+  <fieldset>
+    <legend>Floor shows</legend>
+    <label><input type="radio" name="floor" value="room" checked>The room</label>
+    <label><input type="radio" name="floor" value="hear">What I hear</label>
+  </fieldset>
+  <fieldset>
+    <legend>Floor waves</legend>
+    <label><input type="checkbox" id="floor-on" checked>On</label>
+  </fieldset>
 </footer>
 
-<audio id="audio" src="clips/coffee_shop.mp3" preload="auto"></audio>
+<audio id="audio" preload="auto"></audio>
 <script type="module" src="main.js"></script>
 </body>
 </html>

@@ -16,6 +16,7 @@ aside { position:fixed; background:rgba(27,22,19,.82); border:1px solid #4a3a2e;
 .sw.heat { background:radial-gradient(#fff6a0,#ff7a1a); }
 .sw.line { background:var(--blue); height:.25em; border-radius:2px; width:1em; }
 .sw.truth { background:#fff; }
+.sw.bars { background:linear-gradient(90deg,#3b0f70,#e5602b,#fcfdbf); border-radius:2px; width:1em; }
 .sw.head { background:#e8c9a0; }
 #metrics { top:70px; right:14px; max-width:260px; }
 #metrics table { border-collapse:collapse; width:100%; }
