@@ -104,7 +104,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   hear" weighting; click to clap. **Clarity pass:** bar count, decay, colors tuned until a wavefront reads at a
   glance (Johnny: round-1 version looked cluttered). *Done when:* 60 fps on a laptop; a clap visibly bounces off the
   counter; a side-by-side GIF before/after the clarity pass in the M4 page.
-- [ ] **C4.3 Deploy.** (Pages live 2026-10-23: https://johnfok119.github.io/second-ear/ returns 200, workflow `pages.yml`; open: portfolio card branch off `jyfok-portfolio` `feat/site-v2`, where `src/content/projects/second-ear.md` already exists — update status/oneLiner/demo URL after M3 numbers) GitHub Actions → GitHub Pages for `web/`; enable Pages on the repo. Portfolio card branch in
+- [x] **C4.3 Deploy.** (2026-10-23: Pages 200 at https://johnfok119.github.io/second-ear/, workflow `pages.yml`; portfolio branch `feat/second-ear-card` @ 0066d05 off `feat/site-v2`, pushed, not merged, worktree `personaljyfok-portfolio-second-ear`: story + demo link, no numbers; add the one-ear headline there after M3) GitHub Actions → GitHub Pages for `web/`; enable Pages on the repo. Portfolio card branch in
   `jyfok-portfolio` (text: deaf in one ear + viewer link), pushed, not merged. *Done when:* public URL works; branch
   pushed.
 - [ ] **C4.4 README + write-up + LEARNING.md + resume.** (README draft merged 2026-10-23, c8e4bb6: one-ear table between `<!-- one-ear:start/end -->` all TBD, human row 22.4° in sources, repo licence TBD, `--n-scenes N` placeholder; worktree `.claude/worktrees/agent-a9480030768d22bbb` left for cleanup) README: story (deaf in one ear), GIFs, numbers table, how to
