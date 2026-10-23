@@ -86,7 +86,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   rationale in ARCHITECTURE §5.6; spike code deleted or moved under `binaural/`.
 - [x] **C3.1 HRTF sets + binaural generator.** (2026-10-23, 891b382 + 2b1225e; Route B, 600 train / 100 test scenes in `data/binaural/`, held-out test heads) Download HUTUBS (+ SADIE II), SOFA loading, chosen route, multi-subject
   augmentation, labels preserved. *Done when:* cue tests pass; binaural dev set generated.
-- [ ] **C3.2 Two-ear model.** Binaural features → heat-map model (same encoder). *Done when:* trained;
+- [ ] **C3.2 Two-ear model.** (2026-10-23: full run started 05:47 in the chain; epochs 0-2 F20 0, no detections, loss falling slowly (FOA run had F20 > 0 by epoch 1). No two-ear overfit check exists yet: `train_heatmap.py --config configs/heatmap_binaural.yaml --overfit-clip bin_train_00000 --epochs 60 --ckpt-dir checkpoints/overfit_binaural --runs-dir runs/overfit_binaural` was killed by the low-memory reaper before epoch 1; rerun in a herdr pane when RAM allows or after the chain) Binaural features → heat-map model (same encoder). *Done when:* trained;
   `results/heatmap_binaural/metrics.json`.
 - [ ] **C3.3 One-ear experiment.** Two / left / right / classical ITD; error, recall, F-score, front-back confusion;
   human row (Aruffo 2025). *Done when:* `results/one_ear/table.md` + 2-paragraph interpretation.
