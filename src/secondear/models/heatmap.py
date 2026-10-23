@@ -105,6 +105,7 @@ def centernet_loss(
     return -(pos_term + neg_term).sum() / n_pos
 
 
+HEAD_BIAS_INIT = -6.0  # sigmoid(-6) = 0.0025
 LOSSES = ("focal", "focal_pos", "centernet", "bce_pos")
 
 
@@ -158,6 +159,9 @@ class HeatmapNet(nn.Module):
         self.layer_norm_list = seld.layer_norm_list
         self.embed_dim = p["rnn_size"]
         self.head = nn.Linear(self.embed_dim, n_classes * self.n_el_c * self.n_az_c)
+        # Prior init: maps start near 0. A zero bias starts every cell at sigmoid 0.5, the first
+        # steps then move all logits in lockstep and collapse the embedding to a constant in time.
+        nn.init.constant_(self.head.bias, HEAD_BIAS_INIT)
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         """Embedding [B, 50, rnn_size]; mirrors SeldModel.forward lines 170-186 (before fnn_list)."""

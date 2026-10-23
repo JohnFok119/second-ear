@@ -59,6 +59,17 @@ def test_output_shape():
     assert out.dtype == torch.float32
 
 
+def test_head_starts_with_low_prior():
+    """Untrained maps must start near 0 (focal-loss prior init). With bias 0 every cell starts at
+    sigmoid = 0.5, the loss then drives all logits in lockstep and collapses the embedding to a
+    constant over time, so the model fires on every frame of a present class."""
+    torch.manual_seed(0)
+    net = HeatmapNet(SMALL).eval()
+    with torch.no_grad():
+        probs = torch.sigmoid(net(torch.randn(2, 7, bl.SEQ_FEAT_FRAMES, bl.N_MEL)))
+    assert probs.max() < 0.05
+
+
 def test_upsample_keeps_azimuth_wrap():
     coarse = torch.zeros(1, 1, 19, 36)
     coarse[..., 9, 35] = 10.0  # el 0, az 170
