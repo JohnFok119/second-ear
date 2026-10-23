@@ -89,7 +89,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   `results/heatmap_binaural/metrics.json`.
 - [ ] **C3.3 One-ear experiment.** Two / left / right / classical ITD; error, recall, F-score, front-back confusion;
   human row (Aruffo 2025). *Done when:* `results/one_ear/table.md` + 2-paragraph interpretation.
-- [ ] **C3.4 Coffee-shop scene.** Scene file (`web/scenes/coffee_shop.json`), one FSD50K dev part downloaded, CC0/CC-BY
+- [ ] **C3.4 Coffee-shop scene.** (scene + render + preview JSONs done; `scripts/export_coffee_shop.py` merged 879a153 and added to the chain: writes the 3 real JSONs once the binaural/left/right checkpoints exist) Scene file (`web/scenes/coffee_shop.json`), one FSD50K dev part downloaded, CC0/CC-BY
   clips picked and credited, Route B render → binaural audio + labels; run two-ear and one-ear models; export viewer
   JSON for 3 ear modes + mp3. *Done when:* 30 s scene renders; 3 JSONs + audio in `web/clips/`.
 - [ ] **C3.5 M3 page.** The one-ear table with the human row, GIFs, honest limitations, the coffee-shop renders.
