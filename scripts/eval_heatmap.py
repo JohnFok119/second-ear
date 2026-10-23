@@ -47,6 +47,12 @@ def _load_binaural(root: Path, split: str, stem: str):
     return np.ascontiguousarray(data.T), fs
 
 
+def default_out_dir(exp: str, mute: str | None, threshold: float | None) -> str:
+    """results/<exp>[_mute_<side>][_thr<t, 2 decimals>]; no threshold suffix for the config value."""
+    name = f"results/{exp}_mute_{mute}" if mute else f"results/{exp}"
+    return name if threshold is None else f"{name}_thr{threshold:.2f}"
+
+
 def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
@@ -59,7 +65,12 @@ def main() -> None:
     ap.add_argument("--split", default=None, help="default dev-test (foa) or test (binaural)")
     ap.add_argument("--limit-clips", type=int, default=None)
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
-    ap.add_argument("--out", default=None, help="default results/<experiment>[_mute_<side>]")
+    ap.add_argument(
+        "--threshold", type=float, default=None, help="decoding threshold (default: config value)"
+    )
+    ap.add_argument(
+        "--out", default=None, help="default results/<experiment>[_mute_<side>][_thr<t>]"
+    )
     a = ap.parse_args()
 
     train_cfg = load_config(a.config, data=a.data, ears=a.ears)
@@ -70,7 +81,9 @@ def main() -> None:
     root = Path(a.root or ("data/binaural" if binaural else "data/starss23"))
     if a.mute and not binaural:
         ap.error("--mute needs binaural data")
-    default_out = f"results/{exp}_mute_{a.mute}" if a.mute else f"results/{exp}"
+    default_out = default_out_dir(exp, a.mute, a.threshold)
+    if a.threshold is not None:
+        train_cfg["threshold"] = a.threshold
     out, ckpt = Path(a.out or default_out), Path(a.ckpt_dir or f"checkpoints/{exp}")
     kw = {
         **({"mute": a.mute} if a.mute else {}),
@@ -155,6 +168,7 @@ def main() -> None:
     metrics = {
         "experiment": exp,
         "split": split,
+        "threshold_source": "config" if a.threshold is None else "flag",
         "mute": a.mute,
         "n_clips": len(stems),
         "git_sha": sha,
