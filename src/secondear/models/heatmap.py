@@ -249,8 +249,17 @@ class BinauralHeatmapLocalizer:
         fine_step_deg: float = 5.0,
         params: dict | None = None,
         name: str | None = None,
+        mute: str | None = None,
     ):
-        """feat_mean/feat_scale are the full 320-column scaler; the mode's columns are picked."""
+        """feat_mean/feat_scale are the full 320-column scaler; the mode's columns are picked.
+
+        mute ("left"/"right") zeroes that ear's waveform before features (two-ear model only).
+        """
+        if mute not in (None, "left", "right"):
+            raise ValueError(f"mute must be None, 'left' or 'right', got {mute!r}")
+        if mute is not None and ears != "both":
+            raise ValueError(f"mute needs ears='both', got ears={ears!r}")
+        self.mute = mute
         self.ears = ears
         self.name = name or {"both": "heatmap_binaural"}.get(ears, f"heatmap_{ears}")
         self.cols = channel_columns(ears)
@@ -270,6 +279,9 @@ class BinauralHeatmapLocalizer:
 
     def predict(self, audio: np.ndarray, fs: int = FS) -> Prediction:
         """Binaural [2, n] float32 at 24 kHz -> Prediction (heat map [frames, 13, 37, 72])."""
+        if self.mute is not None:
+            audio = np.array(audio, copy=True)
+            audio[0 if self.mute == "left" else 1] = 0.0
         feat = binaural_features(audio, fs)[:, self.cols]
         n_label = int(audio.shape[1] / float(_FC._label_hop_len))
         if feat.shape[0] == 0 or n_label == 0:

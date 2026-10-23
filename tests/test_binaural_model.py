@@ -127,3 +127,53 @@ def test_predict_valid_prediction(ears):
         np.testing.assert_allclose(
             loc.predict(x, FS).heatmap, loc.predict(y, FS).heatmap, atol=1e-5
         )
+
+
+def _stereo(n=FS * 2):
+    rng = np.random.default_rng(0)
+    return (0.1 * rng.standard_normal((2, n))).astype(np.float32)
+
+
+@pytest.mark.parametrize("side", ["left", "right"])
+def test_muted_ear_features_are_finite(side):
+    loc = BinauralHeatmapLocalizer("both", mute=side, params=SMALL)
+    audio = _stereo()
+    audio[0 if side == "left" else 1] = 0.0  # what predict() feeds the feature builder
+    feat = binaural_features(audio)
+    assert np.isfinite(feat).all()
+    pred = loc.predict(_stereo())
+    assert pred.heatmap is not None and np.isfinite(pred.heatmap).all()
+
+
+def test_mute_does_not_modify_input():
+    audio = _stereo()
+    before = audio.copy()
+    BinauralHeatmapLocalizer("both", mute="left", params=SMALL).predict(audio)
+    assert np.array_equal(audio, before)
+
+
+@pytest.mark.parametrize("ears", ["left", "right"])
+def test_mute_needs_both_ears(ears):
+    with pytest.raises(ValueError):
+        BinauralHeatmapLocalizer(ears, mute="left", params=SMALL)
+
+
+def test_mute_rejects_bad_side():
+    with pytest.raises(ValueError):
+        BinauralHeatmapLocalizer("both", mute="up", params=SMALL)
+
+
+def test_one_ear_table_with_all_models_missing(tmp_path):
+    import subprocess
+    import sys
+
+    out = tmp_path / "t"
+    subprocess.run(
+        [sys.executable, "scripts/one_ear_table.py", "--results", str(tmp_path), "--out", str(out)],
+        check=True,
+        capture_output=True,
+    )
+    text = (out / "table.md").read_text(encoding="utf-8")
+    assert "Two-ear model, left muted | pending" in text
+    assert "Two-ear model, right muted | pending" in text
+    assert "One-ear model, left (trained) | pending" in text
