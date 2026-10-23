@@ -20,6 +20,7 @@ def prediction_to_viewer(
     class_names: list[str] = CLASS_NAMES,
     scene: dict | None = None,
     metrics: dict | None = None,
+    model: str = "",
 ) -> dict:
     """Build the viewer dict (version 1) for one clip."""
     n_frames = max(pred.n_frames, max((e.frame for e in truth), default=-1) + 1)
@@ -53,6 +54,7 @@ def prediction_to_viewer(
     return {
         "version": 1,
         "clip": clip_id,
+        "model": model,
         "fps": fps,
         "grid": {"az": pred.grid.az_deg.tolist(), "el": pred.grid.el_deg.tolist()},
         "classes": list(class_names),
