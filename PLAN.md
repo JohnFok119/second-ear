@@ -26,7 +26,7 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
 
 **Resume state (2026-10-23 morning)**
-- main pushed by Johnny @ 9e32171; later local commits need `git push origin main` (auto-mode classifier denies the ship's push to main: ask Johnny to run `! git push origin main`). Feature-branch pushes to other own repos do work.
+- main pushed by Johnny @ eb17c8d (2026-10-23); later local commits need `git push origin main` (auto-mode classifier denies the ship's push to main: ask Johnny to run `! git push origin main`). Feature-branch pushes to other own repos do work.
 - GPU: queued behind clicr-upgrade; the Admiral (personal-f6) watches the lease and messages the ship when it passes, so no own watcher (`node C:\Users\johnn\personal\fleet\lease.mjs status gpu`; read `.gpu.holder`, not a grep: the queue also contains "second-ear"). Background waiters get reaped under memory pressure: check the lease by hand each turn.
 - When the GPU lease is granted: run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_c3_chain.ps1` in a herdr pane. It: trains+evals heatmap_binaural, both muted evals, heatmap_left, heatmap_right → `scripts/one_ear_table.py`. Release the lease after.
   Chain = for e in binaural,left,right: `train_heatmap.py --config configs/heatmap_$e.yaml --device cuda` then `eval_heatmap.py` same config; after binaural also `eval_heatmap.py --config configs/heatmap_binaural.yaml --mute left|right`; finally `one_ear_table.py`. Tee logs to `runs/`.
