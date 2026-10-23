@@ -31,7 +31,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 - When the GPU lease is granted: run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_c3_chain.ps1` in a herdr pane. It: evals heatmap_foa (epoch-39 best.pt) → trains+evals heatmap_binaural, both muted evals, heatmap_left, heatmap_right → `scripts/one_ear_table.py`. Release the lease after.
   Chain = `eval_heatmap.py --config configs/heatmap_foa.yaml`; for e in binaural,left,right: `train_heatmap.py --config configs/heatmap_$e.yaml --device cuda` then `eval_heatmap.py` same config; after binaural also `eval_heatmap.py --config configs/heatmap_binaural.yaml --mute left|right`; finally `one_ear_table.py`. Tee logs to `runs/`.
 - Done 2026-10-23 morning: C2.4 eval on CPU (`results/heatmap_foa/`, table `results/m2_table.md`), FOA eval removed from the chain script; C4.2 ticked (60 fps + GIF). M2 GIFs: `results/<exp>/pano_fold4_room24_mix011.gif`.
-- Then: C2.5 M2 page, C3.2/C3.3 (write the 2-paragraph interpretation; muted vs trained, human row Aruffo 2025, ITD row is class-agnostic), C3.4 export, C3.5 M3 page, C4.2 60 fps + GIF, C4.3 portfolio branch, C4.4.
+- Then: C3.2/C3.3 (write the 2-paragraph interpretation; muted vs trained, human row Aruffo 2025, ITD row is class-agnostic), C3.4 export, C3.5 M3 page, C4.2 60 fps + GIF, C4.3 portfolio branch, C4.4.
 - Tools ready: `scripts/export_clip.py --model classical|baseline|heatmap` for M2 GIFs; classical ITD done (`results/classical_itd/metrics.json`: LE 54.7°, LR 0.544, FB 0.075, frontal az 20.8°).
 
 ---
@@ -74,7 +74,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   *Done when:* peak, wrap, overlap tests.
 - [x] **C2.4 Heat-map model.** (2026-10-23; overfit passed after head-bias fix 173903d; full run stopped at epoch 80 on Johnny's order, best epoch 39; CPU eval: official F20 9.7 %, LE 41.2°, LR 13.3 % vs our baseline 15.6 % / 52.4° / 26.7 %; class-agnostic LE 25.8°, precision20 47.5 %, recall20 13.5 %: accurate when it fires, fires rarely; table `results/m2_table.md`) Baseline encoder + map head; focal BCE; config YAML. *Done when:* overfits one clip,
   then full training finishes; `results/heatmap_foa/metrics.json`; table vs baseline and classical.
-- [ ] **C2.5 M2 page.** Classical vs baseline vs ours on the same clip (GIFs) + table + plain-English reading of
+- [x] **C2.5 M2 page.** (2026-10-23; `.lavish/m2/` (git-ignored, like M1), 3-method synced GIF, LEARNING §Phase 2; optional question on the page: add DCASE synthetic data now/later/never) Classical vs baseline vs ours on the same clip (GIFs) + table + plain-English reading of
   the numbers. Push notification. *Done when:* page + LEARNING.md §Phase 2.
 
 ## Phase 3 — Two-ear model + one-ear experiment + coffee shop → **M3**

@@ -70,7 +70,48 @@ three problems above, because it can learn to stay quiet, ignore echoes and pull
 sounds apart.
 
 ## Phase 2 — Learned model
-*(pending)*
+
+**What we built.** Two neural networks trained on the same 90 real recordings (STARSS23
+dev-train) and tested on the same 78 clips as Phase 1.
+- **Baseline:** the standard model of the DCASE contest (Detection and Classification of
+  Acoustic Scenes and Events). A **CRNN** (convolution layers read the sound as a picture of
+  pitch over time, a recurrent layer follows it through time) outputs one arrow per sound
+  type; the arrow's length is how sure it is.
+- **Heat-map model (ours):** the same front end, but it draws a map of every direction for
+  each sound type, then any spot brighter than 0.5 becomes a guess. Maps can hold two
+  sounds of the same type at once and feed the viewer directly.
+
+**Why that way.** Reusing the contest model's front end means any difference comes from the
+output design (arrows vs maps), not from a better feature extractor. Training both on the
+same data keeps the table fair; the contest's extra 19 GB of computer-made mixtures were
+left out for both.
+
+**Bugs worth remembering.** The first heat-map run fired on every frame. The last layer's
+starting bias was 0, so every direction started at 50 % "sound here"; the network learned
+to ignore time instead of fixing it. Starting the bias at -6 (0.25 %) fixed it: the model
+then memorised one clip perfectly (F20 100 %, 1.7° miss), the standard sanity check.
+
+**The numbers** (78 test clips, `results/m2_table.md`):
+
+| | Average miss | Guesses that hit | Sounds found | F20 | Official F20 |
+|---|---|---|---|---|---|
+| Baseline | 25.0° | 49.4 % | 35.7 % | **41.4 %** | 15.6 % |
+| Heat-map (ours) | **25.8°** | 47.5 % | 13.5 % | 21.0 % | 9.7 % |
+| Classical | 43.7° | 21.2 % | 26.2 % | 23.5 % | n/a |
+| Random | 73.3° | 3.7 % | 4.5 % | 4.0 % | n/a |
+
+**What they mean.** Learning beats physics: the baseline misses by 25° instead of 44° and
+nearly doubles F20. Our heat-map model aims as well as the baseline when it speaks up, but
+it speaks up rarely: its map peaks mostly stay under the 0.5 bar, so it finds only 13.5 %
+of sounds. The bar was fixed before testing on purpose; tuning it on test clips would be
+cheating. The fix is to choose it on a slice of training recordings set aside for that.
+The official contest score (which also requires naming the sound type, averaged over all
+13 types) is about half the published 29.9 % for both models; that gap is the extra
+training mixtures we did not use.
+
+**Interview line.** "My map-based model matched the contest baseline's accuracy per guess
+(26° vs 25°) but under-detected; the cause was a decoding threshold fixed before testing,
+not the architecture."
 
 ## Phase 3 — Two ears, one ear, coffee shop
 *(pending)*
