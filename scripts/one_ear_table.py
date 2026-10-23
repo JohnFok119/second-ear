@@ -61,20 +61,39 @@ def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--results", default="results")
-    ap.add_argument("--out", default="results/one_ear")
+    ap.add_argument("--out", default=None, help="default results/one_ear[valthr]")
+    ap.add_argument(
+        "--val-threshold",
+        action="store_true",
+        help="use metrics evaluated at the validation-picked threshold (threshold_val.json)",
+    )
     a = ap.parse_args()
-    res, out = Path(a.results), Path(a.out)
+    res = Path(a.results)
+    out = Path(a.out or ("results/one_ear_valthr" if a.val_threshold else "results/one_ear"))
 
     rows: list[dict] = []
     for label, exp, kind in ROWS:
-        f = res / exp / "metrics.json"
+        thr = None
+        if a.val_threshold and kind == "model":
+            base = "heatmap_binaural" if exp.startswith("heatmap_binaural") else exp
+            tf = res / base / "threshold_val.json"
+            if not tf.exists():
+                rows.append({"condition": label, "status": "pending", "source": tf.as_posix()})
+                continue
+            thr = float(json.loads(tf.read_text(encoding="utf-8"))["chosen"])
+            f = res / f"{exp}_thr{thr:.2f}" / "metrics.json"
+        else:
+            f = res / exp / "metrics.json"
         src = f.as_posix()
         if not f.exists():
             rows.append({"condition": label, "status": "pending", "source": src})
             continue
         m = json.loads(f.read_text(encoding="utf-8"))
         vals = _row_from_itd(m) if kind == "itd" else _row_from_model(m)
-        rows.append({"condition": label, "status": "ok", "source": src, **vals})
+        row = {"condition": label, "status": "ok", "source": src, **vals}
+        if thr is not None:
+            row["threshold"] = thr
+        rows.append(row)
     for label, az_err in HUMANS:
         rows.append(
             {
@@ -115,6 +134,11 @@ def main() -> None:
         "TODO: First Mate writes this.",
         "",
     ]
+    if a.val_threshold:
+        lines += ["", "Decoding thresholds (picked on the validation split):", ""]
+        for r in rows:
+            if "threshold" in r:
+                lines.append(f"- {r['condition']}: {r['threshold']:.2f}")
     out.mkdir(parents=True, exist_ok=True)
     (out / "table.md").write_text("\n".join(lines), encoding="utf-8")
     (out / "table.json").write_text(json.dumps({"rows": rows}, indent=2), encoding="utf-8")
