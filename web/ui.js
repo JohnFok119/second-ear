@@ -9,7 +9,15 @@ export function initUI(handlers) {
     r.addEventListener('change', () => r.checked && handlers.onEars(r.value)));
   document.querySelectorAll('input[name=cam]').forEach((r) =>
     r.addEventListener('change', () => r.checked && handlers.onCamera(r.value)));
+  document.querySelectorAll('input[name=floor]').forEach((r) =>
+    r.addEventListener('change', () => r.checked && handlers.onFloorShows(r.value)));
+  $('floor-on').addEventListener('change', (e) => handlers.onFloorOn(e.target.checked));
   return {
+    setFloorShows(v) {
+      document.querySelector(`input[name=floor][value=${v}]`).checked = true;
+      $('hear-note').hidden = v !== 'hear';
+    },
+    setFloorOn(on) { $('floor-on').checked = on; },
     setPlaying(p) { play.textContent = p ? 'Pause' : 'Play'; },
     setTime(t, dur) {
       if (document.activeElement !== scrub) scrub.value = t;

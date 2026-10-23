@@ -4,6 +4,7 @@ import { buildScene, updateSources, setEarMode } from './scene.js';
 import { Perception } from './perception.js';
 import { Timeline } from './timeline.js';
 import { initUI, showMetrics } from './ui.js';
+import { Floor } from './floor.js';
 
 const canvas = document.getElementById('view');
 const audio = document.getElementById('audio');
@@ -17,6 +18,10 @@ const def = await (await fetch('scenes/coffee_shop.json')).json();
 const world = buildScene(scene3, def);
 const perception = new Perception(scene3, world.head, world.facing);
 const [W, D] = world.size;
+// URL params: ?cam=orbit|chair&t=<seconds>&ears=both|left|right&play=0
+//   &floor=room|hear|off&clap=x,y (scene metres)&dense=1 (the pre-clarity look)&warm=<s> (pre-run the floor sim)&perf=1
+const q = new URLSearchParams(location.search);
+const floor = new Floor(scene3, def, { dense: q.get('dense') === '1' });
 
 const controls = new OrbitControls(camera, canvas);
 const orbitHome = () => {
@@ -55,6 +60,7 @@ async function loadMode(m) {
   data = await res.json();
   perception.clearCache();
   setEarMode(world.ears, m);
+  floor.setEars(m);
   showMetrics(data.metrics || {}, m);
   timeline.fps = data.fps;
   ui.setLoading(false);
@@ -70,14 +76,19 @@ const ui = initUI({
   onSeek(t) { timeline.seek(t); },
   onEars(m) { loadMode(m); },
   onCamera: setCamera,
+  onFloorShows(v) { floor.setShows(v); ui.setFloorShows(v); },
+  onFloorOn(on) { floor.setEnabled(on); },
 });
 timeline = new Timeline(audio, def.duration_s, 10);
+// Load the clip as a blob: servers without HTTP Range support (python -m http.server) make
+// the browser treat a plain src as unseekable, so every seek snaps back to 0. A blob is seekable.
+fetch('clips/coffee_shop.mp3').then((r) => (r.ok ? r.blob() : Promise.reject(new Error(r.status))))
+  .then((b) => { audio.src = URL.createObjectURL(b); })
+  .catch(() => { audio.src = 'clips/coffee_shop.mp3'; });
 ui.setDuration(def.duration_s);
 audio.addEventListener('play', () => ui.setPlaying(true));
 audio.addEventListener('pause', () => ui.setPlaying(false));
 audio.addEventListener('ended', () => ui.setPlaying(false));
-// URL params: ?cam=orbit|chair&t=<seconds>&ears=both|left|right&play=0
-const q = new URLSearchParams(location.search);
 const earsParam = ['both', 'left', 'right'].includes(q.get('ears')) ? q.get('ears') : 'both';
 document.querySelector(`input[name=ears][value=${earsParam}]`).checked = true;
 await loadMode(earsParam);
@@ -85,13 +96,32 @@ if (q.get('cam') === 'chair') {
   document.querySelector('input[name=cam][value=chair]').checked = true;
   setCamera('chair');
 }
+// Seek is held in the timeline until audio metadata arrives, and drives the visual time now.
 if (q.has('t')) {
   const t0 = parseFloat(q.get('t'));
-  if (Number.isFinite(t0)) {
-    if (audio.readyState >= 1) timeline.seek(t0);
-    else audio.addEventListener('loadedmetadata', () => timeline.seek(t0), { once: true });
-  }
+  if (Number.isFinite(t0)) timeline.seek(t0);
 }
+const floorParam = q.get('floor');
+if (floorParam === 'off') { floor.setEnabled(false); ui.setFloorOn(false); }
+else if (floorParam === 'hear') { floor.setShows('hear'); ui.setFloorShows('hear'); }
+if (q.has('clap')) {
+  const [cx, cy] = q.get('clap').split(',').map(parseFloat);
+  if (Number.isFinite(cx) && Number.isFinite(cy)) floor.clap(cx, cy);
+}
+if (q.has('warm')) floor.warm(timeline.t, parseFloat(q.get('warm')) || 0); // screenshots only
+
+// Click (not drag) on the floor = clap.
+let down = null;
+canvas.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+canvas.addEventListener('pointerup', (e) => {
+  if (!down || !floor.enabled) return;
+  const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t;
+  down = null;
+  if (moved > 5 || dt > 500) return;
+  const r = canvas.getBoundingClientRect();
+  const pt = floor.pick(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1), camera);
+  if (pt) floor.clap(pt[0], pt[1]);
+});
 
 function resize() {
   const w = innerWidth, h = innerHeight;
@@ -100,9 +130,21 @@ function resize() {
 }
 addEventListener('resize', resize); resize();
 
-let lastFrame = -1, lastData = null;
+let lastFrame = -1, lastData = null, prevMs = null;
+let perfN = 0, perfFrame = 0, perfFloor = 0;
 renderer.setAnimationLoop((ms) => {
   const t = timeline.t;
+  const wallDt = prevMs === null ? 0 : Math.min(0.1, (ms - prevMs) / 1000);
+  if (q.get('perf') === '1' && prevMs !== null) {
+    perfFrame += ms - prevMs;
+    if (++perfN === 300) {
+      console.info(`PERF mean rAF interval ${(perfFrame / perfN).toFixed(2)} ms, floor update ${(perfFloor / perfN).toFixed(3)} ms`);
+    }
+  }
+  prevMs = ms;
+  const f0 = performance.now();
+  floor.update(t, wallDt);
+  perfFloor += performance.now() - f0;
   if (data) {
     const fi = timeline.frameIndex(data.frames.length);
     if (fi !== lastFrame || data !== lastData) {
