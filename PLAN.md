@@ -63,7 +63,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   within ~10 % of 29.9 % (or gap written up); `results/baseline/metrics.json`.
 - [x] **C2.3 Dense targets.** (2026-10-22, 877fdea; FWHM 15°, kappa 81.0, max-combine) Labels → per-class spherical Gaussian maps, kappa for 10–20° blobs.
   *Done when:* peak, wrap, overlap tests.
-- [ ] **C2.4 Heat-map model.** Baseline encoder + map head; focal BCE; config YAML. *Done when:* overfits one clip,
+- [ ] **C2.4 Heat-map model.** (overfit passed after head-bias fix 173903d: F20 1.0, LE 1.7°. Full run stopped early at epoch 80 on Johnny's order via the Admiral, 2026-10-23 00:35: plateaued, best epoch 39 = val F20 9.7 %, LE 41.2°, LR 13.3 %, SELD 0.720; `checkpoints/heatmap_foa/best.pt` kept; GPU lease released to clicr-upgrade. Open: eval epoch-39 checkpoint on CPU or after clicr → `results/heatmap_foa/metrics.json`. Binaural chain C3.2/C3.3 on hold until the GPU is free: `scratchpad/chain_c3.ps1.hold`) Baseline encoder + map head; focal BCE; config YAML. *Done when:* overfits one clip,
   then full training finishes; `results/heatmap_foa/metrics.json`; table vs baseline and classical.
 - [ ] **C2.5 M2 page.** Classical vs baseline vs ours on the same clip (GIFs) + table + plain-English reading of
   the numbers. Push notification. *Done when:* page + LEARNING.md §Phase 2.
