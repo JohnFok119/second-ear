@@ -15,6 +15,7 @@ import soundfile as sf
 import torch
 
 from secondear.eval.agnostic import Counts, chance_events, count_clip, summarize
+from secondear.eval.frontback import FBCounts, fb_counts
 from secondear.eval.official import seld_scores
 from secondear.io.starss23 import clip_paths, list_clips, load_foa, read_metadata
 from secondear.models.heatmap import BinauralHeatmapLocalizer, HeatmapLocalizer
@@ -96,6 +97,7 @@ def main() -> None:
     pred = {"best": {}, "last": {}}
     ref = {}
     overall, chance = Counts(), Counts()
+    fb_total = FBCounts()
     by_site = {"sony": Counts(), "tau": Counts()}
     per_clip: dict[str, dict] = {}
     rows = []
@@ -120,6 +122,7 @@ def main() -> None:
         ch = count_clip(chance_events(per_frame, np.random.default_rng(idx)), truth, n_frames)
         site = "binaural" if binaural else _site(stem, root)
         overall.add(c)
+        fb_total.add(fb_counts(p.events, truth))
         chance.add(ch)
         if not binaural:
             by_site[site].add(c)
@@ -155,6 +158,9 @@ def main() -> None:
         "official_macro": official,
         **({} if binaural else {"reference_published": REFERENCE}),
         "overall": summarize(overall),
+        "front_back_rate": fb_total.front_back_rate,
+        "frontal_azimuth_error": (fb_total.frontal_azimuth_error if fb_total.n_front else None),
+        "front_back_matching": "class-agnostic: per-frame Hungarian match on angle, classes ignored",
         **({} if binaural else {"by_site": {k: summarize(v) for k, v in by_site.items()}}),
         "chance": summarize(chance),
         "per_clip": per_clip,
