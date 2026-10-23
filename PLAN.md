@@ -25,6 +25,14 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
 
+**Resume state (2026-10-23 01:40, handoff to a fresh pane)**
+- main pushed by Johnny @ 9e32171; later local commits need `git push origin main` (auto-mode classifier denies the ship's push: ask Johnny to run `! git push origin main`, or he adds an allow rule himself).
+- GPU: queued behind clicr-upgrade (`node C:\Users\johnn\personal\fleet\lease.mjs status gpu`). Background waiters get reaped under memory pressure: check the lease by hand each turn.
+- When the GPU lease is granted: run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_c3_chain.ps1` in a herdr pane. It: evals heatmap_foa (epoch-39 best.pt) → trains+evals heatmap_binaural, both muted evals, heatmap_left, heatmap_right → `scripts/one_ear_table.py`. Release the lease after.
+  Chain = `eval_heatmap.py --config configs/heatmap_foa.yaml`; for e in binaural,left,right: `train_heatmap.py --config configs/heatmap_$e.yaml --device cuda` then `eval_heatmap.py` same config; after binaural also `eval_heatmap.py --config configs/heatmap_binaural.yaml --mute left|right`; finally `one_ear_table.py`. Tee logs to `runs/`.
+- Then: tick C2.4 (table vs baseline + classical), C2.5 M2 page, C3.2/C3.3 (write the 2-paragraph interpretation; muted vs trained, human row Aruffo 2025, ITD row is class-agnostic), C3.4 export, C3.5 M3 page, C4.2 60 fps + GIF, C4.3 portfolio branch, C4.4.
+- Tools ready: `scripts/export_clip.py --model classical|baseline|heatmap` for M2 GIFs; classical ITD done (`results/classical_itd/metrics.json`: LE 54.7°, LR 0.544, FB 0.075, frontal az 20.8°).
+
 ---
 
 ## Phase 0 — Foundation
@@ -94,7 +102,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   hear" weighting; click to clap. **Clarity pass:** bar count, decay, colors tuned until a wavefront reads at a
   glance (Johnny: round-1 version looked cluttered). *Done when:* 60 fps on a laptop; a clap visibly bounces off the
   counter; a side-by-side GIF before/after the clarity pass in the M4 page.
-- [ ] **C4.3 Deploy.** GitHub Actions → GitHub Pages for `web/`; enable Pages on the repo. Portfolio card branch in
+- [ ] **C4.3 Deploy.** (Pages live 2026-10-23: https://johnfok119.github.io/second-ear/ returns 200, workflow `pages.yml`; open: portfolio card branch off `jyfok-portfolio` `feat/site-v2`, where `src/content/projects/second-ear.md` already exists — update status/oneLiner/demo URL after M3 numbers) GitHub Actions → GitHub Pages for `web/`; enable Pages on the repo. Portfolio card branch in
   `jyfok-portfolio` (text: deaf in one ear + viewer link), pushed, not merged. *Done when:* public URL works; branch
   pushed.
 - [ ] **C4.4 README + write-up + LEARNING.md + resume.** README: story (deaf in one ear), GIFs, numbers table, how to
