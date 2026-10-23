@@ -15,10 +15,16 @@ const H = 0.1;            // sim cell, metres
 const C_VIS = 5.0;        // visual speed of sound, m/s
 const COURANT = 0.5;
 const DT = COURANT * H / C_VIS; // 0.01 s
-const DAMP = 0.008;       // fraction of pressure lost per step (energy halves in ~0.9 s)
+const DAMP = 0.02;        // fraction of pressure lost per step (energy halves in ~0.35 s)
+const WALL_R = 0.7;       // wall pressure reflection coefficient (furniture stays rigid)
+const WALL_BETA = (1 - WALL_R) / (1 + WALL_R); // wall admittance: outward v = BETA * p
+const PULSE_PERIOD = 0.9; // seconds between pulses of one source (phase-staggered per source)
+const HP_TAU = 0.3;       // s, slow running mean subtracted from the envelope (high-pass)
+const SHOW_FRAC = 0.15;   // hide bars below this fraction of the frame's max
+const LEVELS = 3;         // colour/height steps
 const MAX_STEPS = 6;      // per frame, so a slow frame cannot snowball
 const PULSE_S = 0.1;      // width of one injected pulse, seconds
-const ENV_REF = 0.35;     // envelope that maps to a full-height bar
+const ENV_REF = 0.25;     // minimum 'full-height' reference for the high-passed envelope
 const MAX_BAR = 0.4;      // metres
 const CLAP_AMP = 1.6, CLAP_SIGMA = 1.6; // clap: gaussian blob in p, sigma in sim cells
 
@@ -57,6 +63,7 @@ export class Floor {
     this.vx = new Float32Array((NX + 1) * NY);
     this.vy = new Float32Array(NX * (NY + 1));
     this.env = new Float32Array(NX * NY);
+    this.slow = new Float32Array(NX * NY);
     this.solid = new Uint8Array(NX * NY);
     this.coefX = new Float32Array((NX + 1) * NY);
     this.coefY = new Float32Array(NX * (NY + 1));
@@ -81,18 +88,17 @@ export class Floor {
 
     // Sources: snap to the nearest fluid cell (the barista and coffee machine sit inside the
     // counter's footprint, the phone inside a table's).
-    this.sources = def.sources.map((s) => {
-      const [rate, strength] = CLASS_PULSE[s.class] || [2, 1];
+    this.sources = def.sources.map((s, idx) => {
+      const [, strength] = CLASS_PULSE[s.class] || [2, 1];
       const cell = this.nearestFluid(Math.min(NX - 1, Math.floor(s.pos[0] / H)), Math.min(NY - 1, Math.floor(s.pos[1] / H)));
-      return { cell, rate, amp: strength * Math.pow(10, (s.gain_db || 0) / 20), intervals: s.intervals, on: false };
+      return { cell, rate: 1 / PULSE_PERIOD, phase: (idx * 0.382) % 1, amp: strength * Math.pow(10, (s.gain_db || 0) / 20), intervals: s.intervals, on: false };
     });
 
     // Display grid.
     this.dense = !!opts.dense;
     this.ds = this.dense ? 1 : 2;                 // sim cells per bar side
-    this.decay = Math.exp(-DT / (this.dense ? 0.9 : 0.15)); // envelope decay per step
-    this.thresh = this.dense ? 0.02 : 0.2;
-    this.gamma = this.dense ? 1.0 : 0.8;
+    this.decay = Math.exp(-DT / (this.dense ? 0.9 : 0.15));
+    this.hpK = 1 - Math.exp(-DT / HP_TAU); // envelope decay per step
     this.BX = NX / this.ds; this.BY = NY / this.ds;
     const nBars = this.BX * this.BY;
     const fill = this.dense ? 0.95 : 0.82;
@@ -168,7 +174,7 @@ export class Floor {
     if (on) this.reset();
   }
 
-  reset() { this.p.fill(0); this.vx.fill(0); this.vy.fill(0); this.env.fill(0); this.acc = 0; }
+  reset() { this.p.fill(0); this.vx.fill(0); this.vy.fill(0); this.env.fill(0); this.slow.fill(0); this.acc = 0; }
 
   // One strong gaussian impulse at scene position (x, y) metres.
   clap(x, y) {
@@ -192,34 +198,39 @@ export class Floor {
 
   step() {
     const { NX, NY, p, vx, vy, env, solid, coefX, coefY, openX } = this;
-    const decay = this.decay, keep = 1 - DAMP;
+    const decay = this.decay, hpK = this.hpK, keep = 1 - DAMP;
     // sources: smooth Hann pulse train per active source
     for (const s of this.sources) {
       if (!s.on) continue;
-      const ph = (this.simT * s.rate) % 1, w = PULSE_S * s.rate;
-      if (ph < w) p[s.cell] += 1.0 * s.amp * (1 - Math.cos(2 * Math.PI * ph / w));
+      const ph = (this.simT * s.rate + s.phase) % 1, w = PULSE_S * s.rate;
+      if (ph < w) p[s.cell] += 2.0 * s.amp * (1 - Math.cos(2 * Math.PI * ph / w));
     }
     // velocity from pressure gradient (zero on rigid faces; matched outflow at the door)
-    const SX = NX + 1;
+    const SX = NX + 1, dense = this.dense;
     for (let j = 0; j < NY; j++) {
       const r = j * SX, q = j * NX;
       for (let i = 1; i < NX; i++) vx[r + i] = (vx[r + i] - COURANT * (p[q + i] - p[q + i - 1])) * coefX[r + i];
-      vx[r] = 0;
-      vx[r + NX] = openX[j] ? p[q + NX - 1] : 0;
+      vx[r] = dense ? 0 : -WALL_BETA * p[q];
+      vx[r + NX] = openX[j] ? p[q + NX - 1] : (dense ? 0 : WALL_BETA * p[q + NX - 1]);
     }
     for (let j = 1; j < NY; j++) {
       const r = j * NX;
       for (let i = 0; i < NX; i++) vy[r + i] = (vy[r + i] - COURANT * (p[r + i] - p[r - NX + i])) * coefY[r + i];
     }
+    if (!dense) for (let i = 0; i < NX; i++) { // partly absorbing top/bottom walls
+      vy[i] = -WALL_BETA * p[i];
+      vy[NY * NX + i] = WALL_BETA * p[(NY - 1) * NX + i];
+    }
     // pressure from velocity divergence, damping, envelope (fast attack, exponential decay)
     for (let j = 0; j < NY; j++) {
       for (let i = 0; i < NX; i++) {
         const k = j * NX + i;
-        if (solid[k]) { p[k] = 0; env[k] = 0; continue; }
+        if (solid[k]) { p[k] = 0; env[k] = 0; this.slow[k] = 0; continue; }
         const v = (p[k] - COURANT * (vx[j * SX + i + 1] - vx[j * SX + i] + vy[k + NX] - vy[k])) * keep;
         p[k] = v;
         const a = v < 0 ? -v : v, e = env[k] * decay;
         env[k] = a > e ? a : e;
+        this.slow[k] += (env[k] - this.slow[k]) * hpK;
       }
     }
     this.simT += DT;
@@ -252,29 +263,38 @@ export class Floor {
   }
 
   draw() {
-    const { BX, BY, ds, NX, env } = this;
+    const { BX, BY, ds, NX, env, slow, dense } = this;
     const m = this.mesh.instanceMatrix.array, col = this.mesh.instanceColor.array;
     const wts = this.shows === 'hear' ? this.weights[this.ears] : null;
-    const inv = 1 / ENV_REF, bw = this.bw, thr = this.thresh, gam = this.gamma;
+    const bw = this.bw, nB = BX * BY;
+    if (!this.val) this.val = new Float32Array(nB);
+    const val = this.val;
+    let mx = 0;
     for (let bj = 0; bj < BY; bj++) {
       for (let bi = 0; bi < BX; bi++) {
         const b = bj * BX + bi;
         let e = 0;
         if (!this.barBlocked[b]) {
           for (let dj = 0; dj < ds; dj++) for (let di = 0; di < ds; di++) {
-            const v = env[(bj * ds + dj) * NX + bi * ds + di];
+            const k = (bj * ds + dj) * NX + bi * ds + di;
+            const v = dense ? env[k] : Math.max(0, env[k] - slow[k]); // change, not level
             if (v > e) e = v;
           }
           if (wts) e *= wts[b];
         }
-        let n = e * inv; if (n > 1) n = 1;
-        n = Math.pow(n, gam);
-        const o = b * 16;
-        if (n < thr) { m[o] = 0; m[o + 5] = 0; m[o + 10] = 0; continue; }
-        m[o] = bw; m[o + 10] = bw; m[o + 5] = MAX_BAR * n;
-        const c = (Math.round(n * 255)) * 3;
-        col[b * 3] = LUT[c]; col[b * 3 + 1] = LUT[c + 1]; col[b * 3 + 2] = LUT[c + 2];
+        val[b] = e; if (e > mx) mx = e;
       }
+    }
+    const ref = dense ? 0.35 : Math.max(mx, ENV_REF);
+    const thr = dense ? 0.02 : SHOW_FRAC;
+    for (let b = 0; b < nB; b++) {
+      let n = val[b] / ref; if (n > 1) n = 1;
+      const o = b * 16;
+      if (n < thr) { m[o] = 0; m[o + 5] = 0; m[o + 10] = 0; continue; }
+      if (!dense) n = Math.min(LEVELS, Math.max(1, Math.ceil(n * LEVELS))) / LEVELS; // 2-3 steps
+      m[o] = bw; m[o + 10] = bw; m[o + 5] = MAX_BAR * n;
+      const c = (Math.round(n * 255)) * 3;
+      col[b * 3] = LUT[c]; col[b * 3 + 1] = LUT[c + 1]; col[b * 3 + 2] = LUT[c + 2];
     }
     this.mesh.instanceMatrix.needsUpdate = true;
     this.mesh.instanceColor.needsUpdate = true;
