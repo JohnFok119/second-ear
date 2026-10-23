@@ -20,7 +20,7 @@ from secondear.core import Event, Grid, heatmap_to_events
 from secondear.eval.official import seld_scores
 from secondear.models.baseline import N_CLASSES, N_MEL, SEQ_FEAT_FRAMES, SEQ_LABEL_FRAMES
 from secondear.models.binaural import EAR_CHANNELS, channel_columns, chunks_to_input
-from secondear.models.heatmap import HeatmapNet, focal_bce
+from secondear.models.heatmap import HeatmapNet, heatmap_loss
 from secondear.targets.heatmap import dense_targets
 from secondear.train.baseline import (
     TEST_SPLIT,
@@ -37,6 +37,8 @@ DEFAULT_CONFIG = {
     "fine_step_deg": 5.0,
     "fwhm_deg": 15.0,
     "gamma": 2.0,
+    "loss": "focal",  # focal | focal_pos | centernet | bce_pos (models/heatmap.py)
+    "pos_weight": 0.0,  # focal_pos / bce_pos: per-cell weight 1 + pos_weight * target
     "lr": 1e-3,
     "epochs": 100,
     "batch_size": 32,
@@ -170,7 +172,7 @@ def train_epoch(model, loader, optimizer, gscaler, cfg, device) -> float:
         optimizer.zero_grad()
         with torch.autocast(device_type=device.type, dtype=torch.float16, enabled=use_amp):
             logits = model(x)
-        loss = focal_bce(logits.float(), y, cfg["gamma"])
+        loss = heatmap_loss(logits.float(), y, cfg["loss"], cfg["gamma"], cfg["pos_weight"])
         gscaler.scale(loss).backward()
         gscaler.step(optimizer)
         gscaler.update()
@@ -200,7 +202,9 @@ def evaluate(model, files, mean, scale, cfg, device, average: str = "macro") -> 
                 ]
             )
             tgt_t = torch.from_numpy(tgt).to(device)
-            loss_sum += focal_bce(logits, tgt_t, cfg["gamma"]).item() * len(xb)
+            loss_sum += heatmap_loss(
+                logits, tgt_t, cfg["loss"], cfg["gamma"], cfg["pos_weight"]
+            ).item() * len(xb)
             probs.append(torch.sigmoid(logits).cpu().numpy())
         losses.append(loss_sum / x.shape[0])
         hm = np.concatenate(probs)

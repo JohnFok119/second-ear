@@ -6,7 +6,13 @@ import torch
 
 from secondear.core import Event, Grid, heatmap_to_events
 from secondear.models import baseline as bl
-from secondear.models.heatmap import HeatmapLocalizer, HeatmapNet, focal_bce, upsample_logits
+from secondear.models.heatmap import (
+    HeatmapLocalizer,
+    HeatmapNet,
+    focal_bce,
+    heatmap_loss,
+    upsample_logits,
+)
 from secondear.targets.heatmap import dense_targets
 from secondear.train import baseline as tb
 from secondear.train import heatmap as th
@@ -53,6 +59,17 @@ def test_output_shape():
     assert out.dtype == torch.float32
 
 
+def test_head_starts_with_low_prior():
+    """Untrained maps must start near 0 (focal-loss prior init). With bias 0 every cell starts at
+    sigmoid = 0.5, the loss then drives all logits in lockstep and collapses the embedding to a
+    constant over time, so the model fires on every frame of a present class."""
+    torch.manual_seed(0)
+    net = HeatmapNet(SMALL).eval()
+    with torch.no_grad():
+        probs = torch.sigmoid(net(torch.randn(2, 7, bl.SEQ_FEAT_FRAMES, bl.N_MEL)))
+    assert probs.max() < 0.05
+
+
 def test_upsample_keeps_azimuth_wrap():
     coarse = torch.zeros(1, 1, 19, 36)
     coarse[..., 9, 35] = 10.0  # el 0, az 170
@@ -80,6 +97,28 @@ def test_focal_bce():
     lg = torch.randn_like(t, requires_grad=True)
     focal_bce(lg, t).backward()
     assert torch.isfinite(lg.grad).all() and lg.grad.abs().sum() > 0
+
+
+@pytest.mark.parametrize(
+    "loss,pw", [("focal", 0.0), ("focal_pos", 50.0), ("centernet", 0.0), ("bce_pos", 50.0)]
+)
+def test_loss_variants(loss, pw):
+    t = torch.from_numpy(dense_targets([Event(0, 3, 45.0, 10.0)], FINE, 1))[None]
+    perfect = torch.logit(t.clamp(1e-4, 1 - 1e-4))
+    wrong = torch.logit((1 - t).clamp(1e-4, 1 - 1e-4))
+    good = heatmap_loss(perfect, t, loss, 2.0, pw)
+    bad = heatmap_loss(wrong, t, loss, 2.0, pw)
+    assert torch.isfinite(good) and torch.isfinite(bad)
+    assert good.item() < bad.item()
+    lg = torch.randn_like(t, requires_grad=True)
+    heatmap_loss(lg, t, loss, 2.0, pw).backward()
+    assert torch.isfinite(lg.grad).all() and lg.grad.abs().sum() > 0
+
+
+def test_unknown_loss_rejected():
+    t = torch.zeros(1, 1, 1, 3, 4)
+    with pytest.raises(ValueError):
+        heatmap_loss(t, t, "nope")
 
 
 def _cfg(**kw):
