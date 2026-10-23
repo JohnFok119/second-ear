@@ -37,10 +37,13 @@ from secondear.models.binaural import (
 from secondear.models.dcase2023.seldnet_model import SeldModel
 
 __all__ = [
+    "LOSSES",
     "BinauralHeatmapLocalizer",
     "HeatmapLocalizer",
     "HeatmapNet",
+    "centernet_loss",
     "focal_bce",
+    "heatmap_loss",
     "upsample_logits",
 ]
 
@@ -60,17 +63,68 @@ def upsample_logits(coarse: torch.Tensor, n_el: int, n_az: int) -> torch.Tensor:
     return x[..., :n_az].reshape(*lead, n_el, n_az)
 
 
-def focal_bce(logits: torch.Tensor, target: torch.Tensor, gamma: float = 2.0) -> torch.Tensor:
+def focal_bce(
+    logits: torch.Tensor, target: torch.Tensor, gamma: float = 2.0, pos_weight: float = 0.0
+) -> torch.Tensor:
     """Focal binary cross-entropy on soft targets, mean over all cells.
 
     With p = sigmoid(logits) and t = target in [0, 1]:
         loss = mean( |t - p| ** gamma * BCE(logits, t) ),
         BCE = -(t log p + (1 - t) log(1 - p)) (computed stably from the logits).
     The weight |t - p| ** gamma is part of the graph (gradients flow through it).
+    With pos_weight > 0 each cell is also scaled by (1 + pos_weight * t); gamma = 0 then gives
+    plain weighted BCE.
     """
     bce = F.binary_cross_entropy_with_logits(logits, target, reduction="none")
     weight = (target - torch.sigmoid(logits)).abs().pow(gamma)
+    if pos_weight:
+        weight = weight * (1.0 + pos_weight * target)
     return (weight * bce).mean()
+
+
+def centernet_loss(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    alpha: float = 2.0,
+    beta: float = 4.0,
+    pos_thresh: float = 0.9,
+) -> torch.Tensor:
+    """Penalty-reduced focal loss (CornerNet / CenterNet) on soft targets.
+
+    Positive cells (t >= pos_thresh): -(1 - p)^alpha * log p.
+    Other cells: -(1 - t)^beta * p^alpha * log(1 - p).
+    Summed and divided by the number of positive cells (at least 1).
+    """
+    logp = F.logsigmoid(logits)
+    log1mp = F.logsigmoid(-logits)
+    p = torch.sigmoid(logits)
+    pos = (target >= pos_thresh).to(logits.dtype)
+    pos_term = pos * (1.0 - p).pow(alpha) * logp
+    neg_term = (1.0 - pos) * (1.0 - target).pow(beta) * p.pow(alpha) * log1mp
+    n_pos = pos.sum().clamp(min=1.0)
+    return -(pos_term + neg_term).sum() / n_pos
+
+
+LOSSES = ("focal", "focal_pos", "centernet", "bce_pos")
+
+
+def heatmap_loss(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    loss: str = "focal",
+    gamma: float = 2.0,
+    pos_weight: float = 0.0,
+) -> torch.Tensor:
+    """Dispatch on the config's `loss` key: focal | focal_pos | centernet | bce_pos."""
+    if loss == "focal":
+        return focal_bce(logits, target, gamma)
+    if loss == "focal_pos":
+        return focal_bce(logits, target, gamma, pos_weight)
+    if loss == "bce_pos":
+        return focal_bce(logits, target, 0.0, pos_weight)
+    if loss == "centernet":
+        return centernet_loss(logits, target)
+    raise ValueError(f"loss must be one of {LOSSES}, got {loss!r}")
 
 
 class HeatmapNet(nn.Module):

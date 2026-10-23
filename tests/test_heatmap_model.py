@@ -6,7 +6,13 @@ import torch
 
 from secondear.core import Event, Grid, heatmap_to_events
 from secondear.models import baseline as bl
-from secondear.models.heatmap import HeatmapLocalizer, HeatmapNet, focal_bce, upsample_logits
+from secondear.models.heatmap import (
+    HeatmapLocalizer,
+    HeatmapNet,
+    focal_bce,
+    heatmap_loss,
+    upsample_logits,
+)
 from secondear.targets.heatmap import dense_targets
 from secondear.train import baseline as tb
 from secondear.train import heatmap as th
@@ -80,6 +86,28 @@ def test_focal_bce():
     lg = torch.randn_like(t, requires_grad=True)
     focal_bce(lg, t).backward()
     assert torch.isfinite(lg.grad).all() and lg.grad.abs().sum() > 0
+
+
+@pytest.mark.parametrize(
+    "loss,pw", [("focal", 0.0), ("focal_pos", 50.0), ("centernet", 0.0), ("bce_pos", 50.0)]
+)
+def test_loss_variants(loss, pw):
+    t = torch.from_numpy(dense_targets([Event(0, 3, 45.0, 10.0)], FINE, 1))[None]
+    perfect = torch.logit(t.clamp(1e-4, 1 - 1e-4))
+    wrong = torch.logit((1 - t).clamp(1e-4, 1 - 1e-4))
+    good = heatmap_loss(perfect, t, loss, 2.0, pw)
+    bad = heatmap_loss(wrong, t, loss, 2.0, pw)
+    assert torch.isfinite(good) and torch.isfinite(bad)
+    assert good.item() < bad.item()
+    lg = torch.randn_like(t, requires_grad=True)
+    heatmap_loss(lg, t, loss, 2.0, pw).backward()
+    assert torch.isfinite(lg.grad).all() and lg.grad.abs().sum() > 0
+
+
+def test_unknown_loss_rejected():
+    t = torch.zeros(1, 1, 1, 3, 4)
+    with pytest.raises(ValueError):
+        heatmap_loss(t, t, "nope")
 
 
 def _cfg(**kw):
