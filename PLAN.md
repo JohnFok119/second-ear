@@ -25,13 +25,13 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
 
-**Resume state (2026-10-23 01:40, handoff to a fresh pane)**
-- main pushed by Johnny @ 9e32171; later local commits need `git push origin main` (auto-mode classifier denies the ship's push: ask Johnny to run `! git push origin main`, or he adds an allow rule himself).
-- GPU: queued behind clicr-upgrade (`node C:\Users\johnn\personal\fleet\lease.mjs status gpu`). Background waiters get reaped under memory pressure: check the lease by hand each turn.
-- When the GPU lease is granted: run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_c3_chain.ps1` in a herdr pane. It: evals heatmap_foa (epoch-39 best.pt) → trains+evals heatmap_binaural, both muted evals, heatmap_left, heatmap_right → `scripts/one_ear_table.py`. Release the lease after.
-  Chain = `eval_heatmap.py --config configs/heatmap_foa.yaml`; for e in binaural,left,right: `train_heatmap.py --config configs/heatmap_$e.yaml --device cuda` then `eval_heatmap.py` same config; after binaural also `eval_heatmap.py --config configs/heatmap_binaural.yaml --mute left|right`; finally `one_ear_table.py`. Tee logs to `runs/`.
+**Resume state (2026-10-23 morning)**
+- main pushed by Johnny @ 9e32171; later local commits need `git push origin main` (auto-mode classifier denies the ship's push to main: ask Johnny to run `! git push origin main`). Feature-branch pushes to other own repos do work.
+- GPU: queued behind clicr-upgrade (`node C:\Users\johnn\personal\fleet\lease.mjs status gpu`; read `.gpu.holder`, not a grep: the queue also contains "second-ear"). Background waiters get reaped under memory pressure: check the lease by hand each turn.
+- When the GPU lease is granted: run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_c3_chain.ps1` in a herdr pane. It: trains+evals heatmap_binaural, both muted evals, heatmap_left, heatmap_right → `scripts/one_ear_table.py`. Release the lease after.
+  Chain = for e in binaural,left,right: `train_heatmap.py --config configs/heatmap_$e.yaml --device cuda` then `eval_heatmap.py` same config; after binaural also `eval_heatmap.py --config configs/heatmap_binaural.yaml --mute left|right`; finally `one_ear_table.py`. Tee logs to `runs/`.
 - Done 2026-10-23 morning: M2 approved (Johnny); C2.5 M2 page; README draft (C4.4 part); C2.4 eval on CPU (`results/heatmap_foa/`, table `results/m2_table.md`), FOA eval removed from the chain script; C4.2 ticked (60 fps + GIF). M2 GIFs: `results/<exp>/pano_fold4_room24_mix011.gif`.
-- Then: C3.2/C3.3 (write the 2-paragraph interpretation; muted vs trained, human row Aruffo 2025, ITD row is class-agnostic), C3.4 export, C3.5 M3 page, C4.2 60 fps + GIF, C4.3 portfolio branch, C4.4.
+- Then: C3.2/C3.3 (write the 2-paragraph interpretation; muted vs trained, human row Aruffo 2025, ITD row is class-agnostic), C3.4 export (run the trained two-ear/left/right models on `web/clips/coffee_shop.wav`, overwrite the preview JSONs), C3.5 M3 page, C4.4 (fill README one-ear table, reproduce check, resume bullets, M4 page), portfolio card headline after M3.
 - Gusion (laptop 2, CPU only, 2 cores, 24 GB) via `fleet/remote.mjs` for heavy CPU jobs; `data/` is git-ignored so it is NOT copied there: CPU evals on STARSS23 must run here. Remaining work is GPU-bound.
 - Tools ready: `scripts/export_clip.py --model classical|baseline|heatmap` for M2 GIFs; classical ITD done (`results/classical_itd/metrics.json`: LE 54.7°, LR 0.544, FB 0.075, frontal az 20.8°).
 
