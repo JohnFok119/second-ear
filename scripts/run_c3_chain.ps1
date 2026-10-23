@@ -12,3 +12,5 @@ foreach ($e in @("binaural", "left", "right")) {
 uv run python scripts/export_coffee_shop.py --device cuda 2>&1 | Tee-Object -FilePath runs/export_coffee_shop.log
 uv run python scripts/one_ear_table.py 2>&1 | Tee-Object -FilePath runs/one_ear_table.log
 "CHAIN_C3_DONE" | Out-File -FilePath runs/chain_c3.done
+node C:\Users\johnn\personal
+node C:\Users\johnn\personal\fleet\lease.mjs release gpu --holder second-ear
