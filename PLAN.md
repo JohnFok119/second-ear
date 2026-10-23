@@ -32,6 +32,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   Chain = `eval_heatmap.py --config configs/heatmap_foa.yaml`; for e in binaural,left,right: `train_heatmap.py --config configs/heatmap_$e.yaml --device cuda` then `eval_heatmap.py` same config; after binaural also `eval_heatmap.py --config configs/heatmap_binaural.yaml --mute left|right`; finally `one_ear_table.py`. Tee logs to `runs/`.
 - Done 2026-10-23 morning: M2 approved (Johnny); C2.5 M2 page; README draft (C4.4 part); C2.4 eval on CPU (`results/heatmap_foa/`, table `results/m2_table.md`), FOA eval removed from the chain script; C4.2 ticked (60 fps + GIF). M2 GIFs: `results/<exp>/pano_fold4_room24_mix011.gif`.
 - Then: C3.2/C3.3 (write the 2-paragraph interpretation; muted vs trained, human row Aruffo 2025, ITD row is class-agnostic), C3.4 export, C3.5 M3 page, C4.2 60 fps + GIF, C4.3 portfolio branch, C4.4.
+- Gusion (laptop 2, CPU only, 2 cores, 24 GB) via `fleet/remote.mjs` for heavy CPU jobs; `data/` is git-ignored so it is NOT copied there: CPU evals on STARSS23 must run here. Remaining work is GPU-bound.
 - Tools ready: `scripts/export_clip.py --model classical|baseline|heatmap` for M2 GIFs; classical ITD done (`results/classical_itd/metrics.json`: LE 54.7°, LR 0.544, FB 0.075, frontal az 20.8°).
 
 ---
