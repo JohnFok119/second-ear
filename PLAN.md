@@ -89,11 +89,11 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
   rationale in ARCHITECTURE §5.6; spike code deleted or moved under `binaural/`.
 - [x] **C3.1 HRTF sets + binaural generator.** (2026-10-23, 891b382 + 2b1225e; Route B, 600 train / 100 test scenes in `data/binaural/`, held-out test heads) Download HUTUBS (+ SADIE II), SOFA loading, chosen route, multi-subject
   augmentation, labels preserved. *Done when:* cue tests pass; binaural dev set generated.
-- [ ] **C3.2 Two-ear model.** (2026-10-23: full run started 05:47 in the chain; epochs 0-2 F20 0, no detections, loss falling slowly (FOA run had F20 > 0 by epoch 1). No two-ear overfit check exists yet: `train_heatmap.py --config configs/heatmap_binaural.yaml --overfit-clip bin_train_00000 --epochs 60 --ckpt-dir checkpoints/overfit_binaural --runs-dir runs/overfit_binaural` was killed by the low-memory reaper before epoch 1; rerun in a herdr pane when RAM allows or after the chain) Binaural features → heat-map model (same encoder). *Done when:* trained;
+- [x] **C3.2 Two-ear model.** (done 2026-10-23: 100 epochs, best 81; test @0.5 official F20 0.023, LE 56°; val-picked threshold 0.30. Two-ear overfit check never ran (reaper); skipped, the full run learned). No two-ear overfit check exists yet: `train_heatmap.py --config configs/heatmap_binaural.yaml --overfit-clip bin_train_00000 --epochs 60 --ckpt-dir checkpoints/overfit_binaural --runs-dir runs/overfit_binaural` was killed by the low-memory reaper before epoch 1; rerun in a herdr pane when RAM allows or after the chain) Binaural features → heat-map model (same encoder). *Done when:* trained;
   `results/heatmap_binaural/metrics.json`.
-- [ ] **C3.3 One-ear experiment.** Two / left / right / classical ITD; error, recall, F-score, front-back confusion;
+- [x] **C3.3 One-ear experiment.** Two / left / right / classical ITD; error, recall, F-score, front-back confusion;
   human row (Aruffo 2025). *Done when:* `results/one_ear/table.md` + 2-paragraph interpretation.
-- [ ] **C3.4 Coffee-shop scene.** (scene + render + preview JSONs done; `scripts/export_coffee_shop.py` merged 879a153 and added to the chain: writes the 3 real JSONs once the binaural/left/right checkpoints exist) Scene file (`web/scenes/coffee_shop.json`), one FSD50K dev part downloaded, CC0/CC-BY
+- [x] **C3.4 Coffee-shop scene.** (done 2026-10-24: 3 real JSONs from the trained models at their val-picked thresholds) Scene file (`web/scenes/coffee_shop.json`), one FSD50K dev part downloaded, CC0/CC-BY
   clips picked and credited, Route B render → binaural audio + labels; run two-ear and one-ear models; export viewer
   JSON for 3 ear modes + mp3. *Done when:* 30 s scene renders; 3 JSONs + audio in `web/clips/`.
 - [ ] **C3.5 M3 page.** The one-ear table with the human row, GIFs, honest limitations, the coffee-shop renders.
