@@ -143,7 +143,7 @@ Research: `docs/research/c5/showcase.md`. W1, W2, W4 can start before C5.4; W3 n
 - [x] **W1 Shell.** (2026-10-24, merged e06015a; screenshots docs/research/w1/; W2 and W4 content also built there, awaiting Johnny review + a real-browser audio check; numbers marked data-pending="c5") Three sections (problem, showcase, how it works), mobile-first, no build step, Three.js pinned.
 - [ ] **W2 The problem.** Draft intro (Johnny edits), human numbers (3.7° vs 22.4°), "hear it with my ear" audio
   toggle (both ears vs right ear only, headphones note), drag-the-sound toy (which ear hears it first).
-- [ ] **W3 The showcase.** Full-width scene, two ears | my ear side by side on one timeline, hit/miss rings,
+- [ ] **W3 The showcase.** (built 2026-10-24, merged; waits on C5.4 JSONs + a real-device touch/60 fps check) Full-width scene, two ears | my ear side by side on one timeline, hit/miss rings,
   top-down radar, one plain score sentence instead of the stats panel, plain legend, simulation caveat.
 - [ ] **W4 How it works.** Pipeline diagram (inline SVG), ML-work cards, model card, links to code + LEARNING.md.
 - [ ] **W5 Polish + ship.** Chrome + Firefox + phone checks, README links, portfolio card headline (feature branch),
