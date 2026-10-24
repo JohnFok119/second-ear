@@ -76,3 +76,32 @@ def test_export_val_threshold_cli_exits(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as e:
         mod.main()
     assert "threshold_val.json" in str(e.value)
+
+
+def test_one_ear_table_precision_and_guess_rate(tmp_path, monkeypatch):
+    mod = _load("one_ear_table")
+    res = tmp_path / "results"
+    with_overall = _metrics(12.0)
+    with_overall["overall"] = {"precision20": 0.25, "n_pred": 300, "n_truth": 100}
+    _write(res / "heatmap_binaural" / "metrics.json", with_overall)
+    _write(res / "heatmap_binaural_mute_left" / "metrics.json", _metrics(30.0))  # no overall
+    out = tmp_path / "out"
+    monkeypatch.setattr(sys, "argv", ["x", "--results", str(res), "--out", str(out)])
+    mod.main()
+    rows = {r["condition"]: r for r in json.loads((out / "table.json").read_text())["rows"]}
+    assert rows["Two ears"]["precision20"] == 0.25
+    assert rows["Two ears"]["guess_rate"] == 3.0
+    assert rows["Two-ear model, left muted"]["precision20"] is None
+    assert rows["Two-ear model, left muted"]["guess_rate"] is None
+    assert rows["Humans, two ears"]["guess_rate"] is None
+    md = (out / "table.md").read_text()
+    assert "Guesses per real sound" in md
+    assert "| 0.250 | 3.00 |" in md
+    assert "n/a | n/a |" in md
+
+
+def test_fmt_guess_rate():
+    mod = _load("one_ear_table")
+    assert mod._fmt(2.345, "guess_rate") == "2.35"
+    assert mod._fmt(0.2056, "precision20") == "0.206"
+    assert mod._fmt(None, "guess_rate") == "n/a"

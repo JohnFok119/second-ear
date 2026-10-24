@@ -1,0 +1,100 @@
+{
+  "rows": [
+    {
+      "condition": "Two ears",
+      "status": "ok",
+      "source": "results/heatmap_binaural/metrics.json",
+      "LE_deg": 56.05378460989962,
+      "LR": 0.06849766264812694,
+      "F20": 0.022683936557633226,
+      "precision20": 0.2997944501541624,
+      "guess_rate": 0.27193963107881497,
+      "front_back_rate": 0.059749132041662004,
+      "frontal_azimuth_error_deg": 42.306130818125894
+    },
+    {
+      "condition": "Two-ear model, left muted",
+      "status": "ok",
+      "source": "results/heatmap_binaural_mute_left/metrics.json",
+      "LE_deg": 165.37206784334063,
+      "LR": 0.012635752087507212,
+      "F20": 0.00026869338246583756,
+      "precision20": 0.04568237147357869,
+      "guess_rate": 0.09758244829513694,
+      "front_back_rate": 0.014613136440547608,
+      "frontal_azimuth_error_deg": 75.99736225087925
+    },
+    {
+      "condition": "Two-ear model, right muted",
+      "status": "ok",
+      "source": "results/heatmap_binaural_mute_right/metrics.json",
+      "LE_deg": 170.43143387506956,
+      "LR": 0.0009419152276295133,
+      "F20": 0.000528680941052075,
+      "precision20": 0.006711409395973154,
+      "guess_rate": 0.0020821688093907212,
+      "front_back_rate": 0.0,
+      "frontal_azimuth_error_deg": 138.5593220338983
+    },
+    {
+      "condition": "One-ear model, left (trained)",
+      "status": "ok",
+      "source": "results/heatmap_left/metrics.json",
+      "LE_deg": 72.1881200880339,
+      "LR": 0.09412834586299586,
+      "F20": 0.009051389727723328,
+      "precision20": 0.06083590108240499,
+      "guess_rate": 0.1768725544997205,
+      "front_back_rate": 0.034243092049499914,
+      "frontal_azimuth_error_deg": 64.07219164778246
+    },
+    {
+      "condition": "One-ear model, right (trained)",
+      "status": "ok",
+      "source": "results/heatmap_right/metrics.json",
+      "LE_deg": 74.07659342882663,
+      "LR": 0.11765985223987263,
+      "F20": 0.01673436943389875,
+      "precision20": 0.08982523342111563,
+      "guess_rate": 0.29185299049748464,
+      "front_back_rate": 0.025806451612903226,
+      "frontal_azimuth_error_deg": 70.52145922746782
+    },
+    {
+      "condition": "Classical ITD",
+      "status": "ok",
+      "source": "results/classical_itd/metrics.json",
+      "LE_deg": 54.71295601613706,
+      "LR": 0.5435858021240917,
+      "F20": null,
+      "precision20": 0.20561895501765518,
+      "guess_rate": 0.5461430967020682,
+      "front_back_rate": 0.0746034602431939,
+      "frontal_azimuth_error_deg": 20.84060469144747
+    },
+    {
+      "condition": "Humans, one ear (SSD)",
+      "status": "literature",
+      "source": "Aruffo et al. 2025 (unsigned azimuth error, frontal speakers only)",
+      "LE_deg": null,
+      "LR": null,
+      "F20": null,
+      "precision20": null,
+      "guess_rate": null,
+      "front_back_rate": null,
+      "frontal_azimuth_error_deg": 22.4
+    },
+    {
+      "condition": "Humans, two ears",
+      "status": "literature",
+      "source": "Aruffo et al. 2025 (unsigned azimuth error, frontal speakers only)",
+      "LE_deg": null,
+      "LR": null,
+      "F20": null,
+      "precision20": null,
+      "guess_rate": null,
+      "front_back_rate": null,
+      "frontal_azimuth_error_deg": 3.69
+    }
+  ]
+}
