@@ -6,11 +6,13 @@ import argparse
 import json
 from pathlib import Path
 
-COLS = ["LE_deg", "LR", "F20", "front_back_rate", "frontal_azimuth_error_deg"]
+COLS = ["LE_deg", "LR", "F20", "precision20", "guess_rate", "front_back_rate", "frontal_azimuth_error_deg"]
 HEAD = [
     "Localization error (deg)",
     "Localization recall",
     "Detection F20",
+    "Precision (class-agnostic)",
+    "Guesses per real sound",
     "Front-back confusion",
     "Frontal azimuth error (deg)",
 ]
@@ -30,22 +32,36 @@ HUMANS = [
 HUMAN_SOURCE = "Aruffo et al. 2025 (unsigned azimuth error, frontal speakers only)"
 
 
+def _guess_rate(o: dict):
+    """n_pred / n_truth from a class-agnostic overall dict; None when unavailable."""
+    n_pred, n_truth = o.get("n_pred"), o.get("n_truth")
+    if n_pred is None or not n_truth:
+        return None
+    return n_pred / n_truth
+
+
 def _row_from_model(m: dict) -> dict:
+    o = m.get("overall") or {}
     off = m["official_macro"]["best"]
     return {
         "LE_deg": off["LE"],
         "LR": off["LR"],
         "F20": off["F20"],
+        "precision20": o.get("precision20"),
+        "guess_rate": _guess_rate(o),
         "front_back_rate": m.get("front_back_rate"),
         "frontal_azimuth_error_deg": m.get("frontal_azimuth_error"),
     }
 
 
 def _row_from_itd(m: dict) -> dict:
+    o = m.get("overall") or {}
     return {
         "LE_deg": m["LE_deg"],
         "LR": m["LR"],
         "F20": None,
+        "precision20": o.get("precision20"),
+        "guess_rate": _guess_rate(o),
         "front_back_rate": m["front_back_rate"],
         "frontal_azimuth_error_deg": m["frontal_azimuth_error"],
     }
@@ -54,7 +70,9 @@ def _row_from_itd(m: dict) -> dict:
 def _fmt(v, col) -> str:
     if v is None:
         return "n/a"
-    return f"{v:.3f}" if col in ("LR", "F20", "front_back_rate") else f"{v:.1f}"
+    if col == "guess_rate":
+        return f"{v:.2f}"
+    return f"{v:.3f}" if col in ("LR", "F20", "precision20", "front_back_rate") else f"{v:.1f}"
 
 
 def main() -> None:
@@ -103,6 +121,8 @@ def main() -> None:
                 "LE_deg": None,
                 "LR": None,
                 "F20": None,
+                "precision20": None,
+                "guess_rate": None,
                 "front_back_rate": None,
                 "frontal_azimuth_error_deg": az_err,
             }
@@ -127,7 +147,9 @@ def main() -> None:
         "Classical ITD is class-agnostic, front half only (F20 n/a). Front-back confusion and "
         "frontal azimuth error use class-agnostic matching. Human numbers: "
         + HUMAN_SOURCE
-        + "; no front-back rate published.",
+        + "; no front-back rate published. "
+        "Precision and guesses per real sound use class-agnostic matching; a guess rate "
+        "well above 1 means recall and frontal error are flattered by many extra guesses.",
         "",
         "## Interpretation",
         "",
