@@ -114,7 +114,55 @@ training mixtures we did not use.
 not the architecture."
 
 ## Phase 3 — Two ears, one ear, coffee shop
-*(pending)*
+
+**What we built.** The heat-map model from Phase 2, retrained on sound as it reaches two
+human ears instead of a four-microphone ball. 600 practice scenes were made by mixing
+free sound clips (FSD50K) through measured "ear filters" (HRIRs: how a real head and ear
+change a sound from each direction; HUTUBS and SADIE II). Five ways of listening were tested
+on the same 100 test scenes:
+- **Two ears:** the full model.
+- **Sudden loss:** the same two-ear model with one ear silenced at test time, like someone
+  who lost an ear yesterday.
+- **Adapted (left or right):** a model trained from the start on one ear only, like someone
+  who has lived with one ear for years.
+- **Classical ITD:** a hand-built rule (no learning) that uses the time gap between
+  the ears; it only judges the front half and ignores sound types.
+
+**Why that way.** Muted vs trained separates two questions: how much a listener loses at the
+moment of loss, and how much they can win back by adapting. The bar a map spot must pass to
+count as a guess was chosen on 100 separate practice scenes (never the test scenes), once per
+model, because one-ear maps are dimmer and a single fixed bar would have been unfair to them.
+
+**The numbers** (100 test scenes, bar picked per model, `results/one_ear_valthr/table.md`):
+
+| | Average miss | F20 (fair score) | Guesses that hit | Guesses per real sound | Front miss |
+|---|---|---|---|---|---|
+| Two ears | 64° | **3.4 %** | **21.9 %** | 1.4 | 36.5° |
+| Sudden loss (left muted) | 148° | 0.3 % | 5.1 % | 0.9 | 75° |
+| Sudden loss (right muted) | 145° | 0.1 % | 4.5 % | 0.3 | 77° |
+| Adapted, left only | 70° | 1.8 % | 6.0 % | 4.0 | 31° |
+| Adapted, right only | 67° | 1.7 % | 6.2 % | 5.8 | 25° |
+| Classical ITD | 55° | n/a | 20.6 % | 0.6 | 21° |
+| People, one ear | | | | | 22° |
+| People, two ears | | | | | 3.7° |
+
+**What they mean.** Sudden loss is a collapse: the two-ear model leans on the difference
+between the ears, so with one ear gone its fair score drops more than tenfold. Adapting wins
+back about half. The adapted models' small front miss looks like a win but is not: they make
+4 to 6 guesses for every real sound, so one of them usually lands close. The models are still
+weak in absolute terms (600 practice scenes; the simple time-gap rule still aims better), so
+the gaps between rows matter more than the raw numbers. People who lose an ear go from 3.7°
+to 22° (Aruffo et al. 2025), and a one-eared person still beats every model here.
+
+**Bugs worth remembering.** Three side jobs (a progress watcher and two checks) were killed by
+the computer's low-memory guard while training ran. Long jobs now run in their own terminal
+panes, and progress is read from the training history file, because the log stays empty until
+the end (Python holds back printed text when its output is piped).
+
+**Interview line.** "I measured one-ear hearing two ways, sudden loss and an adapted listener.
+Sudden loss cut the model's fair score more than tenfold; training on one ear won back half.
+The adapted model's better-looking recall came from over-guessing, which a guesses-per-sound
+column made visible."
 
 ## Phase 4 — Viewer and ship
 *(pending)*
