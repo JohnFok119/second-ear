@@ -27,3 +27,6 @@ web/clips/*.wav
 
 # Local resume copy (has contact details; never commit)
 resume/
+
+# Third-party code checked out for spikes (own venvs)
+external/
