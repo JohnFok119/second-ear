@@ -20,12 +20,13 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - caps: 40 turns per chunk; lookout burn limit applies
 - ping me for: a decision only Johnny can make (listed in decisions.md as "Johnny"), blocked with no other work, milestones M1–M4, done
 - milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
-- cloud: allowed per the cloud rule until 2026-11-04 (Johnny, 2026-10-23), Claude sessions only, kit on branch `cloud-kit`; no GPU in cloud, GPU cloud spend $0 (local GPU via `fleet\lease.mjs`)
+- cloud: allowed per the cloud rule until 2026-11-04 (Johnny, 2026-10-23), Claude sessions only, kit on branch `cloud-kit`; GPU cloud spend $0 (local GPU via `fleet\lease.mjs`). **Google Colab allowed** (Johnny, 2026-10-24): free T4 as much as needed; L4/A100/G4 are on his account but may spend compute units, so ask before using them.
+- milestones (Phase 5–6): M5 new model results (`.lavish/m5/`) · M6 new website live (`.lavish/m6/`)
 
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
 
-**Captain 2026-10-24:** M3 page closed (no formal approve). Decided: retrain the model before the site revamp; site revamp = story page (1) the problem: half deaf, (2) showcase: two ears vs my one ear, (3) how the model works + the core ML work. Viewer experience needs a rework, inspired by research on how sound is showcased. Open: Colab (Johnny has a student plan) vs local GPU, and whether to use an existing pretrained model; three research crews dispatched (models, showcase design, Colab). Contract says no GPU cloud: changing that needs Johnny's explicit go after the research.
+**Captain 2026-10-24:** M3 page closed (no formal approve). Retrain the model before the site revamp; site revamp = one story page (1) the problem: half deaf, (2) showcase: two ears vs my one ear, (3) how the model works + the core ML work. Phase 5 plan answered on `.lavish/phase5/` (research in `docs/research/c5/`): **stage A and the Spatial-AST spike in parallel**; Colab allowed (T4 free; ask before L4/A100); **"where" only** in the headline (per-type scores to an appendix); **Johnny's LEFT ear is deaf** ("my ear" = right ear only); First Mate drafts the intro, Johnny edits; new page **replaces** the current one at the same URL. Johnny asked whether Colab can be driven without him: researching.
 
 **Resume state (2026-10-23 morning)**
 - Main pushes: Johnny said "yes go" to plain pushes to main for session a8586050 (2026-10-23, own-private-project rule), but the auto-mode classifier still blocks the ship from pushing main and from running `fleet/main-go.mjs grant`: Johnny pushes with `! git push origin main`. Never force-push, delete or deploy. Last push by Johnny @ c9b7716.
@@ -113,10 +114,40 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 - [x] **C4.3 Deploy.** (2026-10-23: Pages 200 at https://johnfok119.github.io/second-ear/, workflow `pages.yml`; portfolio branch `feat/second-ear-card` @ 0066d05 off `feat/site-v2`, pushed, not merged, worktree `personaljyfok-portfolio-second-ear`: story + demo link, no numbers; add the one-ear headline there after M3) GitHub Actions → GitHub Pages for `web/`; enable Pages on the repo. Portfolio card branch in
   `jyfok-portfolio` (text: deaf in one ear + viewer link), pushed, not merged. *Done when:* public URL works; branch
   pushed.
-- [ ] **C4.4 README + write-up + LEARNING.md + resume.** (README draft merged 2026-10-23, c8e4bb6: one-ear table between `<!-- one-ear:start/end -->` all TBD, human row 22.4° in sources, repo licence TBD, `--n-scenes N` placeholder; worktree `.claude/worktrees/agent-a9480030768d22bbb` left for cleanup) README: story (deaf in one ear), GIFs, numbers table, how to
+- [x] **C4.4 README + write-up + LEARNING.md + resume.** (done 2026-10-24: README numbers + MIT licence; reproduce check passed; resume bullets in the spine + git-ignored local `resume/` copy (Johnny); the M4 page is folded into M6, since Johnny redirected to a site revamp) README: story (deaf in one ear), GIFs, numbers table, how to
   run, limitations, credits, model card. Resume bullets with real numbers → spine + `personal\private\resume\`
   (new .tex copy, nothing overwritten). *Done when:* fresh clone → `uv sync` → tests pass → one script reproduces a
   committed results JSON; M4 page + push notification.
+
+## Phase 5 — A model that is good with two ears → **M5**
+
+Plan approved 2026-10-24 (`.lavish/phase5/`). Stage A (C5.1, C5.2) and stage B (C5.3) run in parallel.
+
+- [ ] **C5.1 More scenes.** `scripts/generate_binaural.py` into `data/binaural_v2/`: ~4,000 train (seeds 0–3999),
+  300 val (train heads, seeds 100000+), 300 test (test heads, seeds 0–299). CPU under the cpu lease, herdr pane.
+  *Done when:* counts checked, a few scenes spot-checked, disk still > 20 GB free.
+- [ ] **C5.2 "Where-only" model.** One class-agnostic map instead of 13 (config switch, tests); train two ears, left,
+  right on v2; sudden-loss evals; bar picked on v2 val. Headline = class-agnostic metrics; per-type scores kept in an
+  appendix. *Done when:* metrics JSONs + new one-ear table on the v2 test set.
+- [ ] **C5.3 Spatial-AST spike.** Released checkpoint on our v2 test scenes (zero-shot); memory check on 8 GB, else
+  Colab T4; fine-tune on v2 train. Pass line: beats C5.2's two-ear model on direction error. One-ear variant only if
+  it passes. *Done when:* a written verdict with numbers in `docs/research/c5/spatial_ast_spike.md`.
+- [ ] **C5.4 Results.** Pick the model, one-ear table + interpretation, LEARNING.md Phase 5, viewer JSONs (two ears /
+  right ear only), M5 page + push notification. *Done when:* committed and merged.
+
+## Phase 6 — The new website → **M6**
+
+One scroll page replacing `web/` at the same URL. Johnny's left ear is deaf: "my ear" = right ear only.
+Research: `docs/research/c5/showcase.md`. W1, W2, W4 can start before C5.4; W3 needs C5.4 data.
+
+- [ ] **W1 Shell.** Three sections (problem, showcase, how it works), mobile-first, no build step, Three.js pinned.
+- [ ] **W2 The problem.** Draft intro (Johnny edits), human numbers (3.7° vs 22.4°), "hear it with my ear" audio
+  toggle (both ears vs right ear only, headphones note), drag-the-sound toy (which ear hears it first).
+- [ ] **W3 The showcase.** Full-width scene, two ears | my ear side by side on one timeline, hit/miss rings,
+  top-down radar, one plain score sentence instead of the stats panel, plain legend, simulation caveat.
+- [ ] **W4 How it works.** Pipeline diagram (inline SVG), ML-work cards, model card, links to code + LEARNING.md.
+- [ ] **W5 Polish + ship.** Chrome + Firefox + phone checks, README links, portfolio card headline (feature branch),
+  M6 page + push notification.
 
 ---
 
