@@ -39,7 +39,7 @@ function flatten(obj, prefix = '', out = []) {
 }
 
 export function showMetrics(metrics, mode) {
-  const modeName = { both: 'Both ears', left: 'Left ear only', right: 'Right ear only' }[mode];
+  const modeName = { both: 'Both ears', left: 'Left ear only', right: 'My ear (right only)' }[mode];
   $('preview-banner').hidden = !metrics.preview;
   const body = $('metrics-body');
   if (metrics.preview) {

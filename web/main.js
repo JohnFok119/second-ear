@@ -124,11 +124,12 @@ canvas.addEventListener('pointerup', (e) => {
 });
 
 function resize() {
-  const w = innerWidth, h = innerHeight;
+  // The viewer lives in a box inside the story page, so size to that box, not the window.
+  const w = canvas.parentElement.clientWidth || innerWidth, h = canvas.parentElement.clientHeight || innerHeight;
   renderer.setSize(w, h, false);
   camera.aspect = w / h; camera.updateProjectionMatrix();
 }
-addEventListener('resize', resize); resize();
+addEventListener('resize', resize); new ResizeObserver(resize).observe(canvas.parentElement); resize();
 
 let lastFrame = -1, lastData = null, prevMs = null;
 let perfN = 0, perfFrame = 0, perfFloor = 0;
