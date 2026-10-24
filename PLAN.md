@@ -140,7 +140,7 @@ Plan approved 2026-10-24 (`.lavish/phase5/`). Stage A (C5.1, C5.2) and stage B (
 One scroll page replacing `web/` at the same URL. Johnny's left ear is deaf: "my ear" = right ear only.
 Research: `docs/research/c5/showcase.md`. W1, W2, W4 can start before C5.4; W3 needs C5.4 data.
 
-- [ ] **W1 Shell.** Three sections (problem, showcase, how it works), mobile-first, no build step, Three.js pinned.
+- [x] **W1 Shell.** (2026-10-24, merged e06015a; screenshots docs/research/w1/; W2 and W4 content also built there, awaiting Johnny review + a real-browser audio check; numbers marked data-pending="c5") Three sections (problem, showcase, how it works), mobile-first, no build step, Three.js pinned.
 - [ ] **W2 The problem.** Draft intro (Johnny edits), human numbers (3.7° vs 22.4°), "hear it with my ear" audio
   toggle (both ears vs right ear only, headphones note), drag-the-sound toy (which ear hears it first).
 - [ ] **W3 The showcase.** Full-width scene, two ears | my ear side by side on one timeline, hit/miss rings,
