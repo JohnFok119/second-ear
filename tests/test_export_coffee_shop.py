@@ -27,7 +27,7 @@ def _load_script():
     return mod
 
 
-def _untrained_checkpoint(ckpt_root: Path, config: str) -> None:
+def _untrained_checkpoint(ckpt_root: Path, config: str, agnostic: bool = False) -> None:
     cfg = load_config(ROOT / "configs" / f"{config}.yaml")
     d = ckpt_root / cfg["experiment"]
     d.mkdir(parents=True)
@@ -36,6 +36,7 @@ def _untrained_checkpoint(ckpt_root: Path, config: str) -> None:
         cfg["ears"],
         coarse_step_deg=cfg["coarse_step_deg"],
         fine_step_deg=cfg["fine_step_deg"],
+        agnostic=agnostic,
     )
     torch.save(loc.model.state_dict(), d / "best.pt")
     save_scaler(d, np.zeros(320, np.float32), np.ones(320, np.float32))
@@ -73,3 +74,46 @@ def test_missing_checkpoint_message(tmp_path):
     mod = _load_script()
     with pytest.raises(FileNotFoundError, match="best.pt"):
         mod.export_coffee_shop(tmp_path / "none", tmp_path)
+
+
+def _noise_clips(tmp_path: Path) -> Path:
+    clips = tmp_path / "clips"
+    clips.mkdir()
+    shutil.copy(CLIPS / "coffee_shop_labels.csv", clips / "coffee_shop_labels.csv")
+    noise = np.random.default_rng(0).normal(0, 0.1, (72000, 2)).astype(np.float32)
+    sf.write(clips / "coffee_shop.wav", noise, 24000)
+    return clips
+
+
+def test_export_where_untrained(tmp_path):
+    mod = _load_script()
+    ckpt_root = tmp_path / "ckpt"
+    results = tmp_path / "results"
+    for i, (mode, config) in enumerate(mod.WHERE_MODE_CONFIG.items()):
+        _untrained_checkpoint(ckpt_root, config, agnostic=True)
+        exp = load_config(ROOT / "configs" / f"{config}.yaml")["experiment"]
+        (results / exp).mkdir(parents=True)
+        (results / exp / "threshold_val.json").write_text(json.dumps({"chosen": 0.3 + 0.1 * i}))
+    clips = _noise_clips(tmp_path)
+
+    paths = mod.export_coffee_shop(
+        ckpt_root, clips, "cpu", seconds=3.0, results_root=results, where=True
+    )
+    assert [p.name for p in paths] == [f"coffee_shop_{m}.json" for m in mod.WHERE_MODE_CONFIG]
+    for i, p in enumerate(paths):
+        d = json.loads(p.read_text())
+        assert d["classes"] == ["sound"]
+        assert len(d["frames"]) >= 30  # 3 s at 10 fps
+        assert d["scene"]["model"].startswith("where_")
+        assert d["metrics"]["threshold"] == pytest.approx(0.3 + 0.1 * i)
+        assert {"LE_deg", "precision20", "recall20", "F20", "n_pred", "n_truth"} <= set(
+            d["metrics"]
+        )
+        assert all(t["cls"] == 0 for f in d["frames"] for t in f["truth"])
+        assert all(q["cls"] == 0 for f in d["frames"] for q in f["pred"])
+
+
+def test_missing_where_checkpoint_message(tmp_path):
+    mod = _load_script()
+    with pytest.raises(FileNotFoundError, match="best.pt"):
+        mod.export_coffee_shop(tmp_path / "none", tmp_path, where=True)
