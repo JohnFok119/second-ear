@@ -20,11 +20,17 @@ def dense_targets(
     n_frames: int,
     n_classes: int = 13,
     fwhm_deg: float = DEFAULT_FWHM_DEG,
+    agnostic: bool = False,
 ) -> np.ndarray:
     """Per-class vMF blobs, float32 [n_frames, n_classes, n_el, n_az] in [0, 1].
 
     Overlapping blobs combine with element-wise max, so each source peaks at 1.0.
+    agnostic=True collapses every event (any class, even cls None) into ONE map: the union
+    (max) of all blobs, shape [n_frames, 1, n_el, n_az]; `n_classes` is ignored.
     """
+    if agnostic:
+        events = [Event(e.frame, 0, e.az_deg, e.el_deg) for e in events]
+        n_classes = 1
     n_el, n_az = len(grid.el_deg), len(grid.az_deg)
     out = np.zeros((n_frames * n_classes, n_el * n_az), dtype=np.float32)
     kept = [e for e in events if e.cls is not None and 0 <= e.frame < n_frames]

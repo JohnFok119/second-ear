@@ -20,7 +20,7 @@ from secondear.eval.official import seld_scores
 from secondear.io.starss23 import clip_paths, list_clips, load_foa, read_metadata
 from secondear.models.heatmap import BinauralHeatmapLocalizer, HeatmapLocalizer
 from secondear.train.baseline import load_scaler
-from secondear.train.heatmap import load_config
+from secondear.train.heatmap import BINAURAL_DATA, load_config
 
 REFERENCE = {
     "source": "DCASE 2023 task 3 baseline (published, trained with synthetic data)",
@@ -56,9 +56,13 @@ def default_out_dir(exp: str, mute: str | None, threshold: float | None) -> str:
 def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--root", default=None, help="default data/starss23 or data/binaural")
+    ap.add_argument(
+        "--root", default=None, help="default data/starss23 or data/<binaural|binaural_v2>"
+    )
     ap.add_argument("--config", default="configs/heatmap_foa.yaml")
-    ap.add_argument("--data", choices=["foa", "binaural"], default=None, help="overrides config")
+    ap.add_argument(
+        "--data", choices=["foa", "binaural", "binaural_v2"], default=None, help="overrides config"
+    )
     ap.add_argument("--ears", choices=["both", "left", "right"], default=None)
     ap.add_argument("--mute", choices=["left", "right"], default=None, help="zero one ear at test")
     ap.add_argument("--ckpt-dir", default=None, help="default checkpoints/<experiment>")
@@ -74,11 +78,14 @@ def main() -> None:
     a = ap.parse_args()
 
     train_cfg = load_config(a.config, data=a.data, ears=a.ears)
-    binaural = train_cfg["data"] == "binaural"
+    binaural = train_cfg["data"] in BINAURAL_DATA
+    agnostic = bool(train_cfg["agnostic"])
+    if agnostic and not binaural:
+        ap.error("agnostic mode needs binaural data")
     ears = train_cfg["ears"]
     exp = train_cfg["experiment"]
     split = a.split or ("test" if binaural else "dev-test")
-    root = Path(a.root or ("data/binaural" if binaural else "data/starss23"))
+    root = Path(a.root or (f"data/{train_cfg['data']}" if binaural else "data/starss23"))
     if a.mute and not binaural:
         ap.error("--mute needs binaural data")
     default_out = default_out_dir(exp, a.mute, a.threshold)
@@ -87,6 +94,7 @@ def main() -> None:
     out, ckpt = Path(a.out or default_out), Path(a.ckpt_dir or f"checkpoints/{exp}")
     kw = {
         **({"mute": a.mute} if a.mute else {}),
+        **({"agnostic": True} if agnostic else {}),
         "threshold": train_cfg["threshold"],
         "coarse_step_deg": train_cfg["coarse_step_deg"],
         "fine_step_deg": train_cfg["fine_step_deg"],
@@ -149,8 +157,13 @@ def main() -> None:
         rows.append([stem, site, n_frames, s["LE_deg"], s["LR"], s["F20"], s["front_back_rate"]])
         print(f"[{idx + 1}/{len(stems)}] {stem}", flush=True)
 
-    # macro scores need every class in the reference; subsets (smoke) are still reported as macro
-    official = {k: seld_scores(pred[k], ref, average="macro") for k in ("best", "last")}
+    # macro scores need every class in the reference; subsets (smoke) are still reported as macro.
+    # Agnostic models have no classes: official scores are n/a (None) and "overall" is the headline.
+    official = (
+        {"best": None, "last": None}
+        if agnostic
+        else {k: seld_scores(pred[k], ref, average="macro") for k in ("best", "last")}
+    )
 
     cfg = {
         "model": "SELDnet encoder + coarse-to-fine heat-map head "
@@ -176,6 +189,7 @@ def main() -> None:
         "config_hash": hashlib.sha1(json.dumps(cfg, sort_keys=True).encode()).hexdigest(),
         "best_epoch": int(last_state["best_epoch"]),
         "official_macro": official,
+        "agnostic": agnostic,
         **({} if binaural else {"reference_published": REFERENCE}),
         "overall": summarize(overall),
         "front_back_rate": fb_total.front_back_rate,
