@@ -26,6 +26,7 @@ from secondear.targets.heatmap import dense_targets
 from secondear.train.baseline import (
     TEST_SPLIT,
     TRAIN_SPLIT,
+    as_f32,
     clip_chunks,
     events_from_rows,
     list_cached,
@@ -125,12 +126,12 @@ def load_clip(f: Path, mean, scale, tail: str, data: str = "foa", ears: str = "b
     """
     if data in BINAURAL_DATA:
         with np.load(f) as z:
-            feat, rows, n_label = z["feat"], z["ref"], int(z["n_label"])
+            feat, rows, n_label = as_f32(z["feat"]), z["ref"], int(z["n_label"])
         x = _binaural_chunks(feat, n_label, mean, scale, tail, ears)
         ref = events_from_rows(rows)
         return x, chunk_events(ref, x.shape[0]), ref, n_label
     with np.load(f) as z:
-        feat, rows = z["feat"], z["ref"]
+        feat, rows = as_f32(z["feat"]), z["ref"]
         n_label = z["target"].shape[0]
     x, _ = clip_chunks(feat, np.zeros((n_label,), dtype=np.float32), mean, scale, tail)
     ref = events_from_rows(rows)

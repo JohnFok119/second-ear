@@ -102,6 +102,11 @@ def load_scaler(path: str | Path) -> tuple[np.ndarray, np.ndarray]:
         return z["mean"], z["scale"]
 
 
+def as_f32(a: np.ndarray) -> np.ndarray:
+    """Cast floating arrays (e.g. a float16 cache) to float32; other dtypes pass through."""
+    return a.astype(np.float32, copy=False) if np.issubdtype(a.dtype, np.floating) else a
+
+
 def list_cached(feat_dir: str | Path, split: str, limit: int | None = None) -> list[Path]:
     """Sorted cached clip files of a split."""
     return sorted((Path(feat_dir) / split).glob("*.npz"))[:limit]
@@ -149,7 +154,7 @@ class ChunkDataset(Dataset):
         xs, ys = [], []
         for f in files:
             with np.load(f) as z:
-                x, y = clip_chunks(z["feat"], z["target"], mean, scale, tail)
+                x, y = clip_chunks(as_f32(z["feat"]), as_f32(z["target"]), mean, scale, tail)
             xs.append(x)
             ys.append(y)
         if not xs:
@@ -208,7 +213,7 @@ def evaluate(model, files: list[Path], mean, scale, criterion, device) -> dict:
     pred, ref, losses = {}, {}, []
     for f in files:
         with np.load(f) as z:
-            feat, target, rows = z["feat"], z["target"], z["ref"]
+            feat, target, rows = as_f32(z["feat"]), as_f32(z["target"]), z["ref"]
         x, y = clip_chunks(feat, target, mean, scale, "pad")
         out = model(x.to(device).float())
         losses.append(criterion(out, y.to(device).float()).item())
