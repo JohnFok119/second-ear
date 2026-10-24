@@ -9,8 +9,6 @@ listener with two ears, or one, perceives.
 
 **Try the viewer: <https://johnfok119.github.io/second-ear/>**
 
-> Status: **Phase 3 (one-ear results) still running.** The numbers marked `TBD` below are not measured yet.
-
 *Assistive awareness research, not a medical device.*
 
 ## What it shows
@@ -59,19 +57,22 @@ peak below the 0.5 cut-off used to turn a map into guesses.
 ### One-ear experiment
 
 Two-ear and one-ear models are trained and tested on binaural scenes (left-ear and right-ear
-audio) that we render ourselves. Not measured yet.
+audio) that we render ourselves. Source: `results/one_ear_valthr/table.md`.
 
 <!-- one-ear:start -->
-| Condition | LE ↓ | F20 ↑ | Front-back ↓ |
-|---|---|---|---|
-| Two ears | TBD | TBD | TBD |
-| Left only (trained) | TBD | TBD | TBD |
-| Right only (trained) | TBD | TBD | TBD |
-| Two-ear model, left muted | TBD | TBD | TBD |
-| Two-ear model, right muted | TBD | TBD | TBD |
-| Classical ITD (class-agnostic) | TBD | TBD | TBD |
-| Humans with one hearing ear (Aruffo 2025) | TBD | TBD | TBD |
+| Condition | LE ↓ | F20 ↑ | Front-back ↓ | Guesses per real sound | Frontal azimuth error (deg) |
+|---|---|---|---|---|---|
+| Two ears | 64.4 | 0.034 | 0.036 | 1.41 | 36.5 |
+| Two-ear model, left muted | 148.2 | 0.003 | 0.004 | 0.85 | 75.3 |
+| Two-ear model, right muted | 144.6 | 0.001 | 0.001 | 0.26 | 77.3 |
+| One-ear model, left (trained) | 70.3 | 0.018 | 0.011 | 3.98 | 30.9 |
+| One-ear model, right (trained) | 66.7 | 0.017 | 0.004 | 5.76 | 25.0 |
+| Classical ITD (class-agnostic) | 54.7 | n/a | 0.075 | 0.55 | 20.8 |
+| Humans, one ear (SSD; Aruffo 2025) | n/a | n/a | n/a | n/a | 22.4 |
+| Humans, two ears (Aruffo 2025) | n/a | n/a | n/a | n/a | 3.7 |
 <!-- one-ear:end -->
+
+Decoding thresholds were picked on the validation split per model (two ears 0.30, left 0.25, right 0.20); the fixed-0.5 table is `results/one_ear/table.md`. The one-ear models make 4-6 guesses per real sound, which flatters their recall and frontal error.
 
 "Muted" means the model was trained with two ears and one ear is silenced at test time.
 "Trained" means the model was trained with only that ear. Classical ITD is a hand-made method
@@ -115,8 +116,9 @@ Phase 3: one-ear experiment. Render binaural scenes, train per-ear models (confi
 build the table.
 
 ```bash
-uv run python scripts/generate_binaural.py --split train --n-scenes N   # N = number of scenes
-uv run python scripts/generate_binaural.py --split test --n-scenes N
+uv run python scripts/generate_binaural.py --split train --n-scenes 600
+uv run python scripts/generate_binaural.py --split train --n-scenes 100 --start-seed 100000 --out data/binaural/val   # validation scenes
+uv run python scripts/generate_binaural.py --split test --n-scenes 100
 uv run python scripts/train_heatmap.py --config configs/heatmap_binaural.yaml
 uv run python scripts/eval_heatmap.py --config configs/heatmap_binaural.yaml --mute left
 uv run python scripts/one_ear_table.py --results results --out results/one_ear
@@ -167,7 +169,7 @@ uv run python -m http.server --directory web
 - **Training data:** STARSS23 dev-train recordings (real rooms, 4-channel FOA audio), no synthetic
   mixtures. The one-ear variants are trained on rendered binaural scenes (FSD50K clips, HUTUBS and
   SADIE II head filters).
-- **Evaluation data:** STARSS23 dev-test, 78 recordings. One-ear results: `TBD`.
+- **Evaluation data:** STARSS23 dev-test, 78 recordings. One-ear results: see the table above (`results/one_ear_valthr/table.md`).
 - **Metrics (epoch 39):** official F20 9.7 %, LE 41.2°, localization recall 13.3 %, ER20 0.88
   (error rate at 20 degrees, lower is better), SELD score 0.720 (lower is better). Any-sound: LE
   25.8°, precision20 47.5 %, recall20 13.5 %, F20 21.0 %. Source: `results/m2_table.md`.
