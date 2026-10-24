@@ -21,6 +21,7 @@ from secondear.models.binaural import binaural_features
 from secondear.train.baseline import fit_scaler, save_scaler
 
 SPLITS = ("train", "test")
+SPLITS_V2 = ("train", "val", "test")
 LABEL_HOP = FS // 10
 
 
@@ -45,13 +46,16 @@ def extract_scene(wav: Path, csv: Path) -> dict[str, np.ndarray]:
 def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--root", default="data/binaural")
-    ap.add_argument("--out", default="data/features/binaural")
+    ap.add_argument("--v2", action="store_true", help="v2 set: data/binaural_v2, train/val/test")
+    ap.add_argument("--root", default=None, help="default data/binaural[_v2]")
+    ap.add_argument("--out", default=None, help="default data/features/binaural[_v2]")
     ap.add_argument("--limit", type=int, default=None, help="max scenes per split (smoke)")
     a = ap.parse_args()
 
-    root, out = Path(a.root), Path(a.out)
-    for split in SPLITS:
+    suffix = "_v2" if a.v2 else ""
+    root = Path(a.root or f"data/binaural{suffix}")
+    out = Path(a.out or f"data/features/binaural{suffix}")
+    for split in SPLITS_V2 if a.v2 else SPLITS:
         (out / split).mkdir(parents=True, exist_ok=True)
         stems = scene_stems(root, split)[: a.limit]
         for i, stem in enumerate(stems):

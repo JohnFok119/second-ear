@@ -123,8 +123,12 @@ def heatmap_to_events(
     threshold: float = 0.5,
     min_sep_deg: float = 10.0,
     max_events_per_frame: int = 5,
+    single_cls: int | None = None,
 ) -> list[Event]:
-    """Pick spherical peaks per frame and channel, with greedy non-maximum suppression."""
+    """Pick spherical peaks per frame and channel, with greedy non-maximum suppression.
+
+    A one-channel map gives events with cls None, or `single_cls` when that is set (agnostic mode).
+    """
     n_frames, n_ch, n_el, n_az = heatmap.shape
     events: list[Event] = []
     for t in range(n_frames):
@@ -165,7 +169,7 @@ def heatmap_to_events(
                 events.append(
                     Event(
                         frame=t,
-                        cls=c if n_ch > 1 else None,
+                        cls=c if n_ch > 1 else single_cls,
                         az_deg=az,
                         el_deg=el,
                         score=float(m[ii[k], jj[k]]),

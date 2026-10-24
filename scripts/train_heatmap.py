@@ -13,9 +13,13 @@ def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default="configs/heatmap_foa.yaml")
-    ap.add_argument("--data", choices=["foa", "binaural"], default=None, help="overrides config")
+    ap.add_argument(
+        "--data", choices=["foa", "binaural", "binaural_v2"], default=None, help="overrides config"
+    )
     ap.add_argument("--ears", choices=["both", "left", "right"], default=None)
-    ap.add_argument("--features", default=None, help="default data/features/<baseline|binaural>")
+    ap.add_argument(
+        "--features", default=None, help="default data/features/<baseline|binaural|binaural_v2>"
+    )
     ap.add_argument("--ckpt-dir", default=None, help="default checkpoints/<experiment>")
     ap.add_argument("--runs-dir", default=None, help="default runs/<experiment>")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
@@ -26,7 +30,7 @@ def main() -> None:
     ap.add_argument("--overfit-clip", default=None, help="train+eval on this one clip only")
     a = ap.parse_args()
     cfg = load_config(a.config, epochs=a.epochs, batch_size=a.batch_size, data=a.data, ears=a.ears)
-    feats = a.features or f"data/features/{'baseline' if cfg['data'] == 'foa' else 'binaural'}"
+    feats = a.features or f"data/features/{'baseline' if cfg['data'] == 'foa' else cfg['data']}"
     res = run_training(
         feats,
         a.ckpt_dir or f"checkpoints/{cfg['experiment']}",

@@ -250,22 +250,27 @@ class BinauralHeatmapLocalizer:
         params: dict | None = None,
         name: str | None = None,
         mute: str | None = None,
+        agnostic: bool = False,
     ):
         """feat_mean/feat_scale are the full 320-column scaler; the mode's columns are picked.
 
         mute ("left"/"right") zeroes that ear's waveform before features (two-ear model only).
+        agnostic builds the one-map (class-agnostic) model; decoded events carry class 0.
         """
         if mute not in (None, "left", "right"):
             raise ValueError(f"mute must be None, 'left' or 'right', got {mute!r}")
         if mute is not None and ears != "both":
             raise ValueError(f"mute needs ears='both', got ears={ears!r}")
         self.mute = mute
+        self.agnostic = agnostic
         self.ears = ears
         self.name = name or {"both": "heatmap_binaural"}.get(ears, f"heatmap_{ears}")
         self.cols = channel_columns(ears)
         self.device = torch.device(device)
         n_ch = len(EAR_CHANNELS[ears])
-        self.model = HeatmapNet(params, coarse_step_deg, fine_step_deg, n_channels=n_ch)
+        self.model = HeatmapNet(
+            params, coarse_step_deg, fine_step_deg, 1 if agnostic else N_CLASSES, n_ch
+        )
         self.model = self.model.to(self.device)
         if checkpoint is not None:
             state = torch.load(checkpoint, map_location=self.device, weights_only=True)
@@ -290,5 +295,7 @@ class BinauralHeatmapLocalizer:
         with torch.no_grad():
             maps = torch.sigmoid(self.model(x)).cpu().numpy()
         hm = maps.reshape(-1, *maps.shape[2:])[:n_label].astype(np.float32)
-        events = heatmap_to_events(hm, self.grid, self.threshold)
+        events = heatmap_to_events(
+            hm, self.grid, self.threshold, single_cls=0 if self.agnostic else None
+        )
         return Prediction(grid=self.grid, heatmap=hm, events=events)

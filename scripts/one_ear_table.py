@@ -33,6 +33,33 @@ ROWS = [
     ("One-ear model, right (trained)", "heatmap_right", "model"),
     ("Classical ITD", "classical_itd", "itd"),
 ]
+# --where mode: class-agnostic columns, rows from configs/where_*.yaml experiments (C5.2)
+WHERE_COLS = [
+    "LE_deg",
+    "precision20",
+    "recall20",
+    "F20",
+    "front_back_rate",
+    "guess_rate",
+    "frontal_azimuth_error_deg",
+]
+WHERE_HEAD = [
+    "Localization error (deg)",
+    "Precision (class-agnostic)",
+    "Recall (class-agnostic)",
+    "Detection F20 (class-agnostic)",
+    "Front-back confusion",
+    "Guesses per real sound",
+    "Frontal azimuth error (deg)",
+]
+WHERE_ROWS = [
+    ("Two ears", "where_binaural", "where"),
+    ("Two-ear model, left muted", "where_binaural_mute_left", "where"),
+    ("Two-ear model, right muted", "where_binaural_mute_right", "where"),
+    ("One-ear model, left (trained)", "where_left", "where"),
+    ("One-ear model, right (trained)", "where_right", "where"),
+    ("Classical ITD", "where_classical_itd", "itd"),
+]
 HUMANS = [
     ("Humans, one ear (SSD)", 22.4),
     ("Humans, two ears", 3.69),
@@ -62,9 +89,25 @@ def _row_from_model(m: dict) -> dict:
     }
 
 
+def _row_from_where(m: dict) -> dict:
+    """Row from a class-agnostic (where-only) model: the `overall` block is the headline."""
+    o = m.get("overall") or {}
+    return {
+        "LE_deg": o.get("LE_deg"),
+        "LR": o.get("LR"),
+        "F20": o.get("F20"),
+        "precision20": o.get("precision20"),
+        "recall20": o.get("recall20"),
+        "guess_rate": _guess_rate(o),
+        "front_back_rate": m.get("front_back_rate"),
+        "frontal_azimuth_error_deg": m.get("frontal_azimuth_error"),
+    }
+
+
 def _row_from_itd(m: dict) -> dict:
     o = m.get("overall") or {}
     return {
+        "recall20": o.get("recall20"),
         "LE_deg": m["LE_deg"],
         "LR": m["LR"],
         "F20": None,
@@ -80,7 +123,9 @@ def _fmt(v, col) -> str:
         return "n/a"
     if col == "guess_rate":
         return f"{v:.2f}"
-    return f"{v:.3f}" if col in ("LR", "F20", "precision20", "front_back_rate") else f"{v:.1f}"
+    if col in ("LR", "F20", "precision20", "recall20", "front_back_rate"):
+        return f"{v:.3f}"
+    return f"{v:.1f}"
 
 
 def main() -> None:
@@ -93,16 +138,35 @@ def main() -> None:
         action="store_true",
         help="use metrics evaluated at the validation-picked threshold (threshold_val.json)",
     )
+    ap.add_argument(
+        "--where",
+        action="store_true",
+        help="where-only table from the where_* experiments (class-agnostic columns, "
+        "always at the validation-picked threshold)",
+    )
     a = ap.parse_args()
     res = Path(a.results)
-    out = Path(a.out or ("results/one_ear_valthr" if a.val_threshold else "results/one_ear"))
-    interp = res / "one_ear_interpretation.md"  # hand-written; shared by both tables
+    default_out = "results/one_ear_where" if a.where else None
+    default_out = default_out or (
+        "results/one_ear_valthr" if a.val_threshold else "results/one_ear"
+    )
+    out = Path(a.out or default_out)
+    # hand-written; shared by the two class-aware tables
+    interp = res / ("where_interpretation.md" if a.where else "one_ear_interpretation.md")
+    cols, head = (WHERE_COLS, WHERE_HEAD) if a.where else (COLS, HEAD)
+    use_thr = a.val_threshold or a.where
 
     rows: list[dict] = []
-    for label, exp, kind in ROWS:
+    for label, exp, kind in WHERE_ROWS if a.where else ROWS:
         thr = None
-        if a.val_threshold and kind == "model":
-            base = "heatmap_binaural" if exp.startswith("heatmap_binaural") else exp
+        if use_thr and kind in ("model", "where"):
+            base = (
+                "where_binaural"
+                if exp.startswith("where_binaural")
+                else "heatmap_binaural"
+                if exp.startswith("heatmap_binaural")
+                else exp
+            )
             tf = res / base / "threshold_val.json"
             if not tf.exists():
                 rows.append({"condition": label, "status": "pending", "source": tf.as_posix()})
@@ -116,7 +180,13 @@ def main() -> None:
             rows.append({"condition": label, "status": "pending", "source": src})
             continue
         m = json.loads(f.read_text(encoding="utf-8"))
-        vals = _row_from_itd(m) if kind == "itd" else _row_from_model(m)
+        vals = (
+            _row_from_itd(m)
+            if kind == "itd"
+            else _row_from_where(m)
+            if kind == "where"
+            else _row_from_model(m)
+        )
         row = {"condition": label, "status": "ok", "source": src, **vals}
         if thr is not None:
             row["threshold"] = thr
@@ -131,19 +201,23 @@ def main() -> None:
                 "LR": None,
                 "F20": None,
                 "precision20": None,
+                "recall20": None,
                 "guess_rate": None,
                 "front_back_rate": None,
                 "frontal_azimuth_error_deg": az_err,
             }
         )
 
-    lines = ["# One-ear experiment", "", "| Condition | " + " | ".join(HEAD) + " |"]
-    lines.append("|---|" + "---|" * len(HEAD))
+    title = (
+        "# One-ear experiment, where only (class-agnostic)" if a.where else "# One-ear experiment"
+    )
+    lines = [title, "", "| Condition | " + " | ".join(head) + " |"]
+    lines.append("|---|" + "---|" * len(head))
     for r in rows:
         if r["status"] == "pending":
-            cells = ["pending"] * len(COLS)
+            cells = ["pending"] * len(cols)
         else:
-            cells = [_fmt(r[c], c) for c in COLS]
+            cells = [_fmt(r.get(c), c) for c in cols]
         lines.append(f"| {r['condition']} | " + " | ".join(cells) + " |")
     lines += [
         "",
@@ -167,7 +241,16 @@ def main() -> None:
         else "TODO: First Mate writes this.",
         "",
     ]
-    if a.val_threshold:
+    if a.where:
+        lines += [
+            "",
+            (
+                "Where-only models: one class-agnostic map, scored by Hungarian matching on "
+                "angle (classes ignored), at the decoding threshold picked on the validation "
+                "split. Classical ITD uses the v2 test split."
+            ),
+        ]
+    if use_thr:
         lines += ["", "Decoding thresholds (picked on the validation split):", ""]
         for r in rows:
             if "threshold" in r:

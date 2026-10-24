@@ -17,6 +17,7 @@ import yaml
 from torch.utils.data import DataLoader, Dataset
 
 from secondear.core import Event, Grid, heatmap_to_events
+from secondear.eval.agnostic import Counts, count_clip, summarize
 from secondear.eval.official import seld_scores
 from secondear.models.baseline import N_CLASSES, N_MEL, SEQ_FEAT_FRAMES, SEQ_LABEL_FRAMES
 from secondear.models.binaural import EAR_CHANNELS, channel_columns, chunks_to_input
@@ -46,11 +47,14 @@ DEFAULT_CONFIG = {
     "seed": 42,
     "amp": True,
     "tail": "pad",
-    "data": "foa",  # "foa" (STARSS23 cache) or "binaural" (scene cache, see models/binaural.py)
+    "data": "foa",  # foa (STARSS23 cache) | binaural (scene cache) | binaural_v2 (train/val/test)
     "ears": "both",  # binaural only: both | left | right
+    "agnostic": False,  # true: one class-agnostic target map, 1-map model, agnostic metrics
     "experiment": "heatmap_foa",
 }
 BIN_TRAIN_SPLIT, BIN_TEST_SPLIT = "train", "test"
+BIN_VAL_SPLIT = "val"
+BINAURAL_DATA = ("binaural", "binaural_v2")
 EVAL_CHUNKS = 8  # chunks per forward pass at evaluation
 
 
@@ -78,12 +82,18 @@ def chunk_events(events: list[Event], n_chunks: int) -> list[list[Event]]:
 
 
 def splits_for(data: str) -> tuple[str, str]:
-    """(train split, validation split) folder names for a data kind."""
+    """(train split, selection split) folder names for a data kind.
+
+    foa and binaural select the best epoch on their test folder (as in C2/C3); binaural_v2
+    selects on its val folder, so the test folder stays untouched until the final evaluation.
+    """
     if data == "foa":
         return TRAIN_SPLIT, TEST_SPLIT
     if data == "binaural":
         return BIN_TRAIN_SPLIT, BIN_TEST_SPLIT
-    raise ValueError(f"data must be 'foa' or 'binaural', got {data!r}")
+    if data == "binaural_v2":
+        return BIN_TRAIN_SPLIT, BIN_VAL_SPLIT
+    raise ValueError(f"data must be 'foa', 'binaural' or 'binaural_v2', got {data!r}")
 
 
 def n_input_channels(data: str, ears: str) -> int:
@@ -112,7 +122,7 @@ def load_clip(f: Path, mean, scale, tail: str, data: str = "foa", ears: str = "b
 
     C is 7 for FOA; for binaural it is the ear mode's channel count (5 / 1 / 1).
     """
-    if data == "binaural":
+    if data in BINAURAL_DATA:
         with np.load(f) as z:
             feat, rows, n_label = z["feat"], z["ref"], int(z["n_label"])
         x = _binaural_chunks(feat, n_label, mean, scale, tail, ears)
@@ -139,6 +149,7 @@ class HeatmapChunkDataset(Dataset):
         tail: str = "pad",
         data: str = "foa",
         ears: str = "both",
+        agnostic: bool = False,
     ):
         xs, evs = [], []
         for f in files:
@@ -151,13 +162,19 @@ class HeatmapChunkDataset(Dataset):
         self.events = evs
         self.grid = grid
         self.fwhm_deg = fwhm_deg
+        self.agnostic = agnostic
 
     def __len__(self) -> int:
         return self.x.shape[0]
 
     def __getitem__(self, i: int):
         y = dense_targets(
-            self.events[i], self.grid, SEQ_LABEL_FRAMES, N_CLASSES, fwhm_deg=self.fwhm_deg
+            self.events[i],
+            self.grid,
+            SEQ_LABEL_FRAMES,
+            N_CLASSES,
+            fwhm_deg=self.fwhm_deg,
+            agnostic=self.agnostic,
         )
         return self.x[i], torch.from_numpy(y)
 
@@ -182,8 +199,38 @@ def train_epoch(model, loader, optimizer, gscaler, cfg, device) -> float:
 
 
 @torch.no_grad()
+def agnostic_scores(counts: Counts) -> dict:
+    """Class-agnostic headline from pooled counts, in the keys `run_training` logs.
+
+    ER20 is n/a (None). SELD is the selection score (lower is better):
+    mean(1 - F20, LE / 180, 1 - LR), with LE = 180 when nothing matched.
+    """
+    s = summarize(counts)
+    le = s["LE_deg"] if s["LE_deg"] is not None else 180.0
+    return {
+        "ER20": None,
+        "F20": s["F20"],
+        "LE": le,
+        "LR": s["LR"],
+        "SELD": ((1.0 - s["F20"]) + le / 180.0 + (1.0 - s["LR"])) / 3.0,
+        "LE_deg": s["LE_deg"],
+        "precision20": s["precision20"],
+        "recall20": s["recall20"],
+        "front_back_rate": s["front_back_rate"],
+        "n_pred": s["n_pred"],
+        "n_truth": s["n_truth"],
+    }
+
+
+@torch.no_grad()
 def evaluate(model, files, mean, scale, cfg, device, average: str = "macro") -> dict:
-    """Per-clip inference: mean focal loss + official SELD scores on decoded events."""
+    """Per-clip inference: mean focal loss + official SELD scores on decoded events.
+
+    With cfg["agnostic"] the official macro scores are skipped; the class-agnostic block
+    (`agnostic_scores`) is returned instead, under the same F20 / LE / LR / SELD keys.
+    """
+    agnostic = bool(cfg.get("agnostic", False))
+    counts = Counts()
     model.eval()
     grid = model.fine
     pred, ref, losses = {}, {}, []
@@ -197,7 +244,14 @@ def evaluate(model, files, mean, scale, cfg, device, average: str = "macro") -> 
             logits = model(xb)
             tgt = np.stack(
                 [
-                    dense_targets(ev, grid, SEQ_LABEL_FRAMES, N_CLASSES, fwhm_deg=cfg["fwhm_deg"])
+                    dense_targets(
+                        ev,
+                        grid,
+                        SEQ_LABEL_FRAMES,
+                        N_CLASSES,
+                        fwhm_deg=cfg["fwhm_deg"],
+                        agnostic=agnostic,
+                    )
                     for ev in ev_chunks[i : i + EVAL_CHUNKS]
                 ]
             )
@@ -209,8 +263,15 @@ def evaluate(model, files, mean, scale, cfg, device, average: str = "macro") -> 
         losses.append(loss_sum / x.shape[0])
         hm = np.concatenate(probs)
         hm = hm.reshape(-1, *hm.shape[2:])[:n_label]
-        pred[f.stem] = heatmap_to_events(hm, grid, cfg["threshold"])
+        pred[f.stem] = heatmap_to_events(
+            hm, grid, cfg["threshold"], single_cls=0 if agnostic else None
+        )
         ref[f.stem] = ref_events
+        if agnostic:
+            n_frames = max(n_label, max((e.frame for e in ref_events), default=-1) + 1)
+            counts.add(count_clip(pred[f.stem], ref_events, n_frames))
+    if agnostic:
+        return {"loss": float(np.mean(losses)), **agnostic_scores(counts)}
     scores = seld_scores(pred, ref, n_classes=N_CLASSES, doa_threshold=20, average=average)
     return {"loss": float(np.mean(losses)), **scores}
 
@@ -245,6 +306,7 @@ def run_training(
     cfg = {**DEFAULT_CONFIG, **(cfg or {})}
     train_split, test_split = splits_for(cfg["data"])
     n_ch = n_input_channels(cfg["data"], cfg["ears"])
+    agnostic = bool(cfg["agnostic"])
     feat_dir, ckpt_dir = Path(feat_dir), Path(ckpt_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
     seed_everything(cfg["seed"])
@@ -253,7 +315,11 @@ def run_training(
     shutil.copy(feat_dir / "scaler.npz", ckpt_dir / "scaler.npz")
 
     model = HeatmapNet(
-        model_params, cfg["coarse_step_deg"], cfg["fine_step_deg"], n_channels=n_ch
+        model_params,
+        cfg["coarse_step_deg"],
+        cfg["fine_step_deg"],
+        n_classes=1 if agnostic else N_CLASSES,
+        n_channels=n_ch,
     ).to(dev)
     if overfit_clip:
         one = find_clip(feat_dir, overfit_clip, cfg["data"])
@@ -262,6 +328,8 @@ def run_training(
         train_files = list_cached(feat_dir, train_split, limit_clips)
         test_files = list_cached(feat_dir, test_split, limit_clips)
         average = "macro"
+        if not test_files:
+            raise FileNotFoundError(f"no cached clips in the {test_split!r} split of {feat_dir}")
     train_ds = HeatmapChunkDataset(
         train_files,
         mean,
@@ -271,6 +339,7 @@ def run_training(
         cfg["tail"],
         cfg["data"],
         cfg["ears"],
+        agnostic,
     )
     gen = torch.Generator().manual_seed(cfg["seed"])
     loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, generator=gen)
@@ -333,6 +402,8 @@ def run_training(
         writer.add_scalar("loss/train", train_loss, epoch)
         writer.add_scalar("loss/val", ev["loss"], epoch)
         for k in ("ER20", "F20", "LE", "LR", "SELD"):
+            if ev[k] is None:
+                continue
             writer.add_scalar(f"val/{k}", ev[k], epoch)
         writer.flush()
         print(
