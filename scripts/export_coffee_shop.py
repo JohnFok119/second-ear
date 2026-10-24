@@ -12,7 +12,7 @@ from pathlib import Path
 import soundfile as sf
 import torch
 
-from secondear.core import FRAME_S
+from secondear.core import FRAME_S, Event
 from secondear.eval.agnostic import count_clip, summarize
 from secondear.export.viewer_json import prediction_to_viewer, write_viewer_json
 from secondear.io.starss23 import read_metadata
@@ -26,6 +26,12 @@ MODE_CONFIG = {
     "left": "heatmap_left",
     "right": "heatmap_right",
 }
+WHERE_MODE_CONFIG = {
+    "both": "where_binaural",
+    "left": "where_left",
+    "right": "where_right",
+}
+WHERE_CLASSES = ["sound"]
 
 
 def export_coffee_shop(
@@ -35,13 +41,17 @@ def export_coffee_shop(
     modes: tuple[str, ...] = tuple(MODE_CONFIG),
     seconds: float | None = None,
     results_root: Path | None = None,
+    where: bool = False,
 ) -> list[Path]:
     """Write coffee_shop_<mode>.json into clips_dir for each mode; seconds trims the audio.
 
     With results_root, each mode decodes at the validation-picked threshold from
     <results_root>/<experiment>/threshold_val.json (key "chosen") and records it in metrics.
+    With where=True the where-only (class-agnostic) models are used: one class "sound",
+    truth classes collapsed to 0, metrics are the class-agnostic ones.
     """
-    cfgs = {m: load_config(ROOT / "configs" / f"{MODE_CONFIG[m]}.yaml") for m in modes}
+    mode_config = WHERE_MODE_CONFIG if where else MODE_CONFIG
+    cfgs = {m: load_config(ROOT / "configs" / f"{mode_config[m]}.yaml") for m in modes}
     thresholds: dict[str, float] = {}
     if results_root is not None:
         for m in modes:
@@ -65,6 +75,9 @@ def export_coffee_shop(
         audio = audio[:, : int(seconds * fs)]
         max_frame = round(seconds / FRAME_S)
         truth = [e for e in truth if e.frame < max_frame]
+    metric_truth = truth
+    if where:
+        truth = [Event(e.frame, 0, e.az_deg, e.el_deg, e.dist_m, e.score) for e in truth]
 
     out = []
     for m in modes:
@@ -82,10 +95,11 @@ def export_coffee_shop(
             threshold=thresholds.get(m, cfg["threshold"]),
             coarse_step_deg=cfg["coarse_step_deg"],
             fine_step_deg=cfg["fine_step_deg"],
+            agnostic=where,
         )
         pred = loc.predict(audio, fs)
-        n_frames = max(pred.n_frames, max((e.frame for e in truth), default=-1) + 1)
-        metrics = summarize(count_clip(pred.events, truth, n_frames))
+        n_frames = max(pred.n_frames, max((e.frame for e in metric_truth), default=-1) + 1)
+        metrics = summarize(count_clip(pred.events, metric_truth, n_frames))
         if m in thresholds:
             metrics["threshold"] = thresholds[m]
         data = prediction_to_viewer(
@@ -95,6 +109,7 @@ def export_coffee_shop(
             scene={"name": "coffee_shop", "ear_mode": m, "model": exp},
             metrics=metrics,
             model=exp,
+            **({"class_names": WHERE_CLASSES} if where else {}),
         )
         out.append(write_viewer_json(data, clips_dir / f"coffee_shop_{m}.json"))
     return out
@@ -113,6 +128,11 @@ def main() -> None:
         action="store_true",
         help="decode at the threshold picked on validation (<results>/<exp>/threshold_val.json)",
     )
+    ap.add_argument(
+        "--where",
+        action="store_true",
+        help="export from the where-only (class-agnostic) models configs/where_*.yaml",
+    )
     ap.add_argument("--results", default="results", help="results root for --val-threshold")
     a = ap.parse_args()
     if a.device.startswith("cuda") and not torch.cuda.is_available():
@@ -125,6 +145,7 @@ def main() -> None:
             tuple(a.modes),
             a.seconds,
             Path(a.results) if a.val_threshold else None,
+            a.where,
         )
     except FileNotFoundError as e:
         raise SystemExit(f"error: {e}") from None
