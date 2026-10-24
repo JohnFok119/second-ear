@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Second Ear: where do you hear it?</title>
+<meta name="description" content="A model that hears where sounds come from, and what changes when you listen with only one ear.">
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
 {
@@ -15,65 +16,278 @@
 </script>
 </head>
 <body>
-<canvas id="view"></canvas>
 
-<header id="title">
-  <h1>Second Ear</h1>
-  <p>A coffee shop, heard through a pair of ears. Use headphones.</p>
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">A portfolio project</p>
+    <h1>Second Ear</h1>
+    <p class="lead">A program that works out where sounds come from, and what it loses when it has only one ear.</p>
+    <nav aria-label="Sections">
+      <a class="pill" href="#problem">1. The problem</a>
+      <a class="pill" href="#showcase">2. The showcase</a>
+      <a class="pill" href="#how">3. How it works</a>
+    </nav>
+  </div>
 </header>
 
-<div id="preview-banner" hidden>Preview: showing the true positions until model output is exported</div>
+<main>
 
-<aside id="captions">
-  <h2>What you are seeing</h2>
-  <ul>
-    <li><span class="sw dot"></span>Glowing dots: where each sound really is</li>
-    <li><span class="sw heat"></span>Bright patches on the bubble: where the AI hears sound</li>
-    <li><span class="sw line"></span>Blue lines: the direction the AI picks</li>
-    <li><span class="sw truth"></span>White beads: the true direction</li>
-    <li><span class="sw head"></span>The little figure in the chair is the listener (nose = facing)</li>
-    <li><span class="sw bars"></span>Floor bars: how loud the room is at each spot, right now</li>
-    <li>Click the floor to clap</li>
-    <li id="hear-note" hidden>"What I hear" dims the floor on the side your working ear cannot reach</li>
-    <li>Switch to Left only to hear like someone deaf in the right ear</li>
-  </ul>
-</aside>
+<!-- ===================== 1. THE PROBLEM ===================== -->
+<section class="story" id="problem">
+  <div class="wrap">
+    <p class="eyebrow">1 &middot; The problem</p>
+    <h2>Which way did that come from?</h2>
 
-<aside id="metrics">
-  <h2>How well does it do?</h2>
-  <div id="metrics-body"></div>
-</aside>
+    <!-- DRAFT: Johnny edits -->
+    <p class="lead">I'm deaf in my left ear. I can hear almost everything, but I often can't tell where a sound is coming from: when someone calls my name in a busy room, I can turn the wrong way. So I built a model that listens to a room with two ears, then with only my right one, to show what that difference looks like.</p>
 
-<div id="loading">Loading...</div>
-<div id="clock-tip" hidden>Press Play (audio needs a click to start)</div>
+    <div class="figures" role="group" aria-label="How well people find sounds in front of them">
+      <div class="card figure">
+        <span class="num">3.7&deg;</span>
+        <span class="cap">average error finding a sound in front, with <strong>two ears</strong></span>
+      </div>
+      <div class="card figure">
+        <span class="num big">22.4&deg;</span>
+        <span class="cap">the same, with <strong>one ear</strong> (single-sided deafness)</span>
+      </div>
+    </div>
+    <p class="small">A degree is 1/360 of a full turn. Smaller is better. Source: Aruffo et al. 2025, <em>Audiology Research</em> 15(4):85, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12286218/">pmc.ncbi.nlm.nih.gov/articles/PMC12286218</a>.</p>
 
-<footer id="bar">
-  <button id="play" type="button">Play</button>
-  <input id="scrub" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time">
-  <span id="time">0.0 / 30.0 s</span>
-  <fieldset>
-    <legend>Ears</legend>
-    <label><input type="radio" name="ears" value="both" checked>Both</label>
-    <label><input type="radio" name="ears" value="left">Left only</label>
-    <label><input type="radio" name="ears" value="right">Right only</label>
-  </fieldset>
-  <fieldset>
-    <legend>Camera</legend>
-    <label><input type="radio" name="cam" value="orbit" checked>Orbit</label>
-    <label><input type="radio" name="cam" value="chair">Sit in the chair</label>
-  </fieldset>
-  <fieldset>
-    <legend>Floor shows</legend>
-    <label><input type="radio" name="floor" value="room" checked>The room</label>
-    <label><input type="radio" name="floor" value="hear">What I hear</label>
-  </fieldset>
-  <fieldset>
-    <legend>Floor waves</legend>
-    <label><input type="checkbox" id="floor-on" checked>On</label>
-  </fieldset>
+    <h3 style="margin-top:28px">Hear it with my ear</h3>
+    <p>This is a café recording made for two ears. Press play, then switch between the two modes while it runs.</p>
+    <div class="row">
+      <button class="bigbtn" id="hear-play" type="button">&#9654; Play café sound</button>
+      <div class="seg" role="group" aria-label="Listening mode">
+        <button type="button" id="mode-two" aria-pressed="true">Two ears</button>
+        <button type="button" id="mode-mine" aria-pressed="false">My ear</button>
+      </div>
+    </div>
+    <p id="hear-status" class="small" aria-live="polite">Stopped. Two ears: both sides play normally.</p>
+    <p class="note"><strong>Use headphones</strong>, or the two sides blend in the air. "My ear" silences the left side, so you hear only what the right ear gets. This is a simulation: it removes one channel, and does not reproduce how my hearing actually sounds.</p>
+
+    <h3 style="margin-top:28px">Drag the sound around the head</h3>
+    <p>Why is one ear so limiting? Sound from the right reaches your right ear a tiny moment before the left. Your brain uses that gap to point. Drag the dot and watch the gap.</p>
+    <div class="toy card">
+      <div>
+        <svg id="toy-svg" viewBox="0 0 300 300" role="application" aria-label="Top-down view of a head. Drag the sound dot around the circle.">
+          <circle class="ring" cx="150" cy="150" r="110"/>
+          <text class="lbl" x="150" y="22">front</text>
+          <text class="lbl" x="150" y="288">back</text>
+          <path class="nose" d="M141 124 L150 108 L159 124 Z"/>
+          <circle class="headc" cx="150" cy="150" r="30"/>
+          <ellipse class="ear" id="ear-l" cx="117" cy="150" rx="7" ry="13"/>
+          <ellipse class="ear" id="ear-r" cx="183" cy="150" rx="7" ry="13"/>
+          <text class="lbl" x="96" y="175">left ear</text>
+          <text class="lbl" x="204" y="175">right ear</text>
+          <line class="link" id="toy-link" x1="150" y1="150" x2="150" y2="40"/>
+          <circle class="ghost" id="toy-ghost" cx="150" cy="260" r="10"/>
+          <circle class="dot" id="toy-dot" cx="150" cy="40" r="14" tabindex="0" role="slider"
+            aria-label="Sound direction in degrees, 0 is straight ahead, positive is to the right"
+            aria-valuemin="-180" aria-valuemax="180" aria-valuenow="0"/>
+        </svg>
+        <ul class="legend">
+          <li><span class="sw dot"></span>The sound (drag it, or use the arrow keys)</li>
+          <li><span class="sw ghost"></span>Its front/back mirror twin: gives the same delay</li>
+          <li><span class="sw ear"></span>Ear that is working</li>
+          <li><span class="sw earoff"></span>Ear that is switched off</li>
+        </ul>
+      </div>
+      <div>
+        <div id="toy-read" aria-live="polite"></div>
+        <div class="row">
+          <label class="row" style="cursor:pointer"><input type="checkbox" id="toy-mine"> <span><strong>My ear</strong> (left ear off)</span></label>
+          <button class="bigbtn" id="toy-click" type="button" style="min-height:44px">Play a click from here</button>
+        </div>
+        <p class="small">The click uses your browser's 3D-sound mode (HRTF, a model of how a head bends sound). Headphones needed. The time gap uses the Woodworth formula for a head of radius 8.75 cm and a sound speed of 343 m/s.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 2. THE SHOWCASE ===================== -->
+<section class="story" id="showcase">
+  <div class="wrap">
+    <p class="eyebrow">2 &middot; The showcase</p>
+    <h2>A coffee shop, heard through a pair of ears</h2>
+    <p class="lead">This is the model at work on a 30-second coffee shop. Press Play, then switch the ears option to see how its picture of the room changes. Use headphones.</p>
+    <!-- W3: redesign pending (side-by-side two ears vs my ear) -->
+
+    <div class="stage">
+      <canvas id="view"></canvas>
+      <div id="preview-banner" hidden>Preview: showing the true positions until model output is exported</div>
+      <div id="loading">Loading...</div>
+      <div id="clock-tip" hidden>Press Play (audio needs a click to start)</div>
+    </div>
+
+    <div id="bar">
+      <button id="play" type="button">Play</button>
+      <input id="scrub" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time">
+      <span id="time">0.0 / 30.0 s</span>
+      <fieldset>
+        <legend>Ears</legend>
+        <label><input type="radio" name="ears" value="both" checked>Both</label>
+        <label><input type="radio" name="ears" value="left">Left only</label>
+        <label><input type="radio" name="ears" value="right">My ear (right only)</label>
+      </fieldset>
+      <fieldset>
+        <legend>Camera</legend>
+        <label><input type="radio" name="cam" value="orbit" checked>Orbit</label>
+        <label><input type="radio" name="cam" value="chair">Sit in the chair</label>
+      </fieldset>
+      <fieldset>
+        <legend>Floor shows</legend>
+        <label><input type="radio" name="floor" value="room" checked>The room</label>
+        <label><input type="radio" name="floor" value="hear">What I hear</label>
+      </fieldset>
+      <fieldset>
+        <legend>Floor waves</legend>
+        <label><input type="checkbox" id="floor-on" checked>On</label>
+      </fieldset>
+    </div>
+
+    <div class="viewer-notes">
+      <aside id="captions" class="card">
+        <h3>What you are seeing</h3>
+        <ul>
+          <li><span class="sw dot"></span><span>Glowing dots: where each sound really is</span></li>
+          <li><span class="sw heat"></span><span>Bright patches on the bubble: where the AI hears sound</span></li>
+          <li><span class="sw line"></span><span>Blue lines: the direction the AI picks</span></li>
+          <li><span class="sw truth"></span><span>White beads: the true direction</span></li>
+          <li><span class="sw head"></span><span>The little figure in the chair is the listener (nose = facing)</span></li>
+          <li><span class="sw bars"></span><span>Floor bars: how loud the room is at each spot, right now</span></li>
+          <li><span>Click the floor to clap. Drag the scene to look around.</span></li>
+          <li id="hear-note" hidden><span>"What I hear" dims the floor on the side your working ear cannot reach</span></li>
+          <li><span>Choose <strong>My ear (right only)</strong> to see what the model gets from the one ear I hear with. "Left only" is the mirror case: someone deaf in the right ear.</span></li>
+        </ul>
+      </aside>
+      <aside id="metrics" class="card">
+        <h3>How well does it do?</h3>
+        <div id="metrics-body"></div>
+      </aside>
+    </div>
+    <audio id="audio" preload="auto"></audio>
+  </div>
+</section>
+
+<!-- ===================== 3. HOW IT WORKS ===================== -->
+<section class="story" id="how">
+  <div class="wrap">
+    <p class="eyebrow">3 &middot; How it works</p>
+    <h2>From sound to a map</h2>
+
+    <div class="how">
+      <svg class="pipe" viewBox="0 0 320 590" role="img" aria-label="Four steps: sound, then a spectrogram (a picture of the sound), then a neural network, then a map of where the sounds are.">
+        <defs>
+          <radialGradient id="blob"><stop offset="0" stop-color="#fff6a0"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>
+          <linearGradient id="spec" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#3b0f70"/><stop offset=".55" stop-color="#e5602b"/><stop offset="1" stop-color="#fcfdbf"/></linearGradient>
+        </defs>
+        <!-- 1 sound -->
+        <rect class="box" x="10" y="10" width="300" height="100" rx="12"/>
+        <polyline class="ink" points="22,60 34,60 40,36 48,84 56,28 64,92 72,44 80,74 88,56 100,60"/>
+        <text x="122" y="52">1. Sound</text>
+        <text class="sub" x="122" y="72">what the ears pick up</text>
+        <text class="sub" x="122" y="90">(left and right)</text>
+        <path class="arrow" d="M160 112 V150"/><path class="arrowhead" d="M150 148 L170 148 L160 160 Z"/>
+        <!-- 2 spectrogram -->
+        <rect class="box" x="10" y="162" width="300" height="100" rx="12"/>
+        <g fill="url(#spec)">
+          <rect x="22" y="206" width="9" height="40"/><rect x="33" y="190" width="9" height="56" opacity=".8"/>
+          <rect x="44" y="178" width="9" height="68"/><rect x="55" y="198" width="9" height="48" opacity=".7"/>
+          <rect x="66" y="186" width="9" height="60"/><rect x="77" y="214" width="9" height="32" opacity=".85"/>
+          <rect x="88" y="182" width="9" height="64" opacity=".9"/><rect x="99" y="200" width="9" height="46"/>
+        </g>
+        <text x="122" y="204">2. Spectrogram</text>
+        <text class="sub" x="122" y="224">a picture of sound:</text>
+        <text class="sub" x="122" y="242">pitch up, time across</text>
+        <path class="arrow" d="M160 264 V302"/><path class="arrowhead" d="M150 300 L170 300 L160 312 Z"/>
+        <!-- 3 network -->
+        <rect class="box" x="10" y="314" width="300" height="100" rx="12"/>
+        <g class="ink" stroke-width="1">
+          <path d="M30 340L60 332M30 340L60 360M30 340L60 388M30 366L60 332M30 366L60 360M30 366L60 388M30 392L60 332M30 392L60 360M30 392L60 388"/>
+          <path d="M60 332L92 346M60 332L92 378M60 360L92 346M60 360L92 378M60 388L92 346M60 388L92 378"/>
+        </g>
+        <g class="node"><circle cx="30" cy="340" r="5"/><circle cx="30" cy="366" r="5"/><circle cx="30" cy="392" r="5"/>
+          <circle cx="60" cy="332" r="5"/><circle cx="60" cy="360" r="5"/><circle cx="60" cy="388" r="5"/>
+          <circle cx="92" cy="346" r="5"/><circle cx="92" cy="378" r="5"/></g>
+        <text x="122" y="356">3. Neural network</text>
+        <text class="sub" x="122" y="376">a program that learned</text>
+        <text class="sub" x="122" y="394">from examples</text>
+        <path class="arrow" d="M160 416 V454"/><path class="arrowhead" d="M150 452 L170 452 L160 464 Z"/>
+        <!-- 4 map -->
+        <rect class="box" x="10" y="466" width="300" height="100" rx="12"/>
+        <circle class="ink" cx="64" cy="516" r="36"/>
+        <circle cx="48" cy="500" r="16" fill="url(#blob)"/><circle cx="78" cy="530" r="13" fill="url(#blob)"/>
+        <text x="122" y="508">4. Map of sounds</text>
+        <text class="sub" x="122" y="528">bright = "a sound is</text>
+        <text class="sub" x="122" y="546">probably from here"</text>
+      </svg>
+
+      <div>
+        <p class="lead">Think of a doctor reading an X-ray. The program cannot "listen" the way we do, so we first turn sound into a picture, then let a pattern-finding program read the picture.</p>
+        <p>Every tenth of a second it answers: for each direction around the listener, <em>how likely is it that a sound comes from there?</em> The answers are painted as a heat map, bright where it thinks a sound is.</p>
+        <ul class="legend">
+          <li><span class="sw heat"></span>Bright patch: the model thinks a sound is in that direction</li>
+          <li><span class="sw bars"></span>Dark purple to pale yellow: quiet to loud (spectrogram and floor)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="margin-top:30px">What I did, in five pieces</h3>
+    <div class="grid two">
+      <article class="card">
+        <h3>1. Training scenes from real ear measurements</h3>
+        <p>Practice sound scenes were built by mixing free sound clips (FSD50K) through measured "ear filters" called HRIRs (head-related impulse responses: how a real head and ear change a sound that arrives from each direction). The filters come from two public sets, HUTUBS and SADIE II, so no single person's ears are learned. 600 such scenes were made for training.</p>
+        <p class="small">These scenes are rendered by computer, not recorded in real rooms.</p>
+      </article>
+      <article class="card">
+        <h3>2. The heat-map model</h3>
+        <p>It reuses the front end of the published DCASE 2023 contest baseline, then draws a map of every direction (in 5-degree steps) for each of 13 sound types, 10 times a second. A map can show two sounds of the same type at once, and it feeds the 3D viewer directly.</p>
+      </article>
+      <article class="card">
+        <h3>3. Fair testing</h3>
+        <p>The cut-off a bright spot must pass to count as a guess was chosen on 100 separate practice scenes, once per model, and never on the test scenes. Tuning it on the test scenes would be cheating. Every method is scored by the same code.</p>
+      </article>
+      <article class="card">
+        <h3>4. Sudden loss vs an adapted listener</h3>
+        <p><strong>Sudden loss</strong>: the two-ear model with one ear silenced, like losing an ear yesterday. <strong>Adapted</strong>: a model trained on one ear from the start, like someone who has lived with it for years. In the last run, sudden loss collapsed the model's fair score by more than tenfold, and the adapted models won back about half
+        <span data-pending="c5">(fair score: two ears 3.4%, sudden loss 0.1 to 0.3%, adapted 1.7 to 1.8%)</span><span class="tag">updated soon</span>.</p>
+        <p class="small">Adapted models also made 4 to 6 guesses per real sound, which flatters them. People with one ear still beat every model here.</p>
+      </article>
+      <article class="card">
+        <h3>5. Bugs found and fixed</h3>
+        <ul>
+          <li>The first heat-map run fired on every frame because the last layer started at 50% "sound here". Starting it near zero fixed it, and the model then memorised one clip perfectly, the standard sanity check.</li>
+          <li>The heat-map model under-detects because its cut-off was fixed before testing; choosing it on held-out scenes is what the one-ear tests do instead.</li>
+          <li>Converting the real recordings to two ears loses much of the delay between the ears, so the two-ear data is rendered from head filters instead.</li>
+        </ul>
+      </article>
+    </div>
+
+    <h3 style="margin-top:30px">Model card</h3>
+    <div class="card">
+      <ul>
+        <li><strong>Intended use:</strong> research, learning and a portfolio project: exploring how much direction information one ear loses. <strong>Not a medical device</strong>, not a hearing aid, not for safety decisions.</li>
+        <li><strong>Data:</strong> STARSS23 (real recordings from 16 rooms in Finland and Japan) for the first models; rendered two-ear scenes from FSD50K clips with HUTUBS and SADIE II head filters for the one-ear experiment.</li>
+        <li><strong>Where it works so far:</strong> official contest score (F20) <span data-pending="c5">9.7%</span><span class="tag">updated soon</span>, average miss <span data-pending="c5">25.8&deg; when it fires, but it finds only 13.5% of sounds</span><span class="tag">updated soon</span>.</li>
+        <li><strong>Limits:</strong> it misses many real sounds; echoes pull guesses off course; overlapping sounds blur; with one ear, front and back are easily confused (so the model draws a map, not one arrow). Only 13 sound types, only a few head shapes, and the 3D floor waves are a simple simulation, not real acoustics.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <ul>
+      <li><a class="pill" href="https://github.com/JohnFok119/second-ear">GitHub repository</a></li>
+      <li><a class="pill" href="https://github.com/JohnFok119/second-ear/blob/main/LEARNING.md">LEARNING.md: the whole project in plain words</a></li>
+      <li><a class="pill" href="#problem">Back to top</a></li>
+    </ul>
+    <p class="small">Assistive awareness research, not a medical device. Audio credits: see CREDITS.md in the repository.</p>
+  </div>
 </footer>
 
-<audio id="audio" preload="auto"></audio>
+<script type="module" src="problem.js"></script>
 <script type="module" src="main.js"></script>
 </body>
 </html>
