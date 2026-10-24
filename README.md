@@ -180,7 +180,7 @@ uv run python -m http.server --directory web
   music, musical instrument, water tap, bell, knock), and only the rooms in Finland and Japan.
 - **Licence of the data used:** STARSS23 MIT; HUTUBS CC BY 4.0; SADIE II Apache 2.0; FSD50K
   CC BY 4.0 overall with per-clip licences (see credits).
-- **Licence of this repo's code:** TBD (no licence file in the repo yet).
+- **Licence of this repo's code:** MIT (see `LICENSE`). Vendored DCASE 2023 baseline code keeps its own MIT licence.
 
 ## Credits and licences
 
