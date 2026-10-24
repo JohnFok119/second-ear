@@ -42,6 +42,7 @@ DEFAULT_CONFIG = {
     "pos_weight": 0.0,  # focal_pos / bce_pos: per-cell weight 1 + pos_weight * target
     "lr": 1e-3,
     "epochs": 100,
+    "patience": None,  # stop after this many epochs without a new best (None = off)
     "batch_size": 32,
     "threshold": 0.5,
     "seed": 42,
@@ -276,6 +277,11 @@ def evaluate(model, files, mean, scale, cfg, device, average: str = "macro") -> 
     return {"loss": float(np.mean(losses)), **scores}
 
 
+def should_stop(epoch: int, best_epoch: int, patience: int | None) -> bool:
+    """True once `patience` consecutive epochs passed without a new best (None = never stop)."""
+    return patience is not None and epoch - best_epoch >= patience
+
+
 def find_clip(feat_dir: Path, name: str, data: str = "foa") -> Path:
     """Cached clip `name` in the train split, else the validation split."""
     for split in splits_for(data):
@@ -362,6 +368,7 @@ def run_training(
 
     writer = SummaryWriter(str(runs_dir))
     history = []
+    stopped_early, stop_epoch = False, None
     for epoch in range(start, cfg["epochs"]):
         t0 = time.time()
         train_loss = train_epoch(model, loader, optimizer, gscaler, cfg, dev)
@@ -396,6 +403,9 @@ def run_training(
             "train_s": t1 - t0,
             "val_s": time.time() - t1,
         }
+        if should_stop(epoch, best_epoch, cfg["patience"]):
+            stopped_early, stop_epoch = True, epoch
+            rec["stopped_early"], rec["stop_epoch"] = True, epoch
         history.append(rec)
         with open(ckpt_dir / "history.jsonl", "a", encoding="utf-8") as fh:
             fh.write(json.dumps(rec) + "\n")
@@ -412,5 +422,18 @@ def run_training(
             f"best_epoch {best_epoch}",
             flush=True,
         )
+        if stopped_early:
+            print(
+                f"early stop at epoch {epoch}: no new best for {cfg['patience']} epochs "
+                f"(best_epoch {best_epoch})",
+                flush=True,
+            )
+            break
     writer.close()
-    return {"best_epoch": best_epoch, "best_seld": best_seld, "history": history}
+    return {
+        "best_epoch": best_epoch,
+        "best_seld": best_seld,
+        "history": history,
+        "stopped_early": stopped_early,
+        "stop_epoch": stop_epoch,
+    }
