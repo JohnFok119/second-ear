@@ -2,7 +2,7 @@
 # Best epoch and decoding threshold are picked on the val split; test is evaluated once at that threshold.
 # Run in a herdr pane while holding the GPU lease. Modelled on run_c3_chain.ps1 + run_c3_valthr.ps1.
 Set-Location C:\Users\johnn\personal\second-ear
-uv run python scripts/extract_binaural_features.py --v2 2>&1 | Tee-Object -FilePath runs/c5_features.log
+# Features must already exist in data/features/binaural_v2 (built separately by extract_binaural_features.py --v2).
 foreach ($e in @("binaural", "left", "right")) {
     uv run python scripts/train_heatmap.py --config configs/where_$e.yaml --device cuda 2>&1 | Tee-Object -FilePath runs/where_${e}_train.log
     uv run python scripts/pick_threshold.py --config configs/where_$e.yaml --split val --device cuda 2>&1 | Tee-Object -FilePath runs/where_${e}_pick_threshold.log

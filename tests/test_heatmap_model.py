@@ -209,3 +209,22 @@ def test_overfit_single_static_event():
     best = min(angular_distance_deg(e.az_deg, e.el_deg, truth.az_deg, truth.el_deg) for e in mid)
     assert best <= 10.0
     assert not [e for e in ev if e.cls != 3]
+
+
+def test_should_stop_patience():
+    # SELD plateaus after epoch 2: best_epoch stays 2, stop once 3 epochs pass without a new best
+    seld = [0.9, 0.7, 0.5, 0.6, 0.55, 0.5001, 0.52, 0.7]
+    best_seld, best_epoch, stop = 9999.0, -1, None
+    for epoch, v in enumerate(seld):
+        if v <= best_seld:
+            best_seld, best_epoch = v, epoch
+        if th.should_stop(epoch, best_epoch, 3):
+            stop = epoch
+            break
+    assert (best_epoch, stop) == (2, 5)
+
+
+def test_should_stop_none_never_stops():
+    assert not any(th.should_stop(e, 0, None) for e in range(1000))
+    assert not th.should_stop(2, 0, 3)
+    assert th.should_stop(3, 0, 3)

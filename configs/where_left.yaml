@@ -6,7 +6,8 @@ fine_step_deg: 5      # upsampled grid used for targets, loss and decoding (37 x
 fwhm_deg: 15.0        # target blob full width at half maximum
 gamma: 2.0            # focal exponent
 lr: 0.001
-epochs: 100
+epochs: 60
+patience: 10          # early stop after 10 epochs without a new best val SELD
 batch_size: 32
 threshold: 0.5        # decoding threshold on sigmoid maps (the runner overrides it with the val-picked one)
 seed: 42

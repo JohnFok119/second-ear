@@ -99,8 +99,9 @@ def test_default_config_not_agnostic_and_loads_where_configs():
         base = th.load_config(ROOT / "configs" / "heatmap_binaural.yaml")
         assert cfg["agnostic"] is True and cfg["data"] == "binaural_v2"
         assert cfg["experiment"] == f"where_{ears}"
-        same = {"lr", "epochs", "batch_size", "gamma", "fwhm_deg", "seed", "tail", "amp"}
+        same = {"lr", "batch_size", "gamma", "fwhm_deg", "seed", "tail", "amp"}
         assert all(cfg[k] == base[k] for k in same)
+        assert cfg["epochs"] == 60 and cfg["patience"] == 10
 
 
 def _fake_scene(path, rng, shift):
