@@ -7,7 +7,7 @@ import { initUI, showMetrics } from './ui.js';
 import { Floor } from './floor.js';
 
 const canvas = document.getElementById('view');
-const audio = document.getElementById('audio');
+const audio = document.getElementById('audio-adv');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 const scene3 = new THREE.Scene();

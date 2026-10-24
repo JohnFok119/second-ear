@@ -106,65 +106,121 @@
 
 <!-- ===================== 2. THE SHOWCASE ===================== -->
 <section class="story" id="showcase">
-  <div class="wrap">
+  <div class="wrap wide">
     <p class="eyebrow">2 &middot; The showcase</p>
-    <h2>A coffee shop, heard through a pair of ears</h2>
-    <p class="lead">This is the model at work on a 30-second coffee shop. Press Play, then switch the ears option to see how its picture of the room changes. Use headphones.</p>
-    <!-- W3: redesign pending (side-by-side two ears vs my ear) -->
+    <h2>The same coffee shop, heard two ways</h2>
+    <p class="lead">Both rooms below play the same 30 seconds. The left one is the model with <strong>two ears</strong>. The right one is the model with only <strong>my ear</strong> (my right ear; my left is deaf). A <span class="ring-g">green ring</span> means it found a sound, a <span class="ring-r">red ring</span> means it missed.</p>
 
-    <div class="stage">
-      <canvas id="view"></canvas>
-      <div id="preview-banner" hidden>Preview: showing the true positions until model output is exported</div>
-      <div id="loading">Loading...</div>
-      <div id="clock-tip" hidden>Press Play (audio needs a click to start)</div>
+    <div class="sc-views" id="sc-views">
+      <canvas id="sc-canvas" aria-hidden="true"></canvas>
+      <figure class="sc-view" data-view="both">
+        <div class="sc-pane" id="pane-both" role="img" aria-label="3D coffee shop as understood with two ears">
+          <span class="sc-chip">Two ears</span>
+          <canvas class="sc-radar" id="radar-both" aria-hidden="true"></canvas>
+        </div>
+        <figcaption class="sc-sentence" id="sentence-both">Loading...</figcaption>
+      </figure>
+      <figure class="sc-view" data-view="right">
+        <div class="sc-pane" id="pane-right" role="img" aria-label="3D coffee shop as understood with only the right ear">
+          <span class="sc-chip">My ear</span>
+          <canvas class="sc-radar" id="radar-right" aria-hidden="true"></canvas>
+        </div>
+        <figcaption class="sc-sentence" id="sentence-right">Loading...</figcaption>
+      </figure>
+      <div id="sc-loading">Loading...</div>
     </div>
 
-    <div id="bar">
-      <button id="play" type="button">Play</button>
-      <input id="scrub" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time">
-      <span id="time">0.0 / 30.0 s</span>
-      <fieldset>
-        <legend>Ears</legend>
-        <label><input type="radio" name="ears" value="both" checked>Both</label>
-        <label><input type="radio" name="ears" value="left">Left only</label>
-        <label><input type="radio" name="ears" value="right">My ear (right only)</label>
-      </fieldset>
-      <fieldset>
-        <legend>Camera</legend>
-        <label><input type="radio" name="cam" value="orbit" checked>Orbit</label>
-        <label><input type="radio" name="cam" value="chair">Sit in the chair</label>
-      </fieldset>
-      <fieldset>
-        <legend>Floor shows</legend>
-        <label><input type="radio" name="floor" value="room" checked>The room</label>
-        <label><input type="radio" name="floor" value="hear">What I hear</label>
-      </fieldset>
-      <fieldset>
-        <legend>Floor waves</legend>
-        <label><input type="checkbox" id="floor-on" checked>On</label>
-      </fieldset>
+    <p id="sc-summary" class="sc-summary"></p>
+
+    <div class="sc-controls">
+      <button id="sc-play" class="bigbtn" type="button">&#9654; Play</button>
+      <input id="sc-scrub" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time in the clip">
+      <span id="sc-time">0.0 / 30.0 s</span>
+    </div>
+    <div class="sc-controls">
+      <span class="sc-lbl" id="sc-listen-lbl">Listen as:</span>
+      <div class="seg" role="group" aria-labelledby="sc-listen-lbl">
+        <button type="button" id="sc-listen-two" aria-pressed="true">Two ears</button>
+        <button type="button" id="sc-listen-mine" aria-pressed="false">My ear</button>
+      </div>
+      <button type="button" id="sc-explore" class="pill" aria-pressed="false">Explore: drag to look around</button>
+    </div>
+    <p id="sc-tip" class="small" hidden>Press Play (the browser needs a click before it will make sound). Use headphones.</p>
+
+    <div class="sc-legend card">
+      <h3>What the marks mean</h3>
+      <ul class="legend">
+        <li><span class="sw rg"></span><span><strong>Green ring</strong> around a sound: the model put a guess within 20&deg; of where it really is (found).</span></li>
+        <li><span class="sw rr"></span><span><strong>Red ring</strong>: no guess within 20&deg; (missed).</span></li>
+        <li><span class="sw gb"></span><span><strong>Small blue dot</strong>: a guess that matches a real sound.</span></li>
+        <li><span class="sw gg"></span><span><strong>Small grey dot</strong>: a false guess, nothing real near it.</span></li>
+        <li><span class="sw heat"></span><span><strong>Bright patch on the bubble</strong> around the listener: where the model thinks sound is coming from.</span></li>
+        <li><span class="sw dot"></span><span><strong>Glowing amber ball</strong> in the room: a sound that is playing right now. The little figure in the chair is the listener.</span></li>
+        <li><span class="sw radar"></span><span><strong>Radar</strong> (corner): the same moment seen from above, you in the middle facing up. Dots are real sounds, short lines are guesses.</span></li>
+      </ul>
+      <p class="small">&quot;Within 20&deg;&quot; is the angle between the guess and the real direction, measured around the sphere. A sound counts as <em>found</em> in the sentence when it is placed within 20&deg; in at least half of the tenth-of-a-second steps it was playing during the last 3 seconds. Where a sound is, not what it is: this view ignores the sound type.</p>
+      <p class="note">This coffee shop is computer-made: the room, the sounds and the ears are all simulated, not a real recording.</p>
     </div>
 
-    <div class="viewer-notes">
-      <aside id="captions" class="card">
-        <h3>What you are seeing</h3>
-        <ul>
-          <li><span class="sw dot"></span><span>Glowing dots: where each sound really is</span></li>
-          <li><span class="sw heat"></span><span>Bright patches on the bubble: where the AI hears sound</span></li>
-          <li><span class="sw line"></span><span>Blue lines: the direction the AI picks</span></li>
-          <li><span class="sw truth"></span><span>White beads: the true direction</span></li>
-          <li><span class="sw head"></span><span>The little figure in the chair is the listener (nose = facing)</span></li>
-          <li><span class="sw bars"></span><span>Floor bars: how loud the room is at each spot, right now</span></li>
-          <li><span>Click the floor to clap. Drag the scene to look around.</span></li>
-          <li id="hear-note" hidden><span>"What I hear" dims the floor on the side your working ear cannot reach</span></li>
-          <li><span>Choose <strong>My ear (right only)</strong> to see what the model gets from the one ear I hear with. "Left only" is the mirror case: someone deaf in the right ear.</span></li>
-        </ul>
-      </aside>
-      <aside id="metrics" class="card">
-        <h3>How well does it do?</h3>
-        <div id="metrics-body"></div>
-      </aside>
-    </div>
+    <details id="advanced" class="sc-adv">
+      <summary>Advanced view: the full 3D viewer (floor waves, chair camera, all three ear modes)</summary>
+      <div id="adv-body">
+        <div class="stage">
+          <canvas id="view"></canvas>
+          <div id="preview-banner" hidden>Preview: showing the true positions until model output is exported</div>
+          <div id="loading">Loading...</div>
+          <div id="clock-tip" hidden>Press Play (audio needs a click to start)</div>
+        </div>
+
+        <div id="bar">
+          <button id="play" type="button">Play</button>
+          <input id="scrub" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time">
+          <span id="time">0.0 / 30.0 s</span>
+          <fieldset>
+            <legend>Ears</legend>
+            <label><input type="radio" name="ears" value="both" checked>Both</label>
+            <label><input type="radio" name="ears" value="left">Left only</label>
+            <label><input type="radio" name="ears" value="right">My ear (right only)</label>
+          </fieldset>
+          <fieldset>
+            <legend>Camera</legend>
+            <label><input type="radio" name="cam" value="orbit" checked>Orbit</label>
+            <label><input type="radio" name="cam" value="chair">Sit in the chair</label>
+          </fieldset>
+          <fieldset>
+            <legend>Floor shows</legend>
+            <label><input type="radio" name="floor" value="room" checked>The room</label>
+            <label><input type="radio" name="floor" value="hear">What I hear</label>
+          </fieldset>
+          <fieldset>
+            <legend>Floor waves</legend>
+            <label><input type="checkbox" id="floor-on" checked>On</label>
+          </fieldset>
+        </div>
+
+        <div class="viewer-notes">
+          <aside id="captions" class="card">
+            <h3>What you are seeing</h3>
+            <ul>
+              <li><span class="sw dot"></span><span>Glowing dots: where each sound really is</span></li>
+              <li><span class="sw heat"></span><span>Bright patches on the bubble: where the AI hears sound</span></li>
+              <li><span class="sw line"></span><span>Blue lines: the direction the AI picks</span></li>
+              <li><span class="sw truth"></span><span>White beads: the true direction</span></li>
+              <li><span class="sw head"></span><span>The little figure in the chair is the listener (nose = facing)</span></li>
+              <li><span class="sw bars"></span><span>Floor bars: how loud the room is at each spot, right now</span></li>
+              <li><span>Click the floor to clap. Drag the scene to look around.</span></li>
+              <li id="hear-note" hidden><span>"What I hear" dims the floor on the side your working ear cannot reach</span></li>
+              <li><span>Choose <strong>My ear (right only)</strong> to see what the model gets from the one ear I hear with. "Left only" is the mirror case: someone deaf in the right ear.</span></li>
+            </ul>
+          </aside>
+          <aside id="metrics" class="card">
+            <h3>How well does it do?</h3>
+            <div id="metrics-body"></div>
+          </aside>
+        </div>
+        <audio id="audio-adv" preload="auto"></audio>
+      </div>
+    </details>
     <audio id="audio" preload="auto"></audio>
   </div>
 </section>
@@ -288,6 +344,6 @@
 </footer>
 
 <script type="module" src="problem.js"></script>
-<script type="module" src="main.js"></script>
+<script type="module" src="showcase.js"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@ function ramp(h, out, i) {
 }
 
 export class Perception {
-  constructor(scene3, head, facingDeg) {
+  constructor(scene3, head, facingDeg, opts = {}) {
     this.facing = facingDeg;
     this.group = new THREE.Group();
     this.group.position.copy(head);
@@ -59,7 +59,7 @@ export class Perception {
       new THREE.MeshBasicMaterial({ color: 0xf4e9d4, wireframe: true, transparent: true, opacity: 0.07, depthWrite: false })));
 
     this.lines = []; this.beads = [];
-    for (let k = 0; k < MAX_MARKS; k++) {
+    for (let k = 0; k < (opts.marks === false ? 0 : MAX_MARKS); k++) {
       const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
         new THREE.LineBasicMaterial({ color: 0x6ec6ff }));
       line.visible = false; line.renderOrder = 6; line.frustumCulled = false;
