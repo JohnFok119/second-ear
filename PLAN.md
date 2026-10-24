@@ -96,7 +96,7 @@ model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README
 - [x] **C3.4 Coffee-shop scene.** (done 2026-10-24: 3 real JSONs from the trained models at their val-picked thresholds) Scene file (`web/scenes/coffee_shop.json`), one FSD50K dev part downloaded, CC0/CC-BY
   clips picked and credited, Route B render → binaural audio + labels; run two-ear and one-ear models; export viewer
   JSON for 3 ear modes + mp3. *Done when:* 30 s scene renders; 3 JSONs + audio in `web/clips/`.
-- [ ] **C3.5 M3 page.** The one-ear table with the human row, GIFs, honest limitations, the coffee-shop renders.
+- [x] **C3.5 M3 page.** The one-ear table with the human row, GIFs, honest limitations, the coffee-shop renders.
   Push notification. *Done when:* page + LEARNING.md §Phase 3.
 
 ## Phase 4 — Viewer + ship → **M4**
