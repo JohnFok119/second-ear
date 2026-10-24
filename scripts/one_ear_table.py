@@ -6,7 +6,15 @@ import argparse
 import json
 from pathlib import Path
 
-COLS = ["LE_deg", "LR", "F20", "precision20", "guess_rate", "front_back_rate", "frontal_azimuth_error_deg"]
+COLS = [
+    "LE_deg",
+    "LR",
+    "F20",
+    "precision20",
+    "guess_rate",
+    "front_back_rate",
+    "frontal_azimuth_error_deg",
+]
 HEAD = [
     "Localization error (deg)",
     "Localization recall",
@@ -88,6 +96,7 @@ def main() -> None:
     a = ap.parse_args()
     res = Path(a.results)
     out = Path(a.out or ("results/one_ear_valthr" if a.val_threshold else "results/one_ear"))
+    interp = res / "one_ear_interpretation.md"  # hand-written; shared by both tables
 
     rows: list[dict] = []
     for label, exp, kind in ROWS:
@@ -153,7 +162,9 @@ def main() -> None:
         "",
         "## Interpretation",
         "",
-        "TODO: First Mate writes this.",
+        interp.read_text(encoding="utf-8").strip()
+        if interp.exists()
+        else "TODO: First Mate writes this.",
         "",
     ]
     if a.val_threshold:
