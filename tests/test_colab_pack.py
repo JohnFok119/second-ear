@@ -105,6 +105,25 @@ def test_pack_refuses_when_disk_too_small(tmp_path, monkeypatch):
         mod.pack(src, tmp_path / "out", ["train", "val"])
 
 
+def test_ram_f16_dataset_matches_float32(tmp_path):
+    src = tmp_path / "feat"
+    _make_cache(src)
+    files = tb.list_cached(src, "train")
+    mean, scale = tb.load_scaler(src / "scaler.npz")
+    grid = th.HeatmapNet(SMALL, 10.0, 5.0, n_classes=1, n_channels=5).fine
+    args = (files, mean, scale, grid, 15.0, "pad", "binaural_v2", "both", True)
+    a = th.HeatmapChunkDataset(*args)
+    b = th.HeatmapChunkDataset(*args, ram_f16=True)
+    assert len(a) == len(b) and len(b) >= 3
+    first_of_2nd = len(b.xs[0])
+    for i in (0, 1, first_of_2nd - 1, first_of_2nd, len(b) - 1):
+        xa, ya = a[i]
+        xb, yb = b[i]
+        assert xb.dtype == np.dtype("float16") or str(xb.dtype) == "torch.float16"
+        np.testing.assert_allclose(xb.float().numpy(), xa.numpy(), atol=5e-2, rtol=1e-2)
+        np.testing.assert_array_equal(ya.numpy(), yb.numpy())
+
+
 def test_resume_appends_history(tmp_path):
     src = tmp_path / "feat"
     _make_cache(src)

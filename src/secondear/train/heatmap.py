@@ -6,6 +6,8 @@ scaler helpers. Dense targets are built on the fly from each chunk's `ref` event
 
 from __future__ import annotations
 
+import bisect
+import itertools
 import json
 import shutil
 import time
@@ -44,6 +46,7 @@ DEFAULT_CONFIG = {
     "lr": 1e-3,
     "epochs": 100,
     "patience": None,  # stop after this many epochs without a new best (None = off)
+    "ram_f16": False,  # train set held in RAM as float16, per clip, no concat (low-RAM hosts)
     "batch_size": 32,
     "threshold": 0.5,
     "seed": 42,
@@ -152,24 +155,35 @@ class HeatmapChunkDataset(Dataset):
         data: str = "foa",
         ears: str = "both",
         agnostic: bool = False,
+        ram_f16: bool = False,
     ):
         xs, evs = [], []
         for f in files:
             x, ev, _, _ = load_clip(f, mean, scale, tail, data, ears)
-            xs.append(x)
+            xs.append(x.half() if ram_f16 else x)
             evs.extend(ev)
         if not xs:
             raise FileNotFoundError("no clips given to HeatmapChunkDataset")
-        self.x = torch.cat(xs)
+        self.ram_f16 = ram_f16
+        if ram_f16:
+            self.xs = xs
+            self.offsets = list(itertools.accumulate(len(x) for x in xs))
+        else:
+            self.x = torch.cat(xs)
         self.events = evs
         self.grid = grid
         self.fwhm_deg = fwhm_deg
         self.agnostic = agnostic
 
     def __len__(self) -> int:
-        return self.x.shape[0]
+        return self.offsets[-1] if self.ram_f16 else self.x.shape[0]
 
     def __getitem__(self, i: int):
+        if self.ram_f16:
+            k = bisect.bisect_right(self.offsets, i)
+            x = self.xs[k][i - (self.offsets[k - 1] if k else 0)]
+        else:
+            x = self.x[i]
         y = dense_targets(
             self.events[i],
             self.grid,
@@ -178,7 +192,7 @@ class HeatmapChunkDataset(Dataset):
             fwhm_deg=self.fwhm_deg,
             agnostic=self.agnostic,
         )
-        return self.x[i], torch.from_numpy(y)
+        return x, torch.from_numpy(y)
 
 
 def train_epoch(model, loader, optimizer, gscaler, cfg, device) -> float:
@@ -347,6 +361,7 @@ def run_training(
         cfg["data"],
         cfg["ears"],
         agnostic,
+        ram_f16=bool(cfg.get("ram_f16", False)),
     )
     gen = torch.Generator().manual_seed(cfg["seed"])
     loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, generator=gen)
