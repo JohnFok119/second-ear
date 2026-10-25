@@ -161,3 +161,5 @@ Research: `docs/research/c5/showcase.md`. W1, W2, W4 can start before C5.4; W3 n
 | Core contract (C0.3), targets + model (C2.3–2.4), spike (C3.0), scene (C3.4), viewer (C4.1–4.2) | Sonnet, First Mate reviews closely |
 | Training runs | Herdr pane started by the First Mate; crew writes the script |
 | Milestone pages, LEARNING.md, decisions | First Mate |
+
+**Paused (2026-10-24 ~17:07) by the fleet lookout (5-hour usage 96%).** Colab where_binaural at epoch 33 (best epoch 32, val F20 0.272; Drive history.jsonl 10778 bytes at 16:50). Keep-alive scrolls in Chrome tab 197162279 and Drive polls (cron c1c2c40a) are on hold while paused, so Colab may idle-disconnect: on resume, check the tab and Drive first; if disconnected, Johnny re-runs the notebook (it resumes).
