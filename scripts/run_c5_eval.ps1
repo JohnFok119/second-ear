@@ -1,6 +1,7 @@
 # C5.2 eval chain after Colab training: same steps as run_c5_train.ps1 minus training.
 # Needs checkpoints/where_{binaural,left,right} copied back from Drive. Run in a herdr pane; takes the gpu lease itself.
 param([string[]]$Models = @("binaural", "left", "right"))
+$Models = $Models | ForEach-Object { $_ -split "," } | Where-Object { $_ }  # -File passes "a,b" as one string
 Set-Location C:\Users\johnn\personal\second-ear
 $lease = "C:\Users\johnn\personal\fleet\lease.mjs"
 while ($true) {
