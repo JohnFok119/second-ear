@@ -101,7 +101,8 @@ def test_default_config_not_agnostic_and_loads_where_configs():
         assert cfg["experiment"] == f"where_{ears}"
         same = {"lr", "batch_size", "gamma", "fwhm_deg", "seed", "tail", "amp"}
         assert all(cfg[k] == base[k] for k in same)
-        assert cfg["epochs"] == 60 and cfg["patience"] == 10
+        one_ear = {"binaural": (10, 0.5), "left": (15, 0.25), "right": (15, 0.20)}[ears]
+        assert cfg["epochs"] == 60 and (cfg["patience"], cfg["threshold"]) == one_ear
 
 
 def _fake_scene(path, rng, shift):
