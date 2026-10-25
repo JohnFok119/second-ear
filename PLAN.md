@@ -166,3 +166,4 @@ Research: `docs/research/c5/showcase.md`. W1, W2, W4 can start before C5.4; W3 n
 
 - **Colab 18:27:** where_binaural done (early stop at epoch 44; best epoch 34, val F20 0.307, LE 14.0°). where_left started (from scratch).
 - **Colab 23:10:** where_left stopped too early (epoch 27, best 17, barely detecting) because epoch selection used threshold 0.5. Fixed (3e52727: left 0.25 / right 0.20, patience 15). Old runs renamed on Drive to where_{left,right}_stopped_early. Fresh runtime (12 h cap reset); retraining left, then right, both on Colab (Johnny). Johnny OKd downloading checkpoints via Chrome afterwards.
+- **Colab 09:57 (10-25):** where_left done (ran all 60 epochs; best epoch 59, val F20 0.130 at threshold 0.25, LE 55.2°). where_right started.
