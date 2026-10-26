@@ -1,0 +1,35 @@
+{
+  "experiment": "classical_itd",
+  "split": "test",
+  "n_clips": 300,
+  "git_sha": "6e1d26cf1f4cb70a24fda19ffabe1199da52154a",
+  "config": {
+    "c": 343.0,
+    "d": 0.18,
+    "gate_db": 40.0,
+    "name": "classical_itd",
+    "n_channels": 2
+  },
+  "config_hash": "74cdb62e4854d5e67eb4c4f40a7027e336d4ecd8",
+  "overall": {
+    "LE_deg": 55.50563305422217,
+    "LR": 0.5419133743235924,
+    "precision20": 0.18997668023503647,
+    "recall20": 0.10344199847993192,
+    "F20": 0.1339489875297612,
+    "front_back_rate": 0.07606258345720693,
+    "n_pred": 119641,
+    "n_truth": 219727,
+    "n_matched": 119073,
+    "sum_err": 6609222.244665396,
+    "n_tp20": 22729,
+    "n_fb": 9057
+  },
+  "LE_deg": 55.50563305422217,
+  "LR": 0.5419133743235924,
+  "F20": null,
+  "front_back_rate": 0.07606258345720693,
+  "frontal_azimuth_error": 21.762637632729465,
+  "front_back_matching": "class-agnostic: per-frame Hungarian match on angle, classes ignored",
+  "note": "front half only (ITD cannot tell front from back); elevation fixed at 0"
+}
