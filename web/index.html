@@ -292,22 +292,21 @@
     <div class="grid two">
       <article class="card">
         <h3>1. Training scenes from real ear measurements</h3>
-        <p>Practice sound scenes were built by mixing free sound clips (FSD50K) through measured "ear filters" called HRIRs (head-related impulse responses: how a real head and ear change a sound that arrives from each direction). The filters come from two public sets, HUTUBS and SADIE II, so no single person's ears are learned. 600 such scenes were made for training.</p>
+        <p>Practice sound scenes were built by mixing free sound clips (FSD50K) through measured "ear filters" called HRIRs (head-related impulse responses: how a real head and ear change a sound that arrives from each direction). The filters come from two public sets, HUTUBS and SADIE II, so no single person's ears are learned. 4,000 such scenes were made for training, plus 300 for choosing settings and 300 for the final test. The test scenes use head filters the model never trained on.</p>
         <p class="small">These scenes are rendered by computer, not recorded in real rooms.</p>
       </article>
       <article class="card">
         <h3>2. The heat-map model</h3>
-        <p>It reuses the front end of the published DCASE 2023 contest baseline, then draws a map of every direction (in 5-degree steps) for each of 13 sound types, 10 times a second. A map can show two sounds of the same type at once, and it feeds the 3D viewer directly.</p>
+        <p>It reuses the front end of the published DCASE 2023 contest baseline, then draws one map of every direction (in 5-degree steps), 10 times a second, showing where sounds are whatever their type. One map can show several sounds at once, and it feeds the 3D viewer directly.</p>
       </article>
       <article class="card">
         <h3>3. Fair testing</h3>
-        <p>The cut-off a bright spot must pass to count as a guess was chosen on 100 separate practice scenes, once per model, and never on the test scenes. Tuning it on the test scenes would be cheating. Every method is scored by the same code.</p>
+        <p>The cut-off a bright spot must pass to count as a guess was chosen on 300 separate practice scenes, once per model, and never on the test scenes. Tuning it on the test scenes would be cheating. Every method is scored by the same code.</p>
       </article>
       <article class="card">
         <h3>4. Sudden loss vs an adapted listener</h3>
-        <p><strong>Sudden loss</strong>: the two-ear model with one ear silenced, like losing an ear yesterday. <strong>Adapted</strong>: a model trained on one ear from the start, like someone who has lived with it for years. In the last run, sudden loss collapsed the model's fair score by more than tenfold, and the adapted models won back about half
-        <span data-pending="c5">(fair score: two ears 3.4%, sudden loss 0.1 to 0.3%, adapted 1.7 to 1.8%)</span><span class="tag">updated soon</span>.</p>
-        <p class="small">Adapted models also made 4 to 6 guesses per real sound, which flatters them. People with one ear still beat every model here.</p>
+        <p><strong>Sudden loss</strong>: the two-ear model with one ear silenced, like losing an ear yesterday. <strong>Adapted</strong>: a model trained on one ear from the start, like someone who has lived with it for years. Sudden loss collapsed the model's fair score more than tenfold (two ears 54%, left ear muted 4.6%), and the adapted models won back part of it (13 to 14%).</p>
+        <p class="small">Adapted models also made about 2.5 guesses per real sound, which flatters them. People with one ear still beat every model here.</p>
       </article>
       <article class="card">
         <h3>5. Bugs found and fixed</h3>
@@ -324,8 +323,8 @@
       <ul>
         <li><strong>Intended use:</strong> research, learning and a portfolio project: exploring how much direction information one ear loses. <strong>Not a medical device</strong>, not a hearing aid, not for safety decisions.</li>
         <li><strong>Data:</strong> STARSS23 (real recordings from 16 rooms in Finland and Japan) for the first models; rendered two-ear scenes from FSD50K clips with HUTUBS and SADIE II head filters for the one-ear experiment.</li>
-        <li><strong>Where it works so far:</strong> official contest score (F20) <span data-pending="c5">9.7%</span><span class="tag">updated soon</span>, average miss <span data-pending="c5">25.8&deg; when it fires, but it finds only 13.5% of sounds</span><span class="tag">updated soon</span>.</li>
-        <li><strong>Limits:</strong> it misses many real sounds; echoes pull guesses off course; overlapping sounds blur; with one ear, front and back are easily confused (so the model draws a map, not one arrow). Only 13 sound types, only a few head shapes, and the 3D floor waves are a simple simulation, not real acoustics.</li>
+        <li><strong>Where it works so far:</strong> on 300 unseen test scenes, the two-ear model finds 54% of sounds within 20 degrees (F20), misses by 24.9&deg; on average (19.8&deg; in front) and makes about 1.1 guesses per real sound.</li>
+        <li><strong>Limits:</strong> it misses many real sounds; echoes pull guesses off course; overlapping sounds blur; with one ear, front and back are easily confused (so the model draws a map, not one arrow). It says where a sound is, not what it is; only a few head shapes, and the 3D floor waves are a simple simulation, not real acoustics.</li>
       </ul>
     </div>
   </div>
