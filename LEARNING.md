@@ -166,3 +166,61 @@ column made visible."
 
 ## Phase 4 — Viewer and ship
 *(pending)*
+
+## Phase 5 — Retrain with more data, on Colab
+
+**What we built.** A second, stronger two-ear model, plus fresh one-ear versions, all
+retrained with much more data. The first two-ear model was weak (fair score F20 of 0.034).
+Three causes: too little data (600 scenes), overfitting (memorising the practice scenes
+instead of learning the pattern), and 13 sound-type maps when the story only needs "where".
+
+**What changed.**
+- **7x more data:** 4,000 training scenes, 300 validation scenes (for choosing settings) and
+  300 test scenes made with ear filters the model never saw in training.
+- **One "where" map** that ignores sound type, instead of 13 maps.
+- **Choices made on validation, never test:** the best training round (epoch) and the
+  decoding threshold (the brightness a map spot must pass to count as a guess).
+- **Early stopping:** stop training after N epochs in a row without a new best score.
+
+**Moving to Google Colab.** The laptop's memory was nearly full, so training moved to
+Colab's free T4 GPU (a graphics chip rented over the internet).
+- The features were packed into float16 tar shards (half-size numbers in bundled files):
+  17 GB became 8.4 GB, then uploaded to Google Drive.
+- Training keeps the data as float16 in memory (`--ram-f16`) so it fits Colab's roughly
+  12.7 GB.
+- Checkpoints (saved snapshots of the model) go to Drive every epoch, so a disconnect loses
+  at most one epoch. The run resumed from the laptop's epoch 21.
+- Colab disconnected once overnight and picked up from the last saved epoch. A T4 epoch took
+  about 8.5 to 10 minutes, about the same as the laptop.
+
+**A bug found.** Each epoch, the one-ear models were scored at a detection cutoff of 0.5.
+One-ear maps are dim and rarely reach that, so the score sat at "nothing found" and early
+stopping kept an almost silent epoch (the left-ear model stopped at epoch 27, best epoch 17).
+Fix: judge one-ear models at the cutoffs picked on validation last time (0.25 left, 0.20
+right) and wait 15 epochs instead of 10. Lesson: the number you select on must be able to
+move.
+
+**The numbers** (300 unseen test scenes, decoding threshold picked on validation):
+
+| | F20 (fair score) | Average miss | Front miss | Guesses per real sound |
+|---|---|---|---|---|
+| Two ears | **0.541** | 24.9° | 19.8° | 1.09 (precision 0.52) |
+| Sudden loss (left muted) | 0.046 | 72° | | |
+| Sudden loss (right muted) | 0.000 | model goes silent | | |
+| Adapted, right only (Johnny's ear) | 0.131 | 44.1° | 39.3° | 2.52 |
+| Adapted, left only | 0.140 | 45.6° | 41.5° | 2.36 |
+| Classical ITD | | 55.5° | | 0.54 (precision 0.19) |
+
+**What they mean.** Muting the left ear (a sudden loss; Johnny hears only with his right
+ear) leaves almost nothing. Muting the right ear is worse: the model goes silent, so the
+two-ear model leans on the right channel more than the left. People go from 3.7° to 22.4° in
+front with one ear (6x worse, Aruffo et al. 2025). The models go from 19.8° to about 40°
+(2x worse), but from a much worse start.
+
+**Takeaways.**
+- More and more varied data mattered most.
+- Choose settings on validation, never on test.
+- Watch guesses per real sound, not just recall.
+- A selection score stuck at its floor silently breaks early stopping.
+- Free cloud GPUs trade speed for babysitting: disconnects, a 12-hour cap, and keeping the
+  tab active.
