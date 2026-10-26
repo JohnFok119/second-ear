@@ -1,10 +1,7 @@
 # Blocked — needs Johnny
 
-- **Main pushes:** Johnny gave the go in chat, but the harness blocks the ship's push; Johnny runs `! git push origin main`. Local main now holds the new story page (W1) — preview at http://localhost:8791/ before pushing.
+- **Main pushes:** Johnny runs `! git push origin main`. Local main now holds the new story page + v2 model clips + numbers. Preview at http://localhost:8792/ first (8791 is a stale copy).
 - **Spatial-AST (C5.3):** zero-shot ~63° off and only one direction per 10 s clip (`docs/research/c5/spatial_ast_spike.md`). Recommend parking it. Until Johnny answers: parked, no fine-tune.
 - **Colab compute units:** Johnny (13:35) has Google Pro, sizing what compute he can afford. Until he says: free T4 only.
-- **Colab keep-alive:** Johnny wanted me to keep the Colab tab active, but Claude in Chrome only controls tabs in its own group and the Colab tab is not in it. If Colab disconnects, I push a notification; re-open the notebook link and Run all (it resumes from the last epoch). Next time: drag the Colab tab into the Claude tab group before leaving.
 - **Site review:** intro wording (draft), audio button + click sound in a real browser.
 - **Disk:** C: has 20 GB free after the v2 data (25 GB raw + 17 GB features). The old 600-scene set (`data/binaural` 4.4 GB, `data/features/binaural` 2.6 GB) could be deleted once C5 results are in; asking before deleting anything.
-- **Checkpoint download (needed for the local eval):** the Drive connector can only download a file into chat as text, which is far too big for a model file. Ask: OK for me to download `best.pt` + `scaler.npz` for each model from `MyDrive/second-ear/checkpoints/where_<model>/` through Chrome (about 3 MB each; they land in Downloads and I move them into `checkpoints/`)? Or Johnny downloads the `checkpoints` folder himself.
-- **Speed-up idea:** left and right each take about 6 h on the T4, one after the other, and the 12 h Colab cap will cut the session once. The laptop GPU is free now, so it could train `where_right` (about 6 GB RAM with `--ram-f16`) while Colab does left, roughly halving the wait. Not doing it without Johnny's OK, because he wanted the laptop freed.
