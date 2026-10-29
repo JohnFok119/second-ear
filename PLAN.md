@@ -160,7 +160,7 @@ what each step bought. Every new model gets two scores: v3 simulated test + LOCA
 Training on free Colab T4 (resume from Drive, `colab/`). Licence rule for new audio: CC0 / CC BY / MIT / ODC-By;
 CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 
-- [ ] **Captain 2026-10-29:** Phase 7 goal/rule and step order approved; LOCATA lives in Drive, scored on Colab.
+**Captain 2026-10-29:** Phase 7 goal/rule and step order approved; LOCATA lives in Drive, scored on Colab.
 - [ ] **phase7-C1 Ablation harness.** One script appends a row (run name, change, F20, LE, frontal error, guesses per sound,
   front-back) to `results/phase7/ablation.md` from an eval JSON. First row = current where_binaural on v2 test (no
   retrain). *Done when:* the table has the v2 row and matches `results/one_ear_where/table.md`.
