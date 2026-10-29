@@ -62,3 +62,20 @@ No large real, direction-labelled binaural dataset was found. Best realism per e
 | SPARTA (ambiBIN, COMPASS) | FOA-to-binaural decoder plugins | tool | n/a | GPLv3; ITD preservation UNVERIFIED | https://github.com/leomccormack/SPARTA |
 
 Notes: BRIR sets use only a few dummy heads (KEMAR, Cortex HATS), so they add real rooms but not head variety. No open-source FOA-to-binaural method was confirmed to keep ITD. No 2024-2026 real labelled binaural ML dataset found.
+
+## Café beds (fourth crew-researcher, 2026-10-29)
+Licence read from each sound page. CC0 / CC BY only.
+
+| Title | Uploader | URL | Licence | Format | Rate | Length |
+|---|---|---|---|---|---|---|
+| Scottish Restaurant.WAV | inchadney | https://freesound.org/s/13747 | CC BY 4.0 | **binaural** (DAT + binaural mic, 1994) | 48 kHz | 4:00 |
+| Restaurant Atmosphere (crowded) | felix.blume | https://freesound.org/s/422097 | CC0 | stereo (MS Schoeps) | 96 kHz | 10:00 |
+| 140812_Vienna_CafeZentral_R.wav | blaukreuz | https://freesound.org/s/252704 | CC0 | stereo (rear pair of a Zoom H2) | 48 kHz | 1:40 |
+| Jazzy café ambience.wav | dersinnsspace | https://freesound.org/people/dersinnsspace/sounds/421647/ | CC0 | stereo (UNVERIFIED), jazz in background | 44.1 kHz | 1:24 |
+| NYC diner ambiance | edlundart | https://freesound.org/people/edlundart/sounds/501025 | CC0 | mono? (UNVERIFIED) | 48 kHz | 5:15 |
+| French Cafe in the Morning (take 1) | alexanderweidner | https://freesound.org/s/424863 | CC BY 4.0 | stereo | 48 kHz | 10:00 |
+| Coffeehouse Ambience | mars_98 | https://freesound.org/people/mars_98/sounds/445094/ | CC BY 4.0 | stereo? (UNVERIFIED) | 48 kHz | 2:00 |
+| 0105coffeehouse.wav | moxobna | https://freesound.org/s/46310 | CC0 | mono | 44.1 kHz | 6:20 |
+
+Rejected on licence: Speedenza binaural coffee shop (CC BY-NC), soundslikewillem, Anika11, arnaud coutancier (BY-NC), elaski (Sampling+), Oldenburg cafeteria (research/education only), ARTE Zenodo cafés (contradictory "non-commercial" note).
+Idea for stereo/mono beds: spread chunks of the bed over several directions through a real-room BRIR, so the background is a proper two-ear diffuse field rather than raw stereo.
