@@ -1,0 +1,253 @@
+{
+  "name": "coffee_shop_v2",
+  "duration_s": 30.0,
+  "fs": 48000,
+  "room": {
+    "name": "auditorium3",
+    "rt60": 0.67,
+    "brir": "TU Berlin Auditorium 3",
+    "head": "KEMAR"
+  },
+  "bed": {
+    "files": [
+      "13747",
+      "422097"
+    ],
+    "snr_db": 12.0,
+    "second_rel_db": -6.0,
+    "dirs": 8,
+    "seed": 7
+  },
+  "sources": [
+    {
+      "id": "woman_1",
+      "label": "Woman, front left",
+      "class": 0,
+      "class_name": "Female speech",
+      "kind": "voice",
+      "az_deg": 30.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 185,
+      "intervals": [
+        [
+          0.0,
+          20.0
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "28396",
+        "license": "CC-BY-3.0",
+        "uploader": "kerouacsamerica",
+        "url": "https://freesound.org/s/28396/"
+      }
+    },
+    {
+      "id": "man_1",
+      "label": "Man, right",
+      "class": 1,
+      "class_name": "Male speech",
+      "kind": "voice",
+      "az_deg": -60.41,
+      "el_deg": -1.95,
+      "dist_m": 2.93,
+      "brir_idx": 116,
+      "intervals": [
+        [
+          4.0,
+          27.0
+        ]
+      ],
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "59512",
+        "license": "CC0",
+        "uploader": "zeshoog",
+        "url": "https://freesound.org/s/59512/"
+      }
+    },
+    {
+      "id": "woman_2",
+      "label": "Woman, behind left",
+      "class": 0,
+      "class_name": "Female speech",
+      "kind": "voice",
+      "az_deg": 120.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 4,
+      "intervals": [
+        [
+          8.0,
+          30.0
+        ]
+      ],
+      "gain_db": -2.0,
+      "clip": {
+        "fname": "59586",
+        "license": "CC-BY-3.0",
+        "uploader": "morgantj",
+        "url": "https://freesound.org/s/59586/"
+      }
+    },
+    {
+      "id": "man_2",
+      "label": "Man, behind right",
+      "class": 1,
+      "class_name": "Male speech",
+      "kind": "voice",
+      "az_deg": -140.41,
+      "el_deg": -1.95,
+      "dist_m": 2.93,
+      "brir_idx": 596,
+      "intervals": [
+        [
+          12.0,
+          30.0
+        ]
+      ],
+      "gain_db": -2.0,
+      "clip": {
+        "fname": "31569",
+        "license": "CC0",
+        "uploader": "Walter_Odington",
+        "url": "https://freesound.org/s/31569/"
+      }
+    },
+    {
+      "id": "dishes_1",
+      "label": "Dishes",
+      "class": 5,
+      "class_name": "Domestic sounds",
+      "kind": "cafe",
+      "az_deg": 80.0,
+      "el_deg": -0.72,
+      "dist_m": 3.97,
+      "brir_idx": 60,
+      "intervals": [
+        [
+          1.0,
+          11.0
+        ]
+      ],
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "1942",
+        "license": "CC-BY-3.0",
+        "uploader": "RHumphries",
+        "url": "https://freesound.org/s/1942/"
+      }
+    },
+    {
+      "id": "dishes_2",
+      "label": "Cups",
+      "class": 5,
+      "class_name": "Domestic sounds",
+      "kind": "cafe",
+      "az_deg": -20.0,
+      "el_deg": -0.72,
+      "dist_m": 3.97,
+      "brir_idx": 660,
+      "intervals": [
+        [
+          14.0,
+          24.0
+        ]
+      ],
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "35627",
+        "license": "CC-BY-3.0",
+        "uploader": "fresco",
+        "url": "https://freesound.org/s/35627/"
+      }
+    },
+    {
+      "id": "dishes_3",
+      "label": "Coffee machine",
+      "class": 5,
+      "class_name": "Domestic sounds",
+      "kind": "cafe",
+      "az_deg": -120.5,
+      "el_deg": -0.52,
+      "dist_m": 5.49,
+      "brir_idx": 955,
+      "intervals": [
+        [
+          18.0,
+          28.0
+        ]
+      ],
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "36266",
+        "license": "CC0",
+        "uploader": "Piero",
+        "url": "https://freesound.org/s/36266/"
+      }
+    }
+  ],
+  "credits": [
+    {
+      "title": "Freesound 28396 (Woman, front left)",
+      "uploader": "kerouacsamerica",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/28396/"
+    },
+    {
+      "title": "Freesound 59512 (Man, right)",
+      "uploader": "zeshoog",
+      "license": "CC0",
+      "url": "https://freesound.org/s/59512/"
+    },
+    {
+      "title": "Freesound 59586 (Woman, behind left)",
+      "uploader": "morgantj",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/59586/"
+    },
+    {
+      "title": "Freesound 31569 (Man, behind right)",
+      "uploader": "Walter_Odington",
+      "license": "CC0",
+      "url": "https://freesound.org/s/31569/"
+    },
+    {
+      "title": "Freesound 1942 (Dishes)",
+      "uploader": "RHumphries",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/1942/"
+    },
+    {
+      "title": "Freesound 35627 (Cups)",
+      "uploader": "fresco",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/35627/"
+    },
+    {
+      "title": "Freesound 36266 (Coffee machine)",
+      "uploader": "Piero",
+      "license": "CC0",
+      "url": "https://freesound.org/s/36266/"
+    },
+    {
+      "title": "Scottish Restaurant.WAV (caf\u00e9 bed)",
+      "uploader": "inchadney",
+      "license": "CC-BY-4.0",
+      "url": "https://freesound.org/s/13747"
+    },
+    {
+      "title": "Restaurant Atmosphere (crowded) (second bed)",
+      "uploader": "felix.blume",
+      "license": "CC0",
+      "url": "https://freesound.org/s/422097"
+    },
+    {
+      "title": "Binaural room impulse responses, Auditorium 3 (KEMAR), Wierstorf and Geier",
+      "uploader": "TU Berlin",
+      "license": "CC-BY-4.0",
+      "url": "https://doi.org/10.5281/zenodo.160749"
+    }
+  ]
+}
