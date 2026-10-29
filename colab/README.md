@@ -15,7 +15,7 @@ Colab gives you a free GPU (a T4) for a few hours at a time. The notebook picks 
 
 ## Run it
 
-1. Open the notebook in Colab: File > Open notebook > GitHub tab > `JohnFok119/second-ear`, branch `feature/colab-train`, file `colab/train_where.ipynb`. (Or upload `colab/train_where.ipynb` by hand.) If the repo is private, use the Upload tab.
+1. Open the notebook in Colab: File > Open notebook > GitHub tab > `JohnFok119/second-ear`, branch `phase7`, file `colab/train_where.ipynb`. (Or upload `colab/train_where.ipynb` by hand.) If the repo is private, use the Upload tab.
 2. Runtime > Change runtime type > **T4 GPU**.
 3. Runtime > **Run all**. Allow Drive access when asked.
 
