@@ -160,6 +160,8 @@ what each step bought. Every new model gets two scores: v3 simulated test + LOCA
 Training on free Colab T4 (resume from Drive, `colab/`). Licence rule for new audio: CC0 / CC BY / MIT / ODC-By;
 CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 
+**Resume state (2026-10-29 01:30, night run):** C1 + C2 merged on main (190 passed). Branch `phase7` on GitHub = main for Colab. Training: `where_aug_swap` LOCAL (gpu+ram lease held by second-ear, log `runs/where_aug_swap_train.log`, releases leases at the end); `where_aug_swapmask` on COLAB (Chrome tab, notebook from branch feature/colab-train with Settings cell edited to BRANCH=phase7, MODELS=['aug_swapmask']; checkpoints on Drive `MyDrive/second-ear/checkpoints/where_aug_swapmask`). Next run: `where_aug_all` on whichever GPU frees first. After each: pick threshold on val + eval locally (raw audio), `scripts/ablation_row.py`. Crew: C3 resconformer (branch phase7-c3-conformer), C4 downloads (branch phase7-c4-sources, data into main repo data/brir, data/beds). A new Colab runtime needs Johnny's Drive popup (BLOCKED.md).
+
 **Captain 2026-10-29:** Phase 7 goal/rule and step order approved; LOCATA lives in Drive, scored on Colab.
 - [x] **phase7-C1 Ablation harness.** (done 2026-10-29, merged) One script appends a row (run name, change, F20, LE, frontal error, guesses per sound,
   front-back) to `results/phase7/ablation.md` from an eval JSON. First row = current where_binaural on v2 test (no
