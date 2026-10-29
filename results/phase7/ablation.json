@@ -1,0 +1,19 @@
+{
+  "rows": [
+    {
+      "name": "v2_crnn_baseline",
+      "change": "today's model: CRNN, v2 scenes, no tricks",
+      "LE_deg": 24.882485077208017,
+      "LR": 0.8406977749662081,
+      "F20": 0.5411560885351209,
+      "precision20": 0.5197776818385679,
+      "recall20": 0.5643685118351409,
+      "guess_rate": 1.0857882736304596,
+      "front_back_rate": 0.02457179359476841,
+      "frontal_azimuth_error_deg": 19.841509393312652,
+      "locata_LE_deg": null,
+      "locata_F20": null,
+      "note": "Phase 5 where_binaural, val threshold 0.30"
+    }
+  ]
+}
