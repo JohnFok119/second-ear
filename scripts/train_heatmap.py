@@ -14,11 +14,11 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", default="configs/heatmap_foa.yaml")
     ap.add_argument(
-        "--data", choices=["foa", "binaural", "binaural_v2"], default=None, help="overrides config"
+        "--data", choices=["foa", "binaural", "binaural_v2", "binaural_v3"], default=None, help="overrides config"
     )
     ap.add_argument("--ears", choices=["both", "left", "right"], default=None)
     ap.add_argument(
-        "--features", default=None, help="default data/features/<baseline|binaural|binaural_v2>"
+        "--features", default=None, help="default data/features/<baseline|binaural|binaural_v2|binaural_v3>"
     )
     ap.add_argument("--ckpt-dir", default=None, help="default checkpoints/<experiment>")
     ap.add_argument("--runs-dir", default=None, help="default runs/<experiment>")

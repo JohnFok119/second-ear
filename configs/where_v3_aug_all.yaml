@@ -1,0 +1,20 @@
+# Where-only heat-map localizer, v3 scenes (48 kHz), ears=both, with ear-swap (p=0.5) + masking + filter augmentation (phase 7 C2). Loaded by scripts/train_heatmap.py,
+# eval_heatmap.py and pick_threshold.py; command-line flags override these values.
+# Hyperparameters equal configs/where_binaural.yaml; only augment and experiment differ.
+coarse_step_deg: 10   # network output grid (19 x 36)
+fine_step_deg: 5      # upsampled grid used for targets, loss and decoding (37 x 72)
+fwhm_deg: 15.0        # target blob full width at half maximum
+gamma: 2.0            # focal exponent
+lr: 0.001
+epochs: 60
+patience: 10          # early stop after 10 epochs without a new best val SELD
+batch_size: 32
+threshold: 0.5        # decoding threshold on sigmoid maps (the runner overrides it with the val-picked one)
+seed: 42
+amp: true             # mixed precision, cuda only
+tail: pad
+agnostic: true        # one target map (union of all events, any class), one output map, class 0
+data: binaural_v3     # scene cache data/features/binaural_v3: train / val (selection) / test
+ears: both
+augment: {swap: 0.5, mask: true, filter: true}  # train-only: swap = ear-swap probability, mask / filter = on/off (train/augment.py)
+experiment: where_v3_aug_all

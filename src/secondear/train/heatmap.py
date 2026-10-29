@@ -53,7 +53,7 @@ DEFAULT_CONFIG = {
     "seed": 42,
     "amp": True,
     "tail": "pad",
-    "data": "foa",  # foa (STARSS23 cache) | binaural (scene cache) | binaural_v2 (train/val/test)
+    "data": "foa",  # foa (STARSS23 cache) | binaural (scene cache) | binaural_v2 | binaural_v3 (train/val/test)
     "ears": "both",  # binaural only: both | left | right
     "agnostic": False,  # true: one class-agnostic target map, 1-map model, agnostic metrics
     "augment": None,  # train-only: {swap: p, mask: bool, filter: bool} (train/augment.py)
@@ -63,7 +63,7 @@ DEFAULT_CONFIG = {
 }
 BIN_TRAIN_SPLIT, BIN_TEST_SPLIT = "train", "test"
 BIN_VAL_SPLIT = "val"
-BINAURAL_DATA = ("binaural", "binaural_v2")
+BINAURAL_DATA = ("binaural", "binaural_v2", "binaural_v3")
 EVAL_CHUNKS = 8  # chunks per forward pass at evaluation
 
 
@@ -93,16 +93,16 @@ def chunk_events(events: list[Event], n_chunks: int) -> list[list[Event]]:
 def splits_for(data: str) -> tuple[str, str]:
     """(train split, selection split) folder names for a data kind.
 
-    foa and binaural select the best epoch on their test folder (as in C2/C3); binaural_v2
-    selects on its val folder, so the test folder stays untouched until the final evaluation.
+    foa and binaural select the best epoch on their test folder (as in C2/C3); binaural_v2 and
+    binaural_v3 select on their val folder, so the test folder stays untouched until the final evaluation.
     """
     if data == "foa":
         return TRAIN_SPLIT, TEST_SPLIT
     if data == "binaural":
         return BIN_TRAIN_SPLIT, BIN_TEST_SPLIT
-    if data == "binaural_v2":
+    if data in ("binaural_v2", "binaural_v3"):
         return BIN_TRAIN_SPLIT, BIN_VAL_SPLIT
-    raise ValueError(f"data must be 'foa', 'binaural' or 'binaural_v2', got {data!r}")
+    raise ValueError(f"data must be 'foa', 'binaural', 'binaural_v2' or 'binaural_v3', got {data!r}")
 
 
 def n_input_channels(data: str, ears: str) -> int:

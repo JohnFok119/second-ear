@@ -60,7 +60,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", required=True)
     ap.add_argument(
-        "--root", default=None, help="default data/<binaural|binaural_v2> or data/starss23"
+        "--root", default=None, help="default data/<binaural|binaural_v2|binaural_v3> or data/starss23"
     )
     ap.add_argument("--split", default="val", help="validation split (FOA: e.g. dev-val)")
     ap.add_argument("--ckpt-dir", default=None, help="default checkpoints/<experiment>")
