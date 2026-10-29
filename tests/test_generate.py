@@ -201,3 +201,142 @@ def test_real_scene_end_to_end(tmp_path):
     assert audio.shape == (2, 10 * FS) and np.isfinite(audio).all()
     write_scene(tmp_path, "bin_train_00001", audio, lab)
     assert len(read_metadata(tmp_path / "bin_train_00001.csv")) == len(lab)
+
+
+# ---- phase 7 C6b: real rooms (BRIR) and background beds ----
+
+_BASE_SHA = "329c5c98212e3814468a84f0480bb3f282ebc3ab8e5e9889cfda4fdc0182e88b"
+_BASE_ROWS_SHA = "cd411a8309a52f1e441994051d5b2e0ba65aefb8f843395e200c1b7f2a044cde"
+_FAKE_AZ = np.array([-90.0, -30.0, 0.0, 45.0, 90.0, 90.0])
+_FAKE_DIST = np.array([1.5, 2.0, 2.5, 3.0, 1.5, 4.0])
+
+
+def _fake_room(tmp_path, name="fake", swap=False):
+    """Small prepared-room npz: source at +90 is louder and earlier in the LEFT channel."""
+    n = len(_FAKE_AZ)
+    ir = np.zeros((n, 2, 400), dtype=np.float32)
+    for i, a in enumerate(_FAKE_AZ):
+        s = np.sin(np.deg2rad(a))
+        ir[i, 0, 20 - round(8 * s)] = 1.0 + 0.5 * s  # left
+        ir[i, 1, 20 + round(8 * s)] = 1.0 - 0.5 * s  # right
+        tail = 0.01 * np.random.default_rng(i).standard_normal((2, 300))
+        ir[i, :, 100:] += tail.astype(np.float32)
+    if swap:
+        ir = ir[:, ::-1].copy()
+    np.savez(
+        tmp_path / f"{name}.npz",
+        ir=ir,
+        az_deg=_FAKE_AZ.astype(np.float32),
+        el_deg=np.zeros(n, dtype=np.float32),
+        dist_m=_FAKE_DIST.astype(np.float32),
+        fs=np.int32(FS),
+        room=name,
+        head="fake head",
+        rt60=np.float32("nan"),
+    )
+    return tmp_path
+
+
+def _noise_bed(path, fs):
+    return np.random.default_rng(5).standard_normal(3 * fs)
+
+
+def _no_hrir(*_):
+    raise AssertionError("HRIRs must not be loaded for a BRIR scene without a bed")
+
+
+def test_default_config_byte_identical_to_before():
+    import hashlib
+
+    cfg = SceneConfig(duration_s=8.0, mean_events=4.0)
+    h = _synthetic_hrirs()
+    a, r = generate_scene(cfg, 7, _clips(), ["a", "b", "c"], lambda p, fs: h, _noise_clip)
+    assert hashlib.sha256(a.tobytes()).hexdigest() == _BASE_SHA
+    assert hashlib.sha256(repr(r).encode()).hexdigest() == _BASE_ROWS_SHA
+    plan = plan_scene(cfg, 7, _clips(), ["a", "b", "c"])
+    assert plan.brir_room is None and plan.bed is None
+
+
+def test_brir_scene_labels_are_measured_directions(tmp_path):
+    d = _fake_room(tmp_path)
+    cfg = SceneConfig(
+        duration_s=10.0, mean_events=10.0, brir_share=1.0, brir_rooms=("fake",), brir_dir=str(d)
+    )
+    measured = {(float(a), 0.0, round(float(r) * 100)) for a, r in zip(_FAKE_AZ, _FAKE_DIST)}
+    labels = {(int(a), int(e), c) for a, e, c in measured}
+    n_ev = 0
+    for seed in range(4):
+        plan = plan_scene(cfg, seed, _clips(), ["a"])
+        assert plan.brir_room == "fake"
+        audio, rows = render_scene(plan, cfg, _no_hrir, _noise_clip)
+        assert audio.shape == (2, 10 * FS) and np.isfinite(audio).all()
+        for ev in plan.events:
+            assert (ev.az_deg, ev.el_deg, round(ev.dist_m * 100)) in measured
+            assert ev.az_deg == _FAKE_AZ[ev.brir_idx]
+            n_ev += 1
+        assert {(r[3], r[4], r[5]) for r in rows} <= labels
+        assert len(rows) == sum(len(ev.frames()) for ev in plan.events)
+    assert n_ev > 10
+
+
+def test_brir_share_mixes_scene_types_and_is_deterministic(tmp_path):
+    d = _fake_room(tmp_path)
+    cfg = SceneConfig(duration_s=6.0, brir_share=0.5, brir_rooms=("fake",), brir_dir=str(d))
+    kinds = [plan_scene(cfg, s, _clips(), ["a"]).brir_room for s in range(30)]
+    assert 5 < sum(k is not None for k in kinds) < 25
+    assert kinds == [plan_scene(cfg, s, _clips(), ["a"]).brir_room for s in range(30)]
+    h = _synthetic_hrirs()
+    a1, r1 = generate_scene(cfg, 3, _clips(), ["a"], lambda p, fs: h, _noise_clip)
+    a2, r2 = generate_scene(cfg, 3, _clips(), ["a"], lambda p, fs: h, _noise_clip)
+    assert np.array_equal(a1, a2) and r1 == r2
+
+
+def test_brir_ir_resampled_to_scene_rate(tmp_path):
+    from secondear.scene.generate import load_brir_room
+
+    room = load_brir_room("fake", str(_fake_room(tmp_path)))
+    assert room.ir_at(0, FS).shape == (2, 400)
+    assert room.ir_at(0, 2 * FS).shape == (2, 800)
+    assert room.nearest(80.0, 0.0) in (4, 5) and room.nearest(-80.0, 0.0) == 0
+
+
+@pytest.mark.parametrize("use_brir", [False, True])
+def test_bed_adds_no_labels_and_hits_target_snr(tmp_path, use_brir):
+    from secondear.scene.generate import _render_parts
+
+    d = _fake_room(tmp_path)
+    base = SceneConfig(duration_s=6.0, mean_events=6.0, bed_dirs=4, brir_dir=str(d))
+    if use_brir:
+        base = replace(base, brir_share=1.0, brir_rooms=("fake",))
+    h = _synthetic_hrirs()
+    cfg = replace(base, bed_files=("bed.wav",), bed_snr_db=(5.0, 20.0))
+    for seed in range(3):
+        plan = plan_scene(cfg, seed, _clips(), ["a"])
+        assert plan.bed is not None and 5.0 <= plan.bed.snr_db <= 20.0
+        assert len(plan.bed.offsets) == 4
+        mix, rows, bed = _render_parts(plan, cfg, lambda p, fs: h, _noise_clip, _noise_bed)
+        snr = 20 * np.log10(np.sqrt(np.mean(mix**2)) / np.sqrt(np.mean(bed**2)))
+        assert abs(snr - plan.bed.snr_db) < 0.5
+        # same scene without the bed: identical labels and identical labelled mix
+        plan0 = plan_scene(base, seed, _clips(), ["a"])
+        mix0, rows0, bed0 = _render_parts(plan0, base, lambda p, fs: h, _noise_clip, _noise_bed)
+        assert bed0 is None and rows == rows0 and np.array_equal(mix, mix0)
+        audio, rows_f = render_scene(plan, cfg, lambda p, fs: h, _noise_clip, _noise_bed)
+        assert rows_f == rows0
+        assert np.abs(audio).max() == pytest.approx(10 ** (-1 / 20), rel=1e-4)
+
+
+def test_prepared_room_left_right_check(tmp_path):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "prepare_brirs", ROOT / "scripts" / "prepare_brirs.py"
+    )
+    prep = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(prep)
+    for swap, ok in ((False, True), (True, False)):
+        d = _fake_room(tmp_path, f"r{swap}", swap=swap)
+        with np.load(d / f"r{swap}.npz") as z:
+            f_l, f_r, n_l, n_r = prep.lr_check(z["ir"], z["az_deg"], float(z["fs"]))
+        assert (n_l, n_r) == (2, 1)
+        assert (f_l >= 0.9 and f_r >= 0.9) == ok
