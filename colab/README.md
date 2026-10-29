@@ -25,7 +25,7 @@ It trains `binaural`, then `left`, then `right`. A model that finished gets a `d
 
 ## Score on Colab (last cell)
 
-The last cell, "7. Score", checks each finished model (the ones with a `done.txt`). If it has no `test_done.txt` yet, the cell picks the best threshold on the val scenes, then tests on the test scenes (the two-ear model also with the left and right ear muted). The small result folders (`results/<experiment>`, plus the `_thr...` and `_mute_...` ones) are copied to `MyDrive/second-ear/results/`, and `test_done.txt` marks the model as scored. It needs the `scenes_*.tar` from setup step 4. Without the val scenes it skips the model; without the test scenes it only picks the threshold.
+The last cell, "7. Score", checks each finished model (the ones with a `done.txt`). If it has no `test_done.txt` yet, the cell picks the best threshold on the val scenes, then tests on the test scenes (the two-ear model also with the left and right ear muted). The small result folders (`results/<experiment>`, plus the `_thr...` and `_mute_...` ones) are copied to `MyDrive/second-ear/results/`, and `test_done.txt` marks the model as scored. It needs the `scenes_*.tar` from setup step 4. Without the val scenes it skips the model; without the test scenes it only picks the threshold. If `MyDrive/second-ear/locata/locata_scenes.tar` exists (members `scenes/dev/*` and `scenes/eval/*`), the cell also scores each two-ear model on the real LOCATA recordings with the picked threshold and marks it with `locata_done.txt`; each part is skipped only by its own marker, so older models still get their LOCATA run on a later pass.
 
 ## After a disconnect
 
