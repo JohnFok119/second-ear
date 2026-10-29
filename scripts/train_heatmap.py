@@ -28,11 +28,14 @@ def main() -> None:
     ap.add_argument("--limit-clips", type=int, default=None, help="clips per split (smoke)")
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--ram-f16", action="store_true", help="hold train chunks as float16 in RAM")
+    ap.add_argument("--disk-cache", default=None, help="dir for a memory-mapped float16 train cache")
     ap.add_argument("--overfit-clip", default=None, help="train+eval on this one clip only")
     a = ap.parse_args()
     cfg = load_config(a.config, epochs=a.epochs, batch_size=a.batch_size, data=a.data, ears=a.ears)
     if a.ram_f16:
         cfg["ram_f16"] = True
+    if a.disk_cache:
+        cfg["disk_cache"] = a.disk_cache
     feats = a.features or f"data/features/{'baseline' if cfg['data'] == 'foa' else cfg['data']}"
     res = run_training(
         feats,

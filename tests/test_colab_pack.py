@@ -7,6 +7,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 
 from secondear.train import baseline as tb
 from secondear.train import heatmap as th
@@ -122,6 +123,52 @@ def test_ram_f16_dataset_matches_float32(tmp_path):
         assert xb.dtype == np.dtype("float16") or str(xb.dtype) == "torch.float16"
         np.testing.assert_allclose(xb.float().numpy(), xa.numpy(), atol=5e-2, rtol=1e-2)
         np.testing.assert_array_equal(ya.numpy(), yb.numpy())
+
+
+def _disk_args(tmp_path, scale_mult=1.0):
+    src = tmp_path / "feat"
+    if not src.exists():
+        _make_cache(src)
+    files = tb.list_cached(src, "train")
+    mean, scale = tb.load_scaler(src / "scaler.npz")
+    grid = th.HeatmapNet(SMALL, 10.0, 5.0, n_classes=1, n_channels=5).fine
+    return (files, mean, scale * scale_mult, grid, 15.0, "pad", "binaural_v2", "both", True)
+
+
+def test_disk_cache_matches_ram_f16(tmp_path):
+    args = _disk_args(tmp_path)
+    cache = tmp_path / "cache"
+    a = th.HeatmapChunkDataset(*args, ram_f16=True)
+    b = th.HeatmapChunkDataset(*args, disk_cache=cache)
+    assert len(a) == len(b) and len(b) >= 3
+    for i in range(len(b)):
+        xa, ya = a[i]
+        xb, yb = b[i]
+        assert xb.dtype == torch.float32
+        np.testing.assert_allclose(xb.numpy(), xa.float().numpy(), atol=0, rtol=0)
+        np.testing.assert_array_equal(ya.numpy(), yb.numpy())
+    f32 = th.HeatmapChunkDataset(*args)
+    np.testing.assert_allclose(b[0][0].numpy(), f32[0][0].numpy(), atol=1e-2)
+    assert len(list(cache.glob("*.npy"))) == len(args[0])
+    assert not list(cache.glob("*.tmp"))
+
+
+def test_disk_cache_reused_on_second_build(tmp_path):
+    args = _disk_args(tmp_path)
+    cache = tmp_path / "cache"
+    th.HeatmapChunkDataset(*args, disk_cache=cache)
+    before = {p.name: p.stat().st_mtime_ns for p in cache.glob("*.npy")}
+    th.HeatmapChunkDataset(*args, disk_cache=cache)
+    after = {p.name: p.stat().st_mtime_ns for p in cache.glob("*.npy")}
+    assert before and before == after
+
+
+def test_disk_cache_key_changes_with_scale(tmp_path):
+    cache = tmp_path / "cache"
+    th.HeatmapChunkDataset(*_disk_args(tmp_path), disk_cache=cache)
+    n1 = len(list(cache.glob("*.npy")))
+    th.HeatmapChunkDataset(*_disk_args(tmp_path, scale_mult=2.0), disk_cache=cache)
+    assert len(list(cache.glob("*.npy"))) == 2 * n1
 
 
 def test_resume_appends_history(tmp_path):

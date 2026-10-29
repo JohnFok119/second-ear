@@ -7,8 +7,10 @@ scaler helpers. Dense targets are built on the fly from each chunk's `ref` event
 from __future__ import annotations
 
 import bisect
+import hashlib
 import itertools
 import json
+import os
 import shutil
 import time
 from pathlib import Path
@@ -48,6 +50,7 @@ DEFAULT_CONFIG = {
     "epochs": 100,
     "patience": None,  # stop after this many epochs without a new best (None = off)
     "ram_f16": False,  # train set held in RAM as float16, per clip, no concat (low-RAM hosts)
+    "disk_cache": None,  # directory for a memory-mapped float16 train cache (beats ram_f16)
     "batch_size": 32,
     "threshold": 0.5,
     "seed": 42,
@@ -145,6 +148,33 @@ def load_clip(f: Path, mean, scale, tail: str, data: str = "foa", ears: str = "b
     return x, chunk_events(ref, x.shape[0]), ref, n_label
 
 
+def _cache_tag(mean, scale, data: str) -> str:
+    """Short hash of everything besides ears/tail that changes the stored array."""
+    h = hashlib.sha1(data.encode())
+    for a in (mean, scale):
+        h.update(np.ascontiguousarray(a, dtype=np.float64).tobytes())
+    return h.hexdigest()[:8]
+
+
+def _cache_clip(path: Path, x: torch.Tensor) -> np.ndarray:
+    """Write x as float16 .npy once (temp name, then rename); return a read-only memmap."""
+    arr = x.half().numpy()
+    if path.exists():
+        try:
+            old = np.load(path, mmap_mode="r")
+            ok = old.shape == arr.shape and old.dtype == arr.dtype
+            del old
+        except (ValueError, OSError):
+            ok = False
+        if ok:
+            return np.load(path, mmap_mode="r")
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "wb") as fh:
+        np.save(fh, arr)
+    os.replace(tmp, path)
+    return np.load(path, mmap_mode="r")
+
+
 class HeatmapChunkDataset(Dataset):
     """Normalised 250-frame chunks plus their events; dense targets are built per item."""
 
@@ -162,16 +192,25 @@ class HeatmapChunkDataset(Dataset):
         ram_f16: bool = False,
         augment: dict | None = None,
         seed: int = 0,
+        disk_cache: str | Path | None = None,
     ):
         xs, evs = [], []
+        tag = _cache_tag(mean, scale, data) if disk_cache else ""
+        if disk_cache:
+            Path(disk_cache).mkdir(parents=True, exist_ok=True)
         for f in files:
             x, ev, _, _ = load_clip(f, mean, scale, tail, data, ears)
-            xs.append(x.half() if ram_f16 else x)
+            if disk_cache:
+                path = Path(disk_cache) / f"{Path(f).stem}_{ears}_{tail}_{tag}.npy"
+                xs.append(_cache_clip(path, x))
+            else:
+                xs.append(x.half() if ram_f16 else x)
             evs.extend(ev)
         if not xs:
             raise FileNotFoundError("no clips given to HeatmapChunkDataset")
-        self.ram_f16 = ram_f16
-        if ram_f16:
+        self.disk = bool(disk_cache)
+        self.ram_f16 = ram_f16 or self.disk
+        if self.ram_f16:
             self.xs = xs
             self.offsets = list(itertools.accumulate(len(x) for x in xs))
         else:
@@ -197,6 +236,8 @@ class HeatmapChunkDataset(Dataset):
         if self.ram_f16:
             k = bisect.bisect_right(self.offsets, i)
             x = self.xs[k][i - (self.offsets[k - 1] if k else 0)]
+            if self.disk:
+                x = torch.from_numpy(np.array(x, dtype=np.float32))
         else:
             x = self.x[i]
         events = self.events[i]
@@ -398,6 +439,7 @@ def run_training(
         ram_f16=bool(cfg.get("ram_f16", False)),
         augment=cfg.get("augment"),
         seed=int(cfg["seed"]),
+        disk_cache=cfg.get("disk_cache"),
     )
     gen = torch.Generator().manual_seed(cfg["seed"])
     loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, generator=gen)
