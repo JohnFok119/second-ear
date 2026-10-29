@@ -34,6 +34,7 @@ from secondear.models.binaural import (
     binaural_features,
     channel_columns,
     chunks_to_input,
+    feature_class,
 )
 from secondear.models.dcase2023.seldnet_model import SeldModel
 
@@ -295,7 +296,7 @@ class HeatmapLocalizer:
         self.grid = self.model.fine
 
     def predict(self, audio: np.ndarray, fs: int = FS) -> Prediction:
-        """FOA [4, n] float32 at 24 kHz -> Prediction (heat map [frames, 13, 37, 72], events)."""
+        """FOA [4, n] float32 at `fs` -> Prediction (heat map [frames, 13, 37, 72], events)."""
         feat = foa_features(audio, fs)
         n_label = int(audio.shape[1] / float(_FC._label_hop_len))
         if feat.shape[0] == 0 or n_label == 0:
@@ -370,12 +371,12 @@ class BinauralHeatmapLocalizer:
         self.n_ch = n_ch
 
     def predict(self, audio: np.ndarray, fs: int = FS) -> Prediction:
-        """Binaural [2, n] float32 at 24 kHz -> Prediction (heat map [frames, 13, 37, 72])."""
+        """Binaural [2, n] float32 at `fs` -> Prediction (heat map [frames, 13, 37, 72])."""
         if self.mute is not None:
             audio = np.array(audio, copy=True)
             audio[0 if self.mute == "left" else 1] = 0.0
         feat = binaural_features(audio, fs)[:, self.cols]
-        n_label = int(audio.shape[1] / float(_FC._label_hop_len))
+        n_label = int(audio.shape[1] / float(feature_class(fs)._label_hop_len))
         if feat.shape[0] == 0 or n_label == 0:
             return Prediction(grid=self.grid, heatmap=None, events=[])
         x = chunks_to_input(feat, self.feat_mean, self.feat_scale, self.n_ch).to(self.device)

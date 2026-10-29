@@ -14,11 +14,14 @@ Ear modes pick channels at load time; one-ear modes get no interaural channels.
 
 from __future__ import annotations
 
+from functools import cache
+
 import numpy as np
 import torch
 
 from secondear.features.binaural import ild_db, ipd
-from secondear.models.baseline import _FC, _PAD, FS, N_MEL, SEQ_FEAT_FRAMES
+from secondear.models.baseline import _PAD, FS, N_MEL, SEQ_FEAT_FRAMES, make_params
+from secondear.models.dcase2023.cls_feature_class import FeatureClass
 
 __all__ = [
     "BIN_CHANNELS",
@@ -26,6 +29,7 @@ __all__ = [
     "binaural_features",
     "channel_columns",
     "chunks_to_input",
+    "feature_class",
 ]
 
 BIN_CHANNELS = 5
@@ -39,18 +43,29 @@ def channel_columns(ears: str) -> np.ndarray:
     return np.concatenate([np.arange(c * N_MEL, (c + 1) * N_MEL) for c in EAR_CHANNELS[ears]])
 
 
+@cache
+def feature_class(fs: int) -> FeatureClass:
+    """Vendored `FeatureClass` for sample rate `fs` (20 ms hop, 100 ms label frames), cached."""
+    params = make_params()
+    params["fs"] = fs
+    hop = fs * params["hop_len_s"]
+    label_hop = fs * params["label_hop_len_s"]
+    if abs(hop - round(hop)) > 1e-6 or abs(label_hop - round(label_hop)) > 1e-6:
+        raise ValueError(f"fs={fs} does not give an integer hop / label hop")
+    return FeatureClass(params)
+
+
 def binaural_features(audio: np.ndarray, fs: int = FS) -> np.ndarray:
-    """Binaural audio [2, n] (rows L, R) -> raw features float32 [T, 320], T = n // 480."""
-    if fs != FS:
-        raise ValueError(f"expected fs={FS}, got {fs}")
+    """Binaural audio [2, n] (rows L, R) -> raw features float32 [T, 320], T = n // (fs / 50)."""
+    fc = feature_class(fs)
     if audio.ndim != 2 or audio.shape[0] != 2:
         raise ValueError(f"expected binaural audio [2, n], got {audio.shape}")
-    x = audio.T.astype(np.float64) + _FC._eps
-    n_frames = int(len(x) / float(_FC._hop_len))
-    spect = _FC._spectrogram(x, n_frames)  # [T, bins, 2]
-    logmel = _FC._get_mel_spectrogram(spect)  # [T, 2 * 64]
+    x = audio.T.astype(np.float64) + fc._eps
+    n_frames = int(len(x) / float(fc._hop_len))
+    spect = fc._spectrogram(x, n_frames)  # [T, bins, 2]
+    logmel = fc._get_mel_spectrogram(spect)  # [T, 2 * 64]
     left, right = spect[:, :, 0], spect[:, :, 1]
-    w = _FC._mel_wts  # [bins, 64]
+    w = fc._mel_wts  # [bins, 64]
     norm = np.maximum(w.sum(axis=0), 1e-8)
     cos_sin = ipd(left, right)
     pooled = [(m.astype(np.float64) @ w) / norm for m in (ild_db(left, right), *cos_sin)]
