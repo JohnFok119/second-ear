@@ -1,0 +1,30 @@
+{
+  "experiment": "where_aug_swapmask",
+  "git_sha": "23bc6afe0b885aac0b0eaa14b7eaa82bf8e83ece",
+  "threshold": 0.3,
+  "agnostic": true,
+  "note": "slim copy: per_clip/by_task/config dropped; full metrics.json on Drive second-ear/results/",
+  "split": "test",
+  "mute": null,
+  "n_clips": 300,
+  "best_epoch": 30,
+  "overall": {
+    "LE_deg": 25.093058659439514,
+    "LR": 0.800811916605606,
+    "precision20": 0.5377177317311748,
+    "recall20": 0.5453995184934032,
+    "F20": 0.541531384364416,
+    "front_back_rate": 0.025113662195953627,
+    "n_pred": 222866,
+    "n_truth": 219727,
+    "n_matched": 175960,
+    "n_tp20": 119839,
+    "n_fb": 4419
+  },
+  "front_back_rate": 0.025113662195953627,
+  "frontal_azimuth_error": 20.985438103440462,
+  "chance": {
+    "F20": 0.05138355102769361,
+    "LE_deg": 70.60672872719684
+  }
+}

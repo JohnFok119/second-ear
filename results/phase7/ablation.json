@@ -14,6 +14,21 @@
       "locata_LE_deg": 60.9825715689212,
       "locata_F20": 0.09907544800821824,
       "note": "Phase 5 where_binaural, val threshold 0.30; LOCATA = eval split, 46 recordings (chance F20 0.04)"
+    },
+    {
+      "name": "aug_swapmask",
+      "change": "ear swap + SpecAugment masks (CRNN, v2 scenes)",
+      "LE_deg": 25.093058659439514,
+      "LR": 0.800811916605606,
+      "F20": 0.541531384364416,
+      "precision20": 0.5377177317311748,
+      "recall20": 0.5453995184934032,
+      "guess_rate": 1.014285909332945,
+      "front_back_rate": 0.025113662195953627,
+      "frontal_azimuth_error_deg": 20.985438103440462,
+      "locata_LE_deg": 74.05618585450613,
+      "locata_F20": 0.051270778953152914,
+      "note": "val threshold 0.30, best epoch 30; one ear muted: left F20 0.000 (no guesses), right F20 0.044; LOCATA = eval split"
     }
   ]
 }

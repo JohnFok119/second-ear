@@ -1,0 +1,21 @@
+{
+  "experiment": "where_aug_swapmask",
+  "git_sha": "23bc6afe0b885aac0b0eaa14b7eaa82bf8e83ece",
+  "threshold": 0.3,
+  "agnostic": true,
+  "note": "slim copy: per_clip/by_task/config dropped; full metrics.json on Drive second-ear/results/",
+  "split": "test",
+  "mute": "left",
+  "n_clips": 300,
+  "overall": {
+    "LE_deg": null,
+    "LR": 0.0,
+    "precision20": 0.0,
+    "recall20": 0.0,
+    "F20": 0.0,
+    "n_pred": 0,
+    "n_truth": 219727
+  },
+  "front_back_rate": 0.0,
+  "frontal_azimuth_error": null
+}
