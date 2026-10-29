@@ -44,3 +44,21 @@ All top five use ResNet-Conformer or a close variant.
 - ILD/IPD sign flips under channel swap, and behaviour for front/back: researcher reasoning, not sourced.
 - Heat map vs ACCDOA vs EINV2 head-to-head: none found.
 - 2025 report bodies, ablations and simulated-data amounts.
+
+## Real audio sources (third crew-researcher, 2026-10-28)
+No large real, direction-labelled binaural dataset was found. Best realism per effort:
+
+| Source | What it is | Real part | Labels | Licence | URL |
+|---|---|---|---|---|---|
+| ASH-Listening-Set | Index of BRIRs from ~14 public dummy-head room datasets | room + head | yes | per room: CC BY 4.0 / CC BY-SA 3.0 / **CC BY-NC** (filter those out) | https://github.com/ShanonPearce/ASH-Listening-Set/wiki/Datasets |
+| TU Berlin Calypso (KEMAR) | KEMAR BRIRs, 9 positions, head rotation +-90 deg in 1 deg steps, SOFA | room + head | yes | CC BY 4.0 | https://zenodo.org/records/160761 |
+| Surrey BRIRs (Cortex HATS) | 4 reverberant rooms, RT60 0.32-0.89 s; shared at 16 kHz | room + head | yes | MIT per ASH wiki; archive UNVERIFIED | https://avtshare01.rz.tu-ilmenau.de/two-ears/database/impulse_responses/surrey_cortex_rooms/doc/BRIR_measurements.pdf |
+| BRAS (TU Berlin) | Room acoustics benchmark, RIRs + binaural | room + head | yes | CC BY-SA 4.0 | https://depositonce.tu-berlin.de//bitstream/11303/7843/5/Documentation.pdf |
+| Aachen AIR | Dummy-head BRIRs, several rooms | room + head | yes | UNVERIFIED | https://www.iks.rwth-aachen.de/en/research/tools-downloads/databases/aachen-impulse-response-database |
+| eBrIRD | Manikin BRIRs: anechoic, restaurant, kitchen | room + head | yes | UNVERIFIED | https://www.phon.ucl.ac.uk/resource/ebrird |
+| LOCATA | Real recordings, talkers, head-torso simulator with hearing-aid dummies (4 ch) + OptiTrack positions; 19.3 GB | all | yes | ODC Attribution | https://zenodo.org/record/3630471 |
+| Oldenburg | Artificial-head ambient recordings: office, cafeteria, courtyard | all | no | UNVERIFIED | https://medi.uni-oldenburg.de/hrir/html/documentation.html |
+| WHAM! | Binaural café/restaurant noise | all | no | **CC BY-NC 4.0: avoid** | https://audeering.github.io/datasets/datasets/wham.html |
+| SPARTA (ambiBIN, COMPASS) | FOA-to-binaural decoder plugins | tool | n/a | GPLv3; ITD preservation UNVERIFIED | https://github.com/leomccormack/SPARTA |
+
+Notes: BRIR sets use only a few dummy heads (KEMAR, Cortex HATS), so they add real rooms but not head variety. No open-source FOA-to-binaural method was confirmed to keep ITD. No 2024-2026 real labelled binaural ML dataset found.
