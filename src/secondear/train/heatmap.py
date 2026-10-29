@@ -25,6 +25,7 @@ from secondear.models.baseline import N_CLASSES, N_MEL, SEQ_FEAT_FRAMES, SEQ_LAB
 from secondear.models.binaural import EAR_CHANNELS, channel_columns, chunks_to_input
 from secondear.models.heatmap import HeatmapNet, heatmap_loss
 from secondear.targets.heatmap import dense_targets
+from secondear.train.augment import ear_swap, filter_augment, spec_mask
 from secondear.train.baseline import (
     TEST_SPLIT,
     TRAIN_SPLIT,
@@ -55,6 +56,7 @@ DEFAULT_CONFIG = {
     "data": "foa",  # foa (STARSS23 cache) | binaural (scene cache) | binaural_v2 (train/val/test)
     "ears": "both",  # binaural only: both | left | right
     "agnostic": False,  # true: one class-agnostic target map, 1-map model, agnostic metrics
+    "augment": None,  # train-only: {swap: p, mask: bool, filter: bool} (train/augment.py)
     "experiment": "heatmap_foa",
 }
 BIN_TRAIN_SPLIT, BIN_TEST_SPLIT = "train", "test"
@@ -156,6 +158,8 @@ class HeatmapChunkDataset(Dataset):
         ears: str = "both",
         agnostic: bool = False,
         ram_f16: bool = False,
+        augment: dict | None = None,
+        seed: int = 0,
     ):
         xs, evs = [], []
         for f in files:
@@ -174,6 +178,15 @@ class HeatmapChunkDataset(Dataset):
         self.grid = grid
         self.fwhm_deg = fwhm_deg
         self.agnostic = agnostic
+        self.augment = augment or None
+        self.seed = seed
+        self._calls = 0
+        self.mean = self.scale = None
+        if self.augment:
+            n_ch = len(EAR_CHANNELS[ears])
+            cols = channel_columns(ears)
+            self.mean = np.asarray(mean)[cols].reshape(n_ch, 1, N_MEL)
+            self.scale = np.asarray(scale)[cols].reshape(n_ch, 1, N_MEL)
 
     def __len__(self) -> int:
         return self.offsets[-1] if self.ram_f16 else self.x.shape[0]
@@ -184,8 +197,11 @@ class HeatmapChunkDataset(Dataset):
             x = self.xs[k][i - (self.offsets[k - 1] if k else 0)]
         else:
             x = self.x[i]
+        events = self.events[i]
+        if self.augment:
+            x, events = self._augment(x, events)
         y = dense_targets(
-            self.events[i],
+            events,
             self.grid,
             SEQ_LABEL_FRAMES,
             N_CLASSES,
@@ -193,6 +209,20 @@ class HeatmapChunkDataset(Dataset):
             agnostic=self.agnostic,
         )
         return x, torch.from_numpy(y)
+
+    def _augment(self, x: torch.Tensor, events: list[Event]):
+        """Swap (with prob), mask, filter, in that order; a fresh generator per call."""
+        rng = np.random.default_rng([self.seed, self._calls])
+        self._calls += 1
+        x = x.float()
+        cfg = self.augment
+        if x.shape[0] == 5 and rng.random() < float(cfg.get("swap", 0.0)):
+            x, events = ear_swap(x, events, self.mean, self.scale)
+        if cfg.get("mask"):
+            x = spec_mask(x, rng)
+        if cfg.get("filter"):
+            x = filter_augment(x, self.mean, self.scale, rng)
+        return x, events
 
 
 def train_epoch(model, loader, optimizer, gscaler, cfg, device) -> float:
@@ -362,6 +392,8 @@ def run_training(
         cfg["ears"],
         agnostic,
         ram_f16=bool(cfg.get("ram_f16", False)),
+        augment=cfg.get("augment"),
+        seed=int(cfg["seed"]),
     )
     gen = torch.Generator().manual_seed(cfg["seed"])
     loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True, generator=gen)
