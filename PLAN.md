@@ -16,7 +16,7 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - scope: `personal\second-ear` only (plus one feature branch in `jyfok-portfolio` at C4.3, never merged by the ship); work on `c<chunk>-<slug>` branches; merge to `main` after verify (Johnny's standing go 2026-10-22, this repo only)
 - standing go: commit, push, merge to `main`, dispatch crew without per-batch approval, enable GitHub Pages; no force-push, no other repos' main, no deploy beyond Pages
 - models: First Mate Opus 5.5 (ship launched by sail.ps1); crew Sonnet, Haiku for mechanical; Fable only if: never
-- stop when: every `- [ ]` in this file is ticked AND `uv run pytest -q` passes AND `gh api repos/JohnFok119/second-ear/pages` returns 200
+- stop when (Phase 7, Johnny 2026-10-29: "good enough when it distinctly shows the difference between two ears and one"): `results/phase7/ablation.md` shows ALL of (1) two-ear frontal error <= 12 deg on v3 sim test, (2) trained right-ear frontal error >= 3x the two-ear one, (3) two ears clearly better than one on LOCATA, AND (4) Johnny says the café clip difference is obvious; AND `uv run pytest -q` passes. Safety stop: every phase7 box ticked but the bar not met -> stop and report the numbers. W2-W5 stay open (site on hold).
 - caps: 40 turns per chunk; lookout burn limit applies
 - ping me for: a decision only Johnny can make (listed in decisions.md as "Johnny"), blocked with no other work, milestones M1–M4, done
 - milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
