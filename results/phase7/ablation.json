@@ -11,8 +11,8 @@
       "guess_rate": 1.0857882736304596,
       "front_back_rate": 0.02457179359476841,
       "frontal_azimuth_error_deg": 19.841509393312652,
-      "locata_LE_deg": null,
-      "locata_F20": null,
+      "locata_LE_deg": 60.9825715689212,
+      "locata_F20": 0.09907544800821824,
       "note": "Phase 5 where_binaural, val threshold 0.30"
     }
   ]
