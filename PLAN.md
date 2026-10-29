@@ -140,7 +140,8 @@ Plan approved 2026-10-24 (`.lavish/phase5/`). Stage A (C5.1, C5.2) and stage B (
 ## Phase 6 — The new website → **M6**
 
 One scroll page replacing `web/` at the same URL. Johnny's left ear is deaf: "my ear" = right ear only.
-Research: `docs/research/c5/showcase.md`. W1, W2, W4 can start before C5.4; W3 needs C5.4 data.
+Research: `docs/research/c5/showcase.md`.
+**Johnny (2026-10-28):** current site "looks pretty meh, extremely AI generated". Presentation is re-evaluated once the new harness is in; W2–W5 on hold until then. W1, W2, W4 can start before C5.4; W3 needs C5.4 data.
 
 - [x] **W1 Shell.** (2026-10-24, merged e06015a; screenshots docs/research/w1/; W2 and W4 content also built there, awaiting Johnny review + a real-browser audio check; numbers marked data-pending="c5") Three sections (problem, showcase, how it works), mobile-first, no build step, Three.js pinned.
 - [ ] **W2 The problem.** Draft intro (Johnny edits), human numbers (3.7° vs 22.4°), "hear it with my ear" audio
