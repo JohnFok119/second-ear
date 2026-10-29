@@ -160,6 +160,7 @@ what each step bought. Every new model gets two scores: v3 simulated test + LOCA
 Training on free Colab T4 (resume from Drive, `colab/`). Licence rule for new audio: CC0 / CC BY / MIT / ODC-By;
 CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 
+- [ ] **Captain 2026-10-29:** Phase 7 goal/rule and step order approved; LOCATA lives in Drive, scored on Colab.
 - [ ] **phase7-C1 Ablation harness.** One script appends a row (run name, change, F20, LE, frontal error, guesses per sound,
   front-back) to `results/phase7/ablation.md` from an eval JSON. First row = current where_binaural on v2 test (no
   retrain). *Done when:* the table has the v2 row and matches `results/one_ear_where/table.md`.
@@ -172,11 +173,11 @@ CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
   *Done when:* ablation row; param count + peak memory in the row note.
 - [ ] **phase7-C4 Real-audio sources.** Download + licence-check into `data/`: CC BY / MIT BRIR rooms (TU Berlin
   Calypso, Surrey, others from the ASH index that pass the licence rule; eBrIRD restaurant if its licence passes),
-  café beds (list in frontier.md), LOCATA dev + eval (19.3 GB). `docs/research/c7/sources.md` lists each file's
+  café beds (list in frontier.md). LOCATA dev + eval (19.3 GB zips) goes to Google Drive, not this PC (Johnny 2026-10-29): a Colab cell downloads from Zenodo to Colab's own disk, keeps only the hearing-aid channels + positions + voice activity in `MyDrive/second-ear/locata/`, deletes the zips. `docs/research/c7/sources.md` lists each file's
   licence, rate, directions; `web/CREDITS.md` gets any audio that ships in the site. *Done when:* sources.md complete,
   every file's licence checked on its own page, disk still > 40 GB free.
 - [ ] **phase7-C5 LOCATA real test.** Loader: front hearing-aid mic of each ear → 2 channels; OptiTrack positions →
-  head-relative az/el per 100 ms; voice-activity → active frames; class-agnostic scoring. Score the v2 models (resampled
+  head-relative az/el per 100 ms; voice-activity → active frames; class-agnostic scoring. Scoring runs in Colab against the Drive copy (models from Drive checkpoints). Score the v2 models (resampled
   to 24 kHz). *Done when:* LOCATA column filled for the v2, C2 and C3 rows; loader tests pass.
 - [ ] **phase7-C6 Renderer v3.** `fs` from config end to end (48 kHz: STFT 2048 / hop 960, 64 mels up to 20 kHz, same
   feature shape); room = shoebox or a real BRIR room (share set in config); background bed = café/ambience chunks spread
