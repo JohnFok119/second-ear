@@ -16,13 +16,11 @@ import numpy as np
 import soundfile as sf
 
 from secondear.io.starss23 import read_metadata_rows
-from secondear.models.baseline import FS
 from secondear.models.binaural import binaural_features
 from secondear.train.baseline import fit_scaler, save_scaler
 
 SPLITS = ("train", "test")
 SPLITS_V2 = ("train", "val", "test")
-LABEL_HOP = FS // 10
 
 
 def scene_stems(root: Path, split: str) -> list[str]:
@@ -31,15 +29,23 @@ def scene_stems(root: Path, split: str) -> list[str]:
     return sorted(w.stem for w in d.glob("*.wav") if w.with_suffix(".csv").exists())
 
 
+def split_fs(root: Path, split: str, stems: list[str]) -> int | None:
+    """The single sample rate of a split's wavs; ValueError if the rates are mixed."""
+    rates = {sf.info(str(root / split / f"{s}.wav")).samplerate for s in stems}
+    if len(rates) > 1:
+        raise ValueError(f"{split}: mixed sample rates {sorted(rates)}; extract one rate per split")
+    return rates.pop() if rates else None
+
+
 def extract_scene(wav: Path, csv: Path) -> dict[str, np.ndarray]:
-    """One scene -> npz payload."""
+    """One scene -> npz payload (features at the wav's own sample rate, no resampling)."""
     data, fs = sf.read(str(wav), dtype="float32", always_2d=True)
-    assert fs == FS and data.shape[1] == 2, f"{wav}: expected 2-ch {FS} Hz, got {data.shape} {fs}"
+    assert data.shape[1] == 2, f"{wav}: expected 2-ch audio, got {data.shape}"
     audio = np.ascontiguousarray(data.T)
     return {
         "feat": binaural_features(audio, fs),
         "ref": read_metadata_rows(csv).astype(np.int64).reshape(-1, 6),
-        "n_label": np.array(audio.shape[1] // LABEL_HOP),
+        "n_label": np.array(audio.shape[1] // (fs // 10)),
     }
 
 
@@ -58,6 +64,7 @@ def main() -> None:
     for split in SPLITS_V2 if a.v2 else SPLITS:
         (out / split).mkdir(parents=True, exist_ok=True)
         stems = scene_stems(root, split)[: a.limit]
+        split_fs(root, split, stems)  # refuse a mixed-rate split before extracting
         for i, stem in enumerate(stems):
             dest = out / split / f"{stem}.npz"
             if dest.exists():
