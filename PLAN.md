@@ -131,7 +131,7 @@ Plan approved 2026-10-24 (`.lavish/phase5/`). Stage A (C5.1, C5.2) and stage B (
 - [x] **C5.2 "Where-only" model.** (done 2026-10-25 on Colab T4; results/one_ear_where/) One class-agnostic map instead of 13 (config switch, tests); train two ears, left,
   right on v2; sudden-loss evals; bar picked on v2 val. Headline = class-agnostic metrics; per-type scores kept in an
   appendix. *Done when:* metrics JSONs + new one-ear table on the v2 test set.
-- [ ] **C5.3 Spatial-AST spike.** Released checkpoint on our v2 test scenes (zero-shot); memory check on 8 GB, else
+- [x] **C5.3 Spatial-AST spike.** (closed 2026-10-29: zero-shot ~63 deg, clip-level output; Johnny: replaced by phase7-C3b, pretrained encoder + our heat-map head) Released checkpoint on our v2 test scenes (zero-shot); memory check on 8 GB, else
   Colab T4; fine-tune on v2 train. Pass line: beats C5.2's two-ear model on direction error. One-ear variant only if
   it passes. *Done when:* a written verdict with numbers in `docs/research/c5/spatial_ast_spike.md`.
 - [x] **C5.4 Results.** (done 2026-10-25: where_interpretation.md, LEARNING Phase 5, web/clips JSONs, .lavish/m5/) Pick the model, one-ear table + interpretation, LEARNING.md Phase 5, viewer JSONs (two ears /
@@ -171,6 +171,10 @@ CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 - [ ] **phase7-C3 Conformer encoder.** `encoder: crnn | resconformer` switch: ResNet conv stem + Conformer blocks, sized
   to train at batch 32 on a T4 (16 GB) and evaluate on the 8 GB card. Train with C2's winning tricks on v2 + Colab.
   *Done when:* ablation row; param count + peak memory in the row note.
+- [ ] **phase7-C3b Pretrained listener.** Spatial-AST's released encoder (`external/spatial-ast`, 86M params, AudioMAE
+  ViT; spike notes `docs/research/c5/spatial_ast_spike.md`) with its clip-level heads removed and our heat-map head on
+  its time tokens (one map per 100 ms frame). 32 kHz input, 2 channels. Fine-tune on v2 (resampled) with C2's tricks,
+  Colab T4, AMP. *Done when:* ablation row "pretrained encoder vs from scratch" with param count + peak memory.
 - [ ] **phase7-C4 Real-audio sources.** Download + licence-check into `data/`: CC BY / MIT BRIR rooms (TU Berlin
   Calypso, Surrey, others from the ASH index that pass the licence rule; eBrIRD restaurant if its licence passes),
   café beds (list in frontier.md). LOCATA dev + eval (19.3 GB zips) goes to Google Drive, not this PC (Johnny 2026-10-29): a Colab cell downloads from Zenodo to Colab's own disk, keeps only the hearing-aid channels + positions + voice activity in `MyDrive/second-ear/locata/`, deletes the zips. `docs/research/c7/sources.md` lists each file's
