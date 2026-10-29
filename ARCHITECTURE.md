@@ -289,3 +289,20 @@ else; cloud spend is $0 by decision.
 - **M2:** baseline within ~10 % of published F20 (or gap explained); heat-map model table vs baseline and classical.
 - **M3:** one-ear table with the human row + 2-paragraph interpretation; coffee-shop scene rendered and scored in 3 ear modes.
 - **M4:** viewer live on GitHub Pages; README with story, GIFs, numbers, how to run, limitations; fresh clone → `uv sync` → tests pass → one script reproduces a results JSON.
+
+## 10. Phase 7 changes (2026-10-29)
+Chunks: PLAN.md Phase 7. Research: `docs/research/c6/frontier.md`.
+- **Augmentation** lives in the training data loader (train split only, config switches). Ear swap must flip the
+  label too: azimuth az → −az (our convention: 0 = front, +90 = left), elevation unchanged; ILD and IPD-sin change
+  sign, IPD-cos and mels swap channels. Masks and filter curves are applied identically to both ears so the
+  interaural cues stay true.
+- **Encoder switch:** `encoder: crnn` (current SeldModel conv → BiGRU → MHSA) or `resconformer` (ResNet stem →
+  Conformer blocks). Same heat-map head and loss, so only the encoder changes between rows.
+- **Renderer v3:** sample rate is a config value, never a constant; 48 kHz keeps the 4–16 kHz pinna cues. Room =
+  shoebox (current image-source + tail) or a measured BRIR room (direction snapped to the nearest measured BRIR; the
+  label is the BRIR's true direction, so labels stay exact). Background bed = unlabelled ambience, spread over several
+  directions through the same room so it reaches the ears as a diffuse two-ear field.
+- **Two test sets for every model:** v3 simulated test (unseen heads) and LOCATA (real room, real talkers, dummy head
+  with hearing-aid mics). LOCATA is speech only and its mics sit behind the ear, so it tests real-world azimuth, not
+  pinna cues.
+- **Ablation table** `results/phase7/ablation.md`: one row per run, one change per row.

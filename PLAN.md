@@ -21,7 +21,7 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - ping me for: a decision only Johnny can make (listed in decisions.md as "Johnny"), blocked with no other work, milestones M1–M4, done
 - milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
 - cloud: allowed per the cloud rule until 2026-11-04 (Johnny, 2026-10-23), Claude sessions only, kit on branch `cloud-kit`; GPU cloud spend $0 (local GPU via `fleet\lease.mjs`). **Google Colab allowed** (Johnny, 2026-10-24): free T4 as much as needed; L4/A100/G4 are on his account but may spend compute units, so ask before using them.
-- milestones (Phase 5–6): M5 new model results (`.lavish/m5/`) · M6 new website live (`.lavish/m6/`)
+- milestones (Phase 5–6): M5 new model results (`.lavish/m5/`) · M6 new website live (`.lavish/m6/`) · M7 better model, sim + real scores (`.lavish/m7/`)
 
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
@@ -151,6 +151,49 @@ Research: `docs/research/c5/showcase.md`.
 - [ ] **W4 How it works.** Pipeline diagram (inline SVG), ML-work cards, model card, links to code + LEARNING.md.
 - [ ] **W5 Polish + ship.** Chrome + Firefox + phone checks, README links, portfolio card headline (feature branch),
   M6 page + push notification.
+
+## Phase 7 — A better model, closer to real audio → **M7**
+
+Johnny 2026-10-28/29: model work is the ML focus; site presentation waits for the new harness. Research:
+`docs/research/c6/frontier.md`. Rule: **one change per run**, each scored on the same test sets, so the M7 table shows
+what each step bought. Every new model gets two scores: v3 simulated test + LOCATA real test (from C7.4 on).
+Training on free Colab T4 (resume from Drive, `colab/`). Licence rule for new audio: CC0 / CC BY / MIT / ODC-By;
+CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
+
+- [ ] **phase7-C1 Ablation harness.** One script appends a row (run name, change, F20, LE, frontal error, guesses per sound,
+  front-back) to `results/phase7/ablation.md` from an eval JSON. First row = current where_binaural on v2 test (no
+  retrain). *Done when:* the table has the v2 row and matches `results/one_ear_where/table.md`.
+- [ ] **phase7-C2 Data tricks.** Config switches in `train/heatmap.py`, on the fly, train split only, with tests:
+  `aug_swap` (swap L/R mels, negate ILD and IPD-sin, mirror target azimuth az → −az), `aug_mask` (SpecAugment time +
+  mel masks, same mask both ears), `aug_filter` (FilterAugment: random smooth gain curve over mel bands, same curve
+  both ears). Cumulative runs on v2 + Colab: swap → +mask → +filter. *Done when:* three ablation rows; winner named.
+- [ ] **phase7-C3 Conformer encoder.** `encoder: crnn | resconformer` switch: ResNet conv stem + Conformer blocks, sized
+  to train at batch 32 on a T4 (16 GB) and evaluate on the 8 GB card. Train with C2's winning tricks on v2 + Colab.
+  *Done when:* ablation row; param count + peak memory in the row note.
+- [ ] **phase7-C4 Real-audio sources.** Download + licence-check into `data/`: CC BY / MIT BRIR rooms (TU Berlin
+  Calypso, Surrey, others from the ASH index that pass the licence rule; eBrIRD restaurant if its licence passes),
+  café beds (list in frontier.md), LOCATA dev + eval (19.3 GB). `docs/research/c7/sources.md` lists each file's
+  licence, rate, directions; `web/CREDITS.md` gets any audio that ships in the site. *Done when:* sources.md complete,
+  every file's licence checked on its own page, disk still > 40 GB free.
+- [ ] **phase7-C5 LOCATA real test.** Loader: front hearing-aid mic of each ear → 2 channels; OptiTrack positions →
+  head-relative az/el per 100 ms; voice-activity → active frames; class-agnostic scoring. Score the v2 models (resampled
+  to 24 kHz). *Done when:* LOCATA column filled for the v2, C2 and C3 rows; loader tests pass.
+- [ ] **phase7-C6 Renderer v3.** `fs` from config end to end (48 kHz: STFT 2048 / hop 960, 64 mels up to 20 kHz, same
+  feature shape); room = shoebox or a real BRIR room (share set in config); background bed = café/ambience chunks spread
+  over several directions through the scene's room, random SNR, unlabelled; more overlap (max 4 at once). Tests; three
+  sample scenes for Johnny to listen to. *Done when:* tests pass and Johnny OKs the samples.
+- [ ] **phase7-C7 Scenes v3.** 4,000 / 300 / 300 into `data/binaural_v3/` (same seeds/head split as v2), features,
+  pack for Drive. Raw train audio deleted after features if disk < 40 GB. *Done when:* counts checked, spot-checks,
+  features on Drive.
+- [ ] **phase7-C8 Retrain on v3.** Best encoder + tricks on v3 (Colab). Rows: v2 model on v3 test, v3 model on v3 test,
+  both on LOCATA. *Done when:* ablation rows + a short note on what real rooms / 48 kHz / beds changed.
+- [ ] **phase7-C9 One-ear on the winner.** Train ears=right and ears=left on v3; muted evals of the two-ear model; new
+  one-ear table vs humans (Aruffo 2025), v3 + LOCATA. *Done when:* table + interpretation committed.
+- [ ] **phase7-C10 Café clip v2.** Rebuild `web/scenes/coffee_shop.json` render: 48 kHz, real restaurant room (BRIR),
+  real café bed, overlapping voices; re-export viewer JSONs from the C8/C9 models. *Done when:* Johnny says it sounds
+  like a café.
+- [ ] **phase7-C11 Results.** M7 page (ablation table: each step's gain, sim + real), LEARNING.md Phase 7, README
+  numbers. *Done when:* committed, merged, M7 push.
 
 ---
 
