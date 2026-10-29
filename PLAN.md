@@ -161,7 +161,7 @@ Training on free Colab T4 (resume from Drive, `colab/`). Licence rule for new au
 CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 
 **Captain 2026-10-29:** Phase 7 goal/rule and step order approved; LOCATA lives in Drive, scored on Colab.
-- [ ] **phase7-C1 Ablation harness.** One script appends a row (run name, change, F20, LE, frontal error, guesses per sound,
+- [x] **phase7-C1 Ablation harness.** (done 2026-10-29, merged) One script appends a row (run name, change, F20, LE, frontal error, guesses per sound,
   front-back) to `results/phase7/ablation.md` from an eval JSON. First row = current where_binaural on v2 test (no
   retrain). *Done when:* the table has the v2 row and matches `results/one_ear_where/table.md`.
 - [ ] **phase7-C2 Data tricks.** Config switches in `train/heatmap.py`, on the fly, train split only, with tests:
