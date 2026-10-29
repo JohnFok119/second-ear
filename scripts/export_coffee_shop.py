@@ -96,6 +96,8 @@ def export_coffee_shop(
             coarse_step_deg=cfg["coarse_step_deg"],
             fine_step_deg=cfg["fine_step_deg"],
             agnostic=where,
+            encoder=cfg["encoder"],
+            conformer=cfg["conformer"],
         )
         pred = loc.predict(audio, fs)
         n_frames = max(pred.n_frames, max((e.frame for e in metric_truth), default=-1) + 1)

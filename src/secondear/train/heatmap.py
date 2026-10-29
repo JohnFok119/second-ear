@@ -57,6 +57,8 @@ DEFAULT_CONFIG = {
     "ears": "both",  # binaural only: both | left | right
     "agnostic": False,  # true: one class-agnostic target map, 1-map model, agnostic metrics
     "augment": None,  # train-only: {swap: p, mask: bool, filter: bool} (train/augment.py)
+    "encoder": "crnn",  # crnn | resconformer (models/heatmap.py)
+    "conformer": None,  # resconformer only: overrides of CONFORMER_DEFAULTS (d_model, ...)
     "experiment": "heatmap_foa",
 }
 BIN_TRAIN_SPLIT, BIN_TEST_SPLIT = "train", "test"
@@ -371,6 +373,8 @@ def run_training(
         cfg["fine_step_deg"],
         n_classes=1 if agnostic else N_CLASSES,
         n_channels=n_ch,
+        encoder=cfg["encoder"],
+        conformer=cfg["conformer"],
     ).to(dev)
     if overfit_clip:
         one = find_clip(feat_dir, overfit_clip, cfg["data"])
