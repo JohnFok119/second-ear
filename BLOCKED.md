@@ -1,5 +1,5 @@
-# Blocked — needs Johnny
+# Blocked — needs Johnny (morning list, 2026-10-29)
 
-- **Spatial-AST (C5.3):** zero-shot ~63° off and only one direction per 10 s clip (`docs/research/c5/spatial_ast_spike.md`). Recommend parking it. Until Johnny answers: parked, no fine-tune.
-- **Colab compute units:** Johnny (13:35) has Google Pro, sizing what compute he can afford. Until he says: free T4 only.
-- **Site review:** intro wording (draft), audio button + click sound in a real browser.
+- **Colab without popups:** every new Colab runtime asks for the Drive permission in a separate window the ship cannot click. Fix: save checkpoints/data to a private Hugging Face repo with a token Johnny adds once to Colab Secrets (the ship never handles the token). Until then: Colab trains only while tonight's runtime lives; the laptop GPU carries the rest.
+- **Listening check (phase7-C6):** three sample v3 scenes, when the renderer is ready.
+- **Site review:** on hold until the new harness (Johnny 2026-10-28).
