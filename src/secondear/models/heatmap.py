@@ -14,6 +14,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torchaudio.models import Conformer
 
 from secondear.core import Grid, Prediction, heatmap_to_events
 from secondear.models.baseline import (
@@ -128,6 +129,37 @@ def heatmap_loss(
     raise ValueError(f"loss must be one of {LOSSES}, got {loss!r}")
 
 
+ENCODERS = ("crnn", "resconformer")
+CONFORMER_DEFAULTS = {
+    "d_model": 256,
+    "num_heads": 4,
+    "ffn_dim": 1024,
+    "num_layers": 6,
+    "depthwise_conv_kernel_size": 31,
+    "dropout": 0.1,
+}
+STEM_CHANNELS = (64, 128, 256, 256)
+STEM_POOL = ((5, 2), (1, 2), (1, 2), (1, 2))  # time 250 -> 50, frequency 64 -> 4
+
+
+class ResBlock(nn.Module):
+    """Two 3x3 conv + BatchNorm (ReLU between), 1x1 shortcut when channels change, then pooling."""
+
+    def __init__(self, c_in: int, c_out: int, pool: tuple[int, int]):
+        super().__init__()
+        self.conv1 = nn.Conv2d(c_in, c_out, 3, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(c_out)
+        self.conv2 = nn.Conv2d(c_out, c_out, 3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(c_out)
+        self.shortcut = nn.Conv2d(c_in, c_out, 1, bias=False) if c_in != c_out else nn.Identity()
+        self.pool = nn.MaxPool2d(pool)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        y = F.relu(self.bn1(self.conv1(x)))
+        y = self.bn2(self.conv2(y))
+        return self.pool(F.relu(y + self.shortcut(x)))
+
+
 class HeatmapNet(nn.Module):
     """FOA features [B, 7, 250, 64] -> logits [B, 50, 13, n_el_fine, n_az_fine]."""
 
@@ -138,10 +170,19 @@ class HeatmapNet(nn.Module):
         fine_step_deg: float = 5.0,
         n_classes: int = N_CLASSES,
         n_channels: int = N_FEAT_CH,
+        encoder: str = "crnn",
+        conformer: dict | None = None,
     ):
         """`params` overrides upstream parameters (tests shrink the encoder); `n_channels` is the
-        input channel count (7 FOA, 5 binaural both ears, 1 one ear)."""
+        input channel count (7 FOA, 5 binaural both ears, 1 one ear).
+
+        `encoder` is `crnn` (SELDnet conv + GRU + MHSA) or `resconformer` (ResNet stem + Conformer
+        blocks); `conformer` overrides CONFORMER_DEFAULTS and only applies to `resconformer`.
+        """
         super().__init__()
+        if encoder not in ENCODERS:
+            raise ValueError(f"encoder must be one of {ENCODERS}, got {encoder!r}")
+        self.encoder = encoder
         p = make_params()
         p.update(params or {})
         self.n_classes = n_classes
@@ -151,20 +192,54 @@ class HeatmapNet(nn.Module):
         self.n_el_f, self.n_az_f = len(self.fine.el_deg), len(self.fine.az_deg)
         if self.n_az_f % self.n_az_c or (self.n_el_f - 1) % (self.n_el_c - 1):
             raise ValueError("fine grid must refine the coarse grid by an integer factor")
-        seld = SeldModel((1, n_channels, SEQ_FEAT_FRAMES, N_MEL), (1, SEQ_LABEL_FRAMES, 1), p)
-        # Encoder = everything in SeldModel.forward before the fnn head.
-        self.conv_block_list = seld.conv_block_list
-        self.gru = seld.gru
-        self.mhsa_block_list = seld.mhsa_block_list
-        self.layer_norm_list = seld.layer_norm_list
-        self.embed_dim = p["rnn_size"]
+        if encoder == "crnn":
+            seld = SeldModel((1, n_channels, SEQ_FEAT_FRAMES, N_MEL), (1, SEQ_LABEL_FRAMES, 1), p)
+            # Encoder = everything in SeldModel.forward before the fnn head.
+            self.conv_block_list = seld.conv_block_list
+            self.gru = seld.gru
+            self.mhsa_block_list = seld.mhsa_block_list
+            self.layer_norm_list = seld.layer_norm_list
+            self.embed_dim = p["rnn_size"]
+        else:
+            self._build_resconformer(n_channels, conformer)
         self.head = nn.Linear(self.embed_dim, n_classes * self.n_el_c * self.n_az_c)
         # Prior init: maps start near 0. A zero bias starts every cell at sigmoid 0.5, the first
         # steps then move all logits in lockstep and collapse the embedding to a constant in time.
         nn.init.constant_(self.head.bias, HEAD_BIAS_INIT)
 
+    def _build_resconformer(self, n_channels: int, conformer: dict | None) -> None:
+        """ResNet conv stem (time /5, frequency /16) -> Linear -> torchaudio Conformer stack."""
+        c = {**CONFORMER_DEFAULTS, **(conformer or {})}
+        unknown = set(c) - set(CONFORMER_DEFAULTS)
+        if unknown:
+            raise ValueError(f"unknown conformer keys: {sorted(unknown)}")
+        chans = (n_channels, *STEM_CHANNELS)
+        self.stem = nn.Sequential(
+            *[ResBlock(chans[i], chans[i + 1], STEM_POOL[i]) for i in range(len(STEM_POOL))]
+        )
+        freq = N_MEL
+        for _, pf in STEM_POOL:
+            freq //= pf
+        self.stem_proj = nn.Linear(STEM_CHANNELS[-1] * freq, c["d_model"])
+        self.conformer = Conformer(
+            input_dim=c["d_model"],
+            num_heads=c["num_heads"],
+            ffn_dim=c["ffn_dim"],
+            num_layers=c["num_layers"],
+            depthwise_conv_kernel_size=c["depthwise_conv_kernel_size"],
+            dropout=c["dropout"],
+        )
+        self.embed_dim = c["d_model"]
+
     def encode(self, x: torch.Tensor) -> torch.Tensor:
-        """Embedding [B, 50, rnn_size]; mirrors SeldModel.forward lines 170-186 (before fnn_list)."""
+        """Embedding [B, 50, embed_dim]; crnn mirrors SeldModel.forward lines 170-186."""
+        if self.encoder == "resconformer":
+            x = self.stem(x)  # [B, C, 50, F]
+            x = x.permute(0, 2, 1, 3).flatten(2)  # [B, 50, C * F]
+            x = self.stem_proj(x)
+            lengths = torch.full((x.shape[0],), x.shape[1], dtype=torch.long, device=x.device)
+            x, _ = self.conformer(x, lengths)
+            return x
         for blk in self.conv_block_list:
             x = blk(x)
         x = x.transpose(1, 2).contiguous()
@@ -202,10 +277,14 @@ class HeatmapLocalizer:
         coarse_step_deg: float = 10.0,
         fine_step_deg: float = 5.0,
         params: dict | None = None,
+        encoder: str = "crnn",
+        conformer: dict | None = None,
     ):
         """`checkpoint` is a plain state_dict; feat_mean/feat_scale as in `BaselineLocalizer`."""
         self.device = torch.device(device)
-        self.model = HeatmapNet(params, coarse_step_deg, fine_step_deg).to(self.device)
+        self.model = HeatmapNet(
+            params, coarse_step_deg, fine_step_deg, encoder=encoder, conformer=conformer
+        ).to(self.device)
         if checkpoint is not None:
             state = torch.load(checkpoint, map_location=self.device, weights_only=True)
             self.model.load_state_dict(state)
@@ -251,6 +330,8 @@ class BinauralHeatmapLocalizer:
         name: str | None = None,
         mute: str | None = None,
         agnostic: bool = False,
+        encoder: str = "crnn",
+        conformer: dict | None = None,
     ):
         """feat_mean/feat_scale are the full 320-column scaler; the mode's columns are picked.
 
@@ -269,7 +350,13 @@ class BinauralHeatmapLocalizer:
         self.device = torch.device(device)
         n_ch = len(EAR_CHANNELS[ears])
         self.model = HeatmapNet(
-            params, coarse_step_deg, fine_step_deg, 1 if agnostic else N_CLASSES, n_ch
+            params,
+            coarse_step_deg,
+            fine_step_deg,
+            1 if agnostic else N_CLASSES,
+            n_ch,
+            encoder=encoder,
+            conformer=conformer,
         )
         self.model = self.model.to(self.device)
         if checkpoint is not None:

@@ -98,6 +98,8 @@ def main() -> None:
         "threshold": train_cfg["threshold"],
         "coarse_step_deg": train_cfg["coarse_step_deg"],
         "fine_step_deg": train_cfg["fine_step_deg"],
+        "encoder": train_cfg["encoder"],
+        "conformer": train_cfg["conformer"],
     }
     mean, scale = load_scaler(ckpt / "scaler.npz")
     last_state = torch.load(ckpt / "last.pt", map_location="cpu", weights_only=False)

@@ -85,6 +85,8 @@ def main() -> None:
         "threshold": 1.0,
         "coarse_step_deg": cfg["coarse_step_deg"],
         "fine_step_deg": cfg["fine_step_deg"],
+        "encoder": cfg["encoder"],
+        "conformer": cfg["conformer"],
     }
     if binaural:
         loc = BinauralHeatmapLocalizer(

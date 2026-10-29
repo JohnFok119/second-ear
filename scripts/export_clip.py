@@ -52,6 +52,8 @@ def build_localizer(a: argparse.Namespace):
         "threshold": cfg["threshold"],
         "coarse_step_deg": cfg["coarse_step_deg"],
         "fine_step_deg": cfg["fine_step_deg"],
+        "encoder": cfg["encoder"],
+        "conformer": cfg["conformer"],
     }
     return HeatmapLocalizer(ckpt / "best.pt", a.device, mean, scale, **kw)
 
