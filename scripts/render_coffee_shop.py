@@ -18,6 +18,7 @@ from secondear.scene.coffee_shop import (
     write_credits,
 )
 from secondear.scene.coffee_shop_v2 import (
+    as_binaural_variant,
     build_scene_v2,
     render_coffee_shop_v2,
     save_scene_v2,
@@ -29,13 +30,19 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--rebuild-scene", action="store_true", help="re-pick clips, rewrite the JSON")
     ap.add_argument("--v2", action="store_true", help="render café clip v2 (real room, real bed)")
+    ap.add_argument(
+        "--bed-mode", choices=["diffuse", "binaural"], default="diffuse", help="v2: how bed 13747 is used"
+    )
     ap.add_argument("--data", type=Path, default=ROOT / "data", help="v2: folder with fsd50k, ...")
     ap.add_argument("--out", type=Path, default=None, help="v2 output (default <data>/samples_v3)")
     args = ap.parse_args()
     if args.v2:
         index = read_clip_index(args.data / "fsd50k" / "clip_index.csv")
         scene = build_scene_v2(index, args.data)
-        save_scene_v2(scene)
+        if args.bed_mode == "binaural":
+            scene = as_binaural_variant(scene)
+        else:
+            save_scene_v2(scene)
         paths, stats = render_coffee_shop_v2(scene, args.data, args.out or args.data / "samples_v3")
         for kind, path in paths.items():
             print(kind, path)

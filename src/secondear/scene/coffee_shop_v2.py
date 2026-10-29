@@ -15,10 +15,12 @@ from __future__ import annotations
 import csv
 import json
 from functools import partial
+from math import gcd
 from pathlib import Path
 
 import numpy as np
 import soundfile as sf
+from scipy.signal import resample_poly
 
 from secondear.classes import CLASS_NAMES
 from secondear.scene.coffee_shop import FADE_S, FREESOUND_URL, OK_LICENSES
@@ -48,6 +50,8 @@ BED_SNR_DB = 12.0  # labelled mix RMS / bed RMS (the v3 preset draws 5..20 dB)
 BED_SECOND_REL_DB = -6.0  # second bed vs main bed
 BED_DIRS = 8
 BED_SEED = 7
+BED_BINAURAL_OFFSET_S = 60.0  # variant B: where the 13747 excerpt starts
+BED_BINAURAL_FADE_S = 2.0
 # (id, label, class, kind, az_deg, dist_m, on, off, gain_db, k). ``k`` is the rank of the clip among
 # the usable clips of the class that are long enough, so two sources of one class differ.
 SOURCES = [
@@ -157,6 +161,11 @@ def build_scene_v2(index: list[dict], data_root: Path) -> dict:
     }
 
 
+def as_binaural_variant(scene: dict) -> dict:
+    """Variant B: same sources; bed 13747 used as its original 2-channel recording."""
+    return {**scene, "name": "coffee_shop_v2b", "bed": {**scene["bed"], "mode": "binaural"}}
+
+
 def save_scene_v2(scene: dict, path: Path = SCENE_V2_PATH) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(scene, indent=2) + "\n", encoding="utf-8")
@@ -224,6 +233,25 @@ def _mix(scene: dict, data_root: Path, only: list[str] | None = None):
     return cfg, mix, rows
 
 
+def _binaural_excerpt(path: str, fs: int, n: int) -> np.ndarray:
+    """[2, n] excerpt of a 2-channel recording at ``BED_BINAURAL_OFFSET_S``, as recorded (no room)."""
+    x, fs0 = sf.read(path, dtype="float64")
+    if x.ndim != 2 or x.shape[1] != 2:
+        raise ValueError(f"{path}: expected a 2-channel recording")
+    if fs0 != fs:
+        g = gcd(fs0, fs)
+        x = resample_poly(x, fs // g, fs0 // g, axis=0)
+    start = round(BED_BINAURAL_OFFSET_S * fs)
+    seg = x[start : start + n].T.copy()
+    if seg.shape[1] < n:
+        raise ValueError(f"{path}: shorter than offset + {n / fs} s")
+    k = round(BED_BINAURAL_FADE_S * fs)
+    ramp = np.linspace(0.0, 1.0, k)
+    seg[:, :k] *= ramp
+    seg[:, n - k :] *= ramp[::-1]
+    return seg
+
+
 def _beds(scene: dict, cfg: SceneConfig, data_root: Path) -> np.ndarray:
     """Both beds through the room from ``bed_dirs`` azimuths; the second is set relative to main."""
     plan = _plan(scene, only=[])
@@ -236,7 +264,10 @@ def _beds(scene: dict, cfg: SceneConfig, data_root: Path) -> np.ndarray:
         if not hits:
             raise FileNotFoundError(f"bed {fid} not in {Path(data_root) / 'beds'}")
         plan.bed = BedPlan(str(hits[0]), rng.random(cfg.bed_dirs), 0.0)
-        beds.append(_render_bed(plan, cfg, brir, None, rng, load_bed, n))
+        if fid == BED_MAIN and scene["bed"].get("mode") == "binaural":
+            beds.append(_binaural_excerpt(plan.bed.file, cfg.fs, n))
+        else:
+            beds.append(_render_bed(plan, cfg, brir, None, rng, load_bed, n))
     rel = 10 ** (float(scene["bed"]["second_rel_db"]) / 20)
     out = beds[0].copy()
     for b in beds[1:]:
@@ -290,9 +321,9 @@ def render_coffee_shop_v2(scene: dict, data_root: Path, out_dir: Path) -> tuple[
     out_dir.mkdir(parents=True, exist_ok=True)
     audio, rows, stats = render_scene_v2(scene, data_root)
     paths = {
-        "wav": out_dir / "coffee_shop_v2.wav",
-        "mp3": out_dir / "coffee_shop_v2.mp3",
-        "labels": out_dir / "coffee_shop_v2_labels.csv",
+        "wav": out_dir / f"{scene['name']}.wav",
+        "mp3": out_dir / f"{scene['name']}.mp3",
+        "labels": out_dir / f"{scene['name']}_labels.csv",
     }
     fs = int(scene["fs"])
     sf.write(str(paths["wav"]), audio.T, fs, subtype="PCM_16")
