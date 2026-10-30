@@ -7,7 +7,7 @@ fwhm_deg: 15.0        # target blob full width at half maximum
 gamma: 2.0            # focal exponent
 lr: 0.001
 epochs: 60
-patience: 15          # early stop after 15 epochs without a new best val SELD
+patience: 60          # no early stop: epoch 0 one-ear SELD is a fluke (over-guessing inflates LR), so train all 60 epochs like v2 where_right (best 58)
 batch_size: 32
 threshold: 0.20       # one-ear maps rarely reach 0.5, so epoch selection uses the C3 val-picked value; the runner still overrides it for test
 seed: 42
