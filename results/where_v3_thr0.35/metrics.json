@@ -1,0 +1,31 @@
+{
+  "experiment": "where_v3",
+  "git_sha": "af8154ba8fc1da12753ffc8b3dfbfbe8478f06b4",
+  "dataset": "binaural_v3",
+  "threshold": 0.35,
+  "agnostic": true,
+  "best_epoch": 42,
+  "note": "slim copy: per_clip/by_task/config dropped; full metrics.json on Drive second-ear/results/",
+  "split": "test",
+  "mute": null,
+  "n_clips": 300,
+  "overall": {
+    "LE_deg": 28.34740858808652,
+    "LR": 0.6169724926922002,
+    "precision20": 0.4922047796299293,
+    "recall20": 0.37301462922711076,
+    "F20": 0.42440005736812114,
+    "front_back_rate": 0.030740771418316354,
+    "n_pred": 222444,
+    "n_truth": 293522,
+    "n_matched": 181095,
+    "n_tp20": 109488,
+    "n_fb": 5567
+  },
+  "front_back_rate": 0.030740771418316354,
+  "frontal_azimuth_error": 21.304135745851745,
+  "chance": {
+    "F20": 0.04894120930448906,
+    "LE_deg": 68.2528176510535
+  }
+}

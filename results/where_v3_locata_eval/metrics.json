@@ -1,0 +1,25 @@
+{
+  "experiment": "where_v3",
+  "git_sha": "af8154ba8fc1da12753ffc8b3dfbfbe8478f06b4",
+  "dataset": "LOCATA (Zenodo 3630471), hearing-aid dummy array",
+  "threshold": 0.35,
+  "agnostic": true,
+  "best_epoch": 42,
+  "note": "slim copy: per_clip/by_task/config dropped; full metrics.json on Drive second-ear/results/",
+  "split": "eval",
+  "n_clips": 46,
+  "overall": {
+    "LE_deg": 61.3104,
+    "LR": 0.797,
+    "precision20": 0.0696,
+    "recall20": 0.1019,
+    "F20": 0.0827,
+    "n_pred": 17604,
+    "n_truth": 12021
+  },
+  "front_back_rate": 0.0837,
+  "frontal_azimuth_error": 49.415,
+  "chance": {
+    "F20": 0.0363
+  }
+}
