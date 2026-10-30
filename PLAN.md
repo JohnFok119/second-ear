@@ -163,6 +163,7 @@ CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 **Resume state (2026-10-29 17:35):** main 26f5337 (226 passed), pushed to `phase7`. aug_swapmask scored on Colab (ablation row: sim F20 0.542 = baseline, LOCATA F20 0.051 vs baseline 0.099). All v3 files on Drive (`second-ear/features_v3/`). Colab runtime (tab train_where, branch phase7) trains MODELS=['v3','v3_right'] (configs where_v3 / where_v3_right: v3 data the only change), then Score. Session cron watches it.
 
 **Captain 2026-10-29 17:30:** C2 stops after aug_swapmask (no gain on sim, worse on LOCATA); the aug_swap / aug_all / conformer-on-v2 runs are dropped to save Colab units. C8 trains plain v3 (no tricks) as the one change from the v2 baseline, then C9's right-ear twin on v3.
+**Captain 2026-10-30 02:40:** overnight the ship may keep v3 training alive on its own (reconnect Colab, Run all, click Connect to Google Drive on his notebook), then score where_v3 + where_v3_right; Johnny reviews in the morning. A consent window or CAPTCHA the tab tools cannot reach gets parked in BLOCKED.md, no second route.
 
 **Captain 2026-10-29:** Phase 7 goal/rule and step order approved; LOCATA lives in Drive, scored on Colab.
 - [x] **phase7-C1 Ablation harness.** (done 2026-10-29, merged) One script appends a row (run name, change, F20, LE, frontal error, guesses per sound,
