@@ -11,3 +11,4 @@
 - **Site review:** on hold until the new harness (Johnny 2026-10-28).
 
 - **Disk (heads-up):** C: has 45 GB free after the Drive uploads were cleared from C:\temp. The raw v3 training audio (43 GB) is still deletable per C7 if space runs low.
+- **Model direction (decision, 2026-10-30):** v3 results + LOCATA diagnosis are in results/phase7/v3_reading.md and locata_diagnosis.md. Proposed next: (a) score LOCATA on left/right only (free, local), (b) look for behind-the-ear HRIR sets that pass the licence rule. Go on either?

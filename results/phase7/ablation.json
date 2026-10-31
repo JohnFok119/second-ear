@@ -44,6 +44,21 @@
       "locata_LE_deg": 61.3104,
       "locata_F20": 0.0827,
       "note": "v3 test (harder: real BRIR rooms, caf\u00e9 beds, up to 4 overlapping), val threshold 0.35, best epoch 42; muted: left F20 0.017, right 0.048; LOCATA eval split"
+    },
+    {
+      "name": "v3_crnn_right",
+      "change": "right ear only, v3 scenes",
+      "LE_deg": 46.02887648881509,
+      "LR": 0.5199985009641526,
+      "F20": 0.18197927718458656,
+      "precision20": 0.20317474985928272,
+      "recall20": 0.16478832932454807,
+      "guess_rate": 0.8110669728333821,
+      "front_back_rate": 0.02386146981936828,
+      "frontal_azimuth_error_deg": 35.89279124690948,
+      "locata_LE_deg": 85.14930665831751,
+      "locata_F20": 0.022192280256796388,
+      "note": "one-ear twin of v3_crnn; val threshold 0.30, best epoch 57 of 60 (patience 60; epoch-0 SELD fluke excluded); LOCATA F20 at chance (0.026)"
     }
   ]
 }
