@@ -160,7 +160,7 @@ what each step bought. Every new model gets two scores: v3 simulated test + LOCA
 Training on free Colab T4 (resume from Drive, `colab/`). Licence rule for new audio: CC0 / CC BY / MIT / ODC-By;
 CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 
-**Resume state (2026-10-30 morning):** where_v3 (two ears) and where_v3_right scored, rows in results/phase7/ablation.md, reading in results/phase7/v3_reading.md: finish-line tests 1 and 2 not met (frontal 21.3 deg; right/two-ear 1.7x), test 3 directionally yes (LOCATA F20 0.083 vs 0.022, chance ~0.03). LOCATA diagnosis (results/phase7/locata_diagnosis.md): pipeline sound, left/right works on real audio, front/back + elevation fail (behind-the-ear vs in-ear HRIR mismatch most likely). Colab runtime deleted. Next (waiting on Johnny): left/right-only LOCATA re-score (free, local) and a licence search for behind-the-ear HRIRs.
+**Resume state (2026-10-30 morning):** where_v3 (two ears) and where_v3_right scored, rows in results/phase7/ablation.md, reading in results/phase7/v3_reading.md: finish-line tests 1 and 2 not met (frontal 21.3 deg; right/two-ear 1.7x), test 3 directionally yes (LOCATA F20 0.083 vs 0.022, chance ~0.03). LOCATA diagnosis (results/phase7/locata_diagnosis.md): pipeline sound, left/right works on real audio, front/back + elevation fail (behind-the-ear vs in-ear HRIR mismatch most likely). Colab runtime deleted. Next: phase7-C12, C13 (Captain go 2026-11-02), then C14 reality check.
 
 **Captain 2026-10-29 17:30:** C2 stops after aug_swapmask (no gain on sim, worse on LOCATA); the aug_swap / aug_all / conformer-on-v2 runs are dropped to save Colab units. C8 trains plain v3 (no tricks) as the one change from the v2 baseline, then C9's right-ear twin on v3.
 **Captain 2026-10-30 02:40:** overnight the ship may keep v3 training alive on its own (reconnect Colab, Run all, click Connect to Google Drive on his notebook), then score where_v3 + where_v3_right; Johnny reviews in the morning. A consent window or CAPTCHA the tab tools cannot reach gets parked in BLOCKED.md, no second route.
@@ -204,6 +204,23 @@ CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
   like a café.
 - [ ] **phase7-C11 Results.** M7 page (ablation table: each step's gain, sim + real), LEARNING.md Phase 7, README
   numbers. *Done when:* committed, merged, M7 push.
+
+**Captain 2026-11-02:** do C12 and C13, then C14 (re-evaluate how far the current work can really get). Context: v3
+reading `results/phase7/v3_reading.md`, LOCATA diagnosis `results/phase7/locata_diagnosis.md` (pipeline sound; left/right
+works on real audio, front/back + elevation fail; behind-the-ear vs in-ear HRIR mismatch most likely).
+- [ ] **phase7-C12 Left/right-only LOCATA score.** Add a lateral (front/back-folded) scoring mode to
+  `scripts/eval_locata.py` (reuse the fold from `scripts/diagnose_locata.py`), with tests. Score locally on CPU (take a
+  fleet CPU lease) the v2 models (checkpoints/where_binaural, where_left, where_right) and, if their Drive checkpoints are
+  pulled down, where_v3 + where_v3_right. Add a "LOCATA lateral F20 / lateral error" column to the ablation table and the
+  one-ear table. *Done when:* two ears vs one ear on real audio is stated in one number pair per model, tests pass.
+- [ ] **phase7-C13 Behind-the-ear HRIR search.** Research only (crew-researcher): HRIR/BRIR sets measured at hearing-aid
+  (BTE) mic positions, e.g. the Oldenburg Kayser 2009 in-ear + BTE database and any others; for each, licence (read on
+  its own page: CC0 / CC BY / MIT / ODC-By only), size, directions, sample rate, download URL. Output
+  `docs/research/c7/bte_hrir.md`. No downloads (Johnny OKs downloads). *Done when:* table + recommendation.
+- [ ] **phase7-C14 Reality check.** First Mate, after C12 + C13: what the current pipeline can honestly reach against
+  each finish-line test (sim frontal 12°, one-ear 3x, LOCATA two-vs-one), what each remaining lever buys (BTE HRIRs,
+  epoch selection by F20 instead of SELD, Conformer, more data), and a proposal to adjust or keep the bar. On a lavish
+  page for Johnny. *Done when:* Johnny has read it and picked a direction.
 
 ---
 
