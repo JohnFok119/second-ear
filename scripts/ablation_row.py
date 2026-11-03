@@ -24,22 +24,43 @@ COLUMNS = [
     ("Front-back confusion", "front_back_rate", "front_back_rate"),
     ("LOCATA error (deg)", "locata_LE_deg", "LE_deg"),
     ("LOCATA F20", "locata_F20", "F20"),
+    ("LOCATA lateral F20", "locata_lat_F20", "F20"),
+    ("LOCATA lateral error (deg)", "locata_lat_err_deg", "LE_deg"),
 ]
+LOCATA_KEYS = ("locata_LE_deg", "locata_F20", "locata_lat_F20", "locata_lat_err_deg")
 
 
 def _load(path: str) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def locata_fields(locata: dict | None) -> dict:
+    """The four LOCATA fields; None where absent (no metrics, or no "lateral" block)."""
+    out = dict.fromkeys(LOCATA_KEYS)
+    if locata is not None:
+        loc = _row_from_where(locata)
+        lat = locata.get("lateral") or {}
+        out["locata_LE_deg"] = loc["LE_deg"]
+        out["locata_F20"] = loc["F20"]
+        out["locata_lat_F20"] = lat.get("lat_F20")
+        out["locata_lat_err_deg"] = lat.get("lat_err_deg")
+    return out
+
+
+def update_locata(rows: list[dict], name: str, locata: dict) -> list[dict]:
+    """Copy of rows with only the LOCATA fields of row `name` replaced; ValueError if missing."""
+    out = [dict(r) for r in rows]
+    for r in out:
+        if r["name"] == name:
+            r.update(locata_fields(locata))
+            return out
+    raise ValueError(f"no ablation row named {name!r}")
+
+
 def build_row(name: str, change: str, metrics: dict, locata: dict | None, note: str) -> dict:
     """One ablation row; LOCATA fields are None when no LOCATA metrics are given."""
     row = {"name": name, "change": change, **_row_from_where(metrics)}
-    row["locata_LE_deg"] = None
-    row["locata_F20"] = None
-    if locata is not None:
-        loc = _row_from_where(locata)
-        row["locata_LE_deg"] = loc["LE_deg"]
-        row["locata_F20"] = loc["F20"]
+    row.update(locata_fields(locata))
     row["note"] = note
     return row
 
@@ -79,10 +100,11 @@ def render(rows: list[dict]) -> str:
 def main() -> None:
     """CLI entry point."""
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--metrics", required=True, help="eval metrics.json (where-only format)")
+    ap.add_argument("--metrics", default=None, help="eval metrics.json (where-only format)")
     ap.add_argument("--name", required=True, help="run id, the row key")
-    ap.add_argument("--change", required=True, help="what changed, in plain words")
+    ap.add_argument("--change", default=None, help="what changed, in plain words")
     ap.add_argument("--locata", default=None, help="LOCATA metrics.json (optional)")
+    ap.add_argument("--locata-only", action="store_true", help="update only the LOCATA fields")
     ap.add_argument("--note", default="")
     ap.add_argument("--out", default="results/phase7")
     a = ap.parse_args()
@@ -92,8 +114,18 @@ def main() -> None:
     jf = out / "ablation.json"
     rows = json.loads(jf.read_text(encoding="utf-8"))["rows"] if jf.exists() else []
     locata = _load(a.locata) if a.locata else None
-    row = build_row(a.name, a.change, _load(a.metrics), locata, a.note)
-    rows = upsert(rows, row)
+    if a.locata_only:
+        if locata is None:
+            ap.error("--locata-only needs --locata")
+        try:
+            rows = update_locata(rows, a.name, locata)
+        except ValueError as e:
+            ap.error(str(e))
+    else:
+        if not a.metrics or a.change is None:
+            ap.error("--metrics and --change are required unless --locata-only")
+        row = build_row(a.name, a.change, _load(a.metrics), locata, a.note)
+        rows = upsert(rows, row)
     jf.write_text(json.dumps({"rows": rows}, indent=2), encoding="utf-8")
     text = render(rows)
     (out / "ablation.md").write_text(text, encoding="utf-8")

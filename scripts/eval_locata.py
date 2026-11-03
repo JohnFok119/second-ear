@@ -4,6 +4,7 @@ Reads <root>/scenes/<split>/*.wav|csv written by prepare_locata.py (48 kHz, 2 ch
 the model's rate (resample_poly), predicts at the given threshold and writes
 results/<experiment>_locata_<split>/metrics.json for each split plus the pooled
 results/<experiment>_locata/metrics.json, in the same format as eval_heatmap.py.
+Also scores a lateral (front/back folded) F20 and error: keys "lateral" / "lateral_chance".
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ from eval_heatmap import _binaural_stems, _load_binaural
 
 from secondear.eval.agnostic import Counts, chance_events, count_clip, summarize
 from secondear.eval.frontback import FBCounts, fb_counts
+from secondear.eval.lateral import add_counts, empty_counts, lat_summary, lateral_counts
 from secondear.io.starss23 import read_metadata
 from secondear.models.baseline import FS as MODEL_FS
 from secondear.models.heatmap import BinauralHeatmapLocalizer
@@ -87,11 +89,19 @@ def main() -> None:
     ).stdout.strip()
     root = Path(a.root) / "scenes"
 
-    pooled = {"overall": Counts(), "chance": Counts(), "fb": FBCounts(), "per_clip": {}}
+    pooled = {
+        "overall": Counts(),
+        "chance": Counts(),
+        "fb": FBCounts(),
+        "lat": empty_counts(),
+        "lat_chance": empty_counts(),
+        "per_clip": {},
+    }
     pooled_task: dict[str, Counts] = {}
     n_total = 0
     for split in a.splits:
         overall, chance, fb_total = Counts(), Counts(), FBCounts()
+        lat_t, lat_c = empty_counts(), empty_counts()
         by_task: dict[str, Counts] = {}
         per_clip: dict[str, dict] = {}
         stems = _binaural_stems(root, split)[: a.limit_clips]
@@ -104,7 +114,10 @@ def main() -> None:
             per_frame: dict[int, int] = {}
             for e in p.events:
                 per_frame[e.frame] = per_frame.get(e.frame, 0) + 1
-            ch = count_clip(chance_events(per_frame, np.random.default_rng(idx)), truth, n_frames)
+            chev = chance_events(per_frame, np.random.default_rng(idx))
+            ch = count_clip(chev, truth, n_frames)
+            lc = lateral_counts(p.events, truth, n_frames)
+            lcc = lateral_counts(chev, truth, n_frames)
             fbc = fb_counts(p.events, truth)
             for tgt in (overall, pooled["overall"], by_task.setdefault(task_of(stem), Counts())):
                 tgt.add(c)
@@ -113,6 +126,10 @@ def main() -> None:
                 tgt.add(ch)
             for tgt in (fb_total, pooled["fb"]):
                 tgt.add(fbc)
+            for tgt in (lat_t, pooled["lat"]):
+                add_counts(tgt, lc)
+            for tgt in (lat_c, pooled["lat_chance"]):
+                add_counts(tgt, lcc)
             per_clip[stem] = summarize(c)
             pooled["per_clip"][stem] = per_clip[stem]
             n_total += 1
@@ -129,6 +146,8 @@ def main() -> None:
             overall,
             chance,
             fb_total,
+            lat_t,
+            lat_c,
             by_task,
             per_clip,
         )
@@ -146,12 +165,30 @@ def main() -> None:
             pooled["overall"],
             pooled["chance"],
             pooled["fb"],
+            pooled["lat"],
+            pooled["lat_chance"],
             pooled_task,
             pooled["per_clip"],
         )
 
 
-def _write(out, exp, split, thr, thr_src, sha, cfg, n, overall, chance, fb, by_task, per_clip):
+def _write(
+    out,
+    exp,
+    split,
+    thr,
+    thr_src,
+    sha,
+    cfg,
+    n,
+    overall,
+    chance,
+    fb,
+    lat,
+    lat_chance,
+    by_task,
+    per_clip,
+):
     """Write metrics.json (same keys as eval_heatmap.py, plus by_task)."""
     cfg = {**cfg, "input": "LOCATA dummy head, front mic per ear, 48 kHz resampled to model rate"}
     metrics = {
@@ -170,6 +207,12 @@ def _write(out, exp, split, thr, thr_src, sha, cfg, n, overall, chance, fb, by_t
         "frontal_azimuth_error": fb.frontal_azimuth_error if fb.n_front else None,
         "front_back_matching": "class-agnostic: per-frame Hungarian match on angle, classes ignored",
         "chance": summarize(chance),
+        "lateral": lat_summary(lat),
+        "lateral_chance": lat_summary(lat_chance),
+        "lateral_matching": (
+            "front/back folded: lateral angle arcsin(sin az), "
+            "per-frame Hungarian on |lateral diff|, TP within 20 deg"
+        ),
         "by_task": {k: summarize(v) for k, v in sorted(by_task.items())},
         "per_clip": per_clip,
     }

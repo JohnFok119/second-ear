@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
@@ -84,7 +86,7 @@ def test_locata_optional(tmp_path, monkeypatch):
     rows = _run(tmp_path, monkeypatch, "a", 30.0, 0.4)
     assert rows[0]["locata_LE_deg"] is None
     line = next(ln for ln in _md(tmp_path).splitlines() if ln.startswith("| a "))
-    assert line.count("—") == 2
+    assert line.count("—") == 4
     rows = _run(tmp_path, monkeypatch, "a", 30.0, 0.4, locata=_metrics(41.0, 0.123))
     assert rows[0]["locata_LE_deg"] == 41.0
     assert "| 41.0 | 0.123 |" in _md(tmp_path)
@@ -108,3 +110,42 @@ def test_baseline_numbers(tmp_path, monkeypatch):
     line = next(ln for ln in text.splitlines() if ln.startswith("| x "))
     cells = [c.strip() for c in line.strip("|").split("|")]
     assert cells[2:7] == ["0.541", "24.9", "19.8", "1.09", "0.025"]
+
+
+def test_lateral_columns(tmp_path, monkeypatch):
+    loc = {**_metrics(41.0, 0.123), "lateral": {"lat_F20": 0.456, "lat_err_deg": 12.3}}
+    rows = _run(tmp_path, monkeypatch, "a", 30.0, 0.4, locata=loc)
+    assert rows[0]["locata_lat_F20"] == 0.456
+    assert rows[0]["locata_lat_err_deg"] == 12.3
+    md = _md(tmp_path)
+    assert "LOCATA lateral F20 | LOCATA lateral error (deg)" in md
+    assert "| 41.0 | 0.123 | 0.456 | 12.3 |" in md
+
+
+def test_locata_without_lateral_dashes(tmp_path, monkeypatch):
+    rows = _run(tmp_path, monkeypatch, "a", 30.0, 0.4, locata=_metrics(41.0, 0.123))
+    assert rows[0]["locata_lat_F20"] is None
+    assert "| 41.0 | 0.123 | — | — |" in _md(tmp_path)
+
+
+def test_locata_only_updates_named_row(tmp_path, monkeypatch):
+    _run(tmp_path, monkeypatch, "a", 30.0, 0.4)
+    rows = _run(tmp_path, monkeypatch, "b", 20.0, 0.5)
+    loc = {**_metrics(41.0, 0.123), "lateral": {"lat_F20": 0.456, "lat_err_deg": 12.3}}
+    new = mod.update_locata(rows, "b", loc)
+    assert new[1]["locata_LE_deg"] == 41.0 and new[1]["locata_lat_F20"] == 0.456
+    assert new[1]["LE_deg"] == 20.0 and new[1]["change"] == "c"
+    assert new[0] == rows[0]
+    with pytest.raises(ValueError):
+        mod.update_locata(rows, "zzz", loc)
+
+
+def test_locata_only_cli(tmp_path, monkeypatch):
+    _run(tmp_path, monkeypatch, "a", 30.0, 0.4)
+    lp = tmp_path / "l.json"
+    lp.write_text(json.dumps(_metrics(41.0, 0.123)), encoding="utf-8")
+    argv = ["ablation_row", "--locata-only", "--name", "a", "--locata", str(lp)]
+    monkeypatch.setattr(sys, "argv", argv + ["--out", str(tmp_path / "out")])
+    mod.main()
+    rows = json.loads((tmp_path / "out" / "ablation.json").read_text(encoding="utf-8"))["rows"]
+    assert rows[0]["locata_LE_deg"] == 41.0 and rows[0]["LE_deg"] == 30.0
