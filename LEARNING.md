@@ -224,3 +224,52 @@ front with one ear (6x worse, Aruffo et al. 2025). The models go from 19.8° to 
 - A selection score stuck at its floor silently breaks early stopping.
 - Free cloud GPUs trade speed for babysitting: disconnects, a 12-hour cap, and keeping the
   tab active.
+
+## Phase 7 — Closer to real audio, and the real-recording test
+
+**What we tried.** Make the model better and test it on real recordings, one change at a time,
+each scored on the same tests (`results/phase7/ablation.md`).
+- **Data tricks** (swap the ears, blank out bits of the sound): no gain on the simulated test,
+  worse on real recordings. Stopped after one run.
+- **Harder practice scenes (v3):** real-room echo measured in real buildings, café background
+  noise, up to 4 sounds at once. Two ears scored F20 0.424 on this harder test (frontal miss
+  21.3°); the right-ear-only twin scored 0.182 (35.9°).
+- **A real-recording test (LOCATA):** public recordings made with hearing-aid microphones on a
+  dummy head, with the true sound positions tracked by cameras. 46 recordings.
+
+**The surprise.** On LOCATA the full score was barely above guessing (F20 0.099 vs about 0.04
+for random guesses). A diagnosis (`results/phase7/locata_diagnosis.md`) found the pipeline
+correct (labels, timing and channel order all checked) and pinned it down: **left vs right
+works on real audio, front vs back and up vs down do not.** Likeliest cause: our training head
+filters are measured inside the ear canal, while LOCATA's microphones sit behind the ear, so the
+small ear-shape cues that tell front from back are different.
+
+**The fix to the test, not the model.** A left/right-only score folds front and back together
+and asks just "correct side, and how far out?" (`results/phase7/locata_lateral.md`):
+
+| | Left/right score (F20) | Random guessing | Average left/right miss |
+|---|---|---|---|
+| Two ears | **0.479** | 0.234 | **9.2°** |
+| Left ear only | 0.216 | 0.226 | 21.2° |
+| Right ear only (Johnny's ear) | 0.207 | 0.223 | 20.7° |
+
+**What it means.** With two ears the model places real sounds on the correct side at about
+twice the chance rate. With either single ear it is at chance: it still hears the sounds, but
+it cannot tell where they come from, because direction comes from comparing the two ears (which
+one hears it first, and louder). That is the half-deaf experience in one number pair. People
+who have lived with one ear do better than this model (22.4° in front, Aruffo 2025), because
+they learn other cues over years; the model shows the raw loss.
+
+**Where we stopped (Johnny, 2026-11-02).** The original bar (two-ear frontal miss ≤ 12° on the
+simulated test, one ear 3x worse) was not reached: 21° on v3 and 19.8° on v2. That bar asked
+for a sharper two-ear model; the real-recording result already shows the two-ears-vs-one
+difference, which was the point, so the project closes on the Phase 5 models. Behind-the-ear
+head filters that pass the licence rule exist (MMHR-HRTF, `docs/research/c7/bte_hrir.md`) and
+are the obvious next step for front/back on real audio.
+
+**Takeaways.**
+- Test on real recordings early; simulation hides mismatches.
+- When a score collapses, diagnose before tuning: here the pipeline was fine and the question
+  was the wrong one for the hardware.
+- Pick the score that matches the claim. "Can it tell left from right?" is the half-deaf story.
+- One change per run, same tests every time, keeps the record honest even when nothing helps.
