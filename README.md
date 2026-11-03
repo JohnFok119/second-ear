@@ -57,26 +57,58 @@ peak below the 0.5 cut-off used to turn a map into guesses.
 ### One-ear experiment
 
 Two-ear and one-ear models are trained and tested on binaural scenes (left-ear and right-ear
-audio) that we render ourselves. Source: `results/one_ear_valthr/table.md`.
+audio) that we render ourselves. These are the final "where-only" models: one shared "where" map
+(sound classes ignored), trained on 4,000 scenes and tested on 300 scenes rendered with head
+filters never seen in training. Source: `results/one_ear_where/table.md`.
 
 <!-- one-ear:start -->
-| Condition | LE ↓ | F20 ↑ | Front-back ↓ | Guesses per real sound | Frontal azimuth error (deg) |
-|---|---|---|---|---|---|
-| Two ears | 64.4 | 0.034 | 0.036 | 1.41 | 36.5 |
-| Two-ear model, left muted | 148.2 | 0.003 | 0.004 | 0.85 | 75.3 |
-| Two-ear model, right muted | 144.6 | 0.001 | 0.001 | 0.26 | 77.3 |
-| One-ear model, left (trained) | 70.3 | 0.018 | 0.011 | 3.98 | 30.9 |
-| One-ear model, right (trained) | 66.7 | 0.017 | 0.004 | 5.76 | 25.0 |
-| Classical ITD (class-agnostic) | 54.7 | n/a | 0.075 | 0.55 | 20.8 |
-| Humans, one ear (SSD; Aruffo 2025) | n/a | n/a | n/a | n/a | 22.4 |
-| Humans, two ears (Aruffo 2025) | n/a | n/a | n/a | n/a | 3.7 |
+| Condition | Localization error (deg) | Precision (class-agnostic) | Recall (class-agnostic) | Detection F20 (class-agnostic) | Front-back confusion | Guesses per real sound | Frontal azimuth error (deg) |
+|---|---|---|---|---|---|---|---|
+| Two ears | 24.9 | 0.520 | 0.564 | 0.541 | 0.025 | 1.09 | 19.8 |
+| Two-ear model, left muted | 72.2 | 0.076 | 0.033 | 0.046 | 0.024 | 0.43 | 88.3 |
+| Two-ear model, right muted | 130.4 | 0.000 | 0.000 | 0.000 | 0.000 | 0.00 | 171.5 |
+| One-ear model, left (trained) | 45.6 | 0.099 | 0.235 | 0.140 | 0.022 | 2.36 | 41.5 |
+| One-ear model, right (trained) | 44.1 | 0.092 | 0.231 | 0.131 | 0.018 | 2.52 | 39.3 |
+| Classical ITD | 55.5 | 0.190 | 0.103 | n/a | 0.076 | 0.54 | 21.8 |
+| Humans, one ear (SSD) | n/a | n/a | n/a | n/a | n/a | n/a | 22.4 |
+| Humans, two ears | n/a | n/a | n/a | n/a | n/a | n/a | 3.7 |
 <!-- one-ear:end -->
 
-Decoding thresholds were picked on the validation split per model (two ears 0.30, left 0.25, right 0.20); the fixed-0.5 table is `results/one_ear/table.md`. The one-ear models make 4-6 guesses per real sound, which flatters their recall and frontal error.
+Notes: every model draws one class-agnostic map, and guesses are matched to real sounds by angle
+only (sound classes are ignored). The cut-off that turns a map into guesses was picked on separate
+validation scenes (two ears 0.30, left 0.20, right 0.20; the muted two-ear rows use the two-ear
+0.30). Classical ITD only looks at the front half, so it has no F20. Human numbers are from Aruffo
+et al. 2025 (frontal speakers only; no front-back rate was published). A guess rate well above 1
+means recall and frontal error are flattered by many extra guesses, which is the case for the
+one-ear models (2.4 to 2.5 guesses per real sound).
 
 "Muted" means the model was trained with two ears and one ear is silenced at test time.
 "Trained" means the model was trained with only that ear. Classical ITD is a hand-made method
 that uses ITD (interaural time difference: the tiny delay between the two ears).
+
+### Real recordings: left or right? (LOCATA)
+
+LOCATA is a public set of real recordings made with hearing-aid microphones on a dummy head (46
+evaluation recordings; Zenodo record 3630471). The left/right score folds front and back together
+and asks only whether the model put the sound on the correct side; a hit is a guess within 20
+degrees of the true left/right angle, and chance is random guesses, the same number per moment as
+the model.
+
+| Model | Lateral F20 | Lateral error (deg) | Chance lateral F20 | Chance lateral error (deg) | Guesses per real sound | Full F20 (not folded) |
+|---|---|---|---|---|---|---|
+| Two ears (where_binaural, v2) | **0.479** | **9.2** | 0.234 | 32.3 | 2.64 | 0.099 |
+| Left ear only, trained (where_left, v2) | 0.216 | 21.2 | 0.226 | 19.1 | 4.72 | 0.030 |
+| Right ear only, trained (where_right, v2) | 0.207 | 20.7 | 0.223 | 17.9 | 4.96 | 0.055 |
+
+Source: `results/phase7/locata_lateral.md`. On real audio, two ears put sounds on the correct side
+at about twice the chance rate (0.479 vs 0.234) with a 9 degree left/right error. Either single ear
+is at chance (0.21 vs 0.22), so with one ear the model cannot tell left from right on real audio.
+Caveat: the two-ear model makes about 2.6 guesses per real sound; the chance row uses the same
+count, so the comparison is fair.
+
+People who have lived with one ear do better than this model (22.4 degrees in front, Aruffo 2025)
+because they learn other cues over years (ear-shape colouring, head turns, known loudness); the
+model shows the raw loss, not an adapted listener.
 
 ## How to run
 
@@ -146,8 +178,14 @@ uv run python -m http.server --directory web
   That is slightly optimistic, because the test set helped choose the model.
 - **The heat-map model under-detects.** Guesses are made where the map is above a fixed 0.5
   threshold. The threshold was set before testing and not tuned; many maps peak below it, so
-  recall is low (13.5 %). Choosing it on held-out training data is the obvious next step.
+  recall is low (13.5 %). Choosing it on held-out training data is the obvious next step (the
+  one-ear where-only models use validation-picked thresholds).
 - **Training stopped early** at epoch 80 of 100 on a plateau; the best epoch was 39.
+- **Front/back fails on real recordings.** On LOCATA the two-ear model gets left/right right but
+  not front/back or elevation; the likeliest cause is that our training head filters are measured
+  in the ear canal while LOCATA's microphones sit behind the ear (`results/phase7/locata_diagnosis.md`).
+- **Phase 7 (harder v3 scenes with real rooms and café noise) did not beat the Phase 5 models**;
+  those runs are recorded in `results/phase7/ablation.md`.
 - **The two-ear data is rendered, not recorded.** Binaural scenes are built by playing dry clips
   through public head filters and simulated room echo (called Route B in ARCHITECTURE.md). The
   other route, converting the real recordings, loses much of the delay between the ears, so it was
@@ -169,7 +207,7 @@ uv run python -m http.server --directory web
 - **Training data:** STARSS23 dev-train recordings (real rooms, 4-channel FOA audio), no synthetic
   mixtures. The one-ear variants are trained on rendered binaural scenes (FSD50K clips, HUTUBS and
   SADIE II head filters).
-- **Evaluation data:** STARSS23 dev-test, 78 recordings. One-ear results: see the table above (`results/one_ear_valthr/table.md`).
+- **Evaluation data:** STARSS23 dev-test, 78 recordings. One-ear results: see the table above (`results/one_ear_where/table.md`).
 - **Metrics (epoch 39):** official F20 9.7 %, LE 41.2°, localization recall 13.3 %, ER20 0.88
   (error rate at 20 degrees, lower is better), SELD score 0.720 (lower is better). Any-sound: LE
   25.8°, precision20 47.5 %, recall20 13.5 %, F20 21.0 %. Source: `results/m2_table.md`.
