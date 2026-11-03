@@ -16,7 +16,7 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - scope: `personal\second-ear` only (plus one feature branch in `jyfok-portfolio` at C4.3, never merged by the ship); work on `c<chunk>-<slug>` branches; merge to `main` after verify (Johnny's standing go 2026-10-22, this repo only)
 - standing go: commit, push, merge to `main`, dispatch crew without per-batch approval, enable GitHub Pages; no force-push, no other repos' main, no deploy beyond Pages
 - models: First Mate Opus 5.5 (ship launched by sail.ps1); crew Sonnet, Haiku for mechanical; Fable only if: never
-- stop when (Phase 7, Johnny 2026-10-29: "good enough when it distinctly shows the difference between two ears and one"): `results/phase7/ablation.md` shows ALL of (1) two-ear frontal error <= 12 deg on v3 sim test, (2) trained right-ear frontal error >= 3x the two-ear one, (3) two ears clearly better than one on LOCATA, AND (4) Johnny says the café clip difference is obvious; AND `uv run pytest -q` passes. Safety stop: every phase7 box ticked but the bar not met -> stop and report the numbers. W2-W5 stay open (site on hold).
+- stop when (Johnny 2026-11-02, close-out): model work done (C12 lateral LOCATA score shows two ears vs one; 12 deg / 3x bar dropped). Remaining: C10 café clip once Johnny picks A/B, then the website (W2-W5) with Johnny. `uv run pytest -q` passes.
 - caps: 40 turns per chunk; lookout burn limit applies
 - ping me for: a decision only Johnny can make (listed in decisions.md as "Johnny"), blocked with no other work, milestones M1–M4, done
 - milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
@@ -169,41 +169,43 @@ CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 - [x] **phase7-C1 Ablation harness.** (done 2026-10-29, merged) One script appends a row (run name, change, F20, LE, frontal error, guesses per sound,
   front-back) to `results/phase7/ablation.md` from an eval JSON. First row = current where_binaural on v2 test (no
   retrain). *Done when:* the table has the v2 row and matches `results/one_ear_where/table.md`.
-- [ ] **phase7-C2 Data tricks.** Config switches in `train/heatmap.py`, on the fly, train split only, with tests:
+- [x] **phase7-C2 Data tricks.** (stopped 2026-10-29 by Johnny after aug_swapmask: no sim gain, worse on LOCATA) Config switches in `train/heatmap.py`, on the fly, train split only, with tests:
   `aug_swap` (swap L/R mels, negate ILD and IPD-sin, mirror target azimuth az → −az), `aug_mask` (SpecAugment time +
   mel masks, same mask both ears), `aug_filter` (FilterAugment: random smooth gain curve over mel bands, same curve
   both ears). Cumulative runs on v2 + Colab: swap → +mask → +filter. *Done when:* three ablation rows; winner named.
-- [ ] **phase7-C3 Conformer encoder.** `encoder: crnn | resconformer` switch: ResNet conv stem + Conformer blocks, sized
+- [x] **phase7-C3 Conformer encoder.** (dropped at close-out 2026-11-02; code built, never trained) `encoder: crnn | resconformer` switch: ResNet conv stem + Conformer blocks, sized
   to train at batch 32 on a T4 (16 GB) and evaluate on the 8 GB card. Train with C2's winning tricks on v2 + Colab.
   *Done when:* ablation row; param count + peak memory in the row note.
-- [ ] **phase7-C3b Pretrained listener.** Spatial-AST's released encoder (`external/spatial-ast`, 86M params, AudioMAE
+- [x] **phase7-C3b Pretrained listener.** (dropped at close-out 2026-11-02; NC licence never resolved) Spatial-AST's released encoder (`external/spatial-ast`, 86M params, AudioMAE
   ViT; spike notes `docs/research/c5/spatial_ast_spike.md`) with its clip-level heads removed and our heat-map head on
   its time tokens (one map per 100 ms frame). 32 kHz input, 2 channels. Fine-tune on v2 (resampled) with C2's tricks,
   Colab T4, AMP. *Done when:* ablation row "pretrained encoder vs from scratch" with param count + peak memory.
-- [ ] **phase7-C4 Real-audio sources.** Download + licence-check into `data/`: CC BY / MIT BRIR rooms (TU Berlin
+- [x] **phase7-C4 Real-audio sources.** (done 2026-10-29: BRIR rooms, café beds, LOCATA hearing-aid subset) Download + licence-check into `data/`: CC BY / MIT BRIR rooms (TU Berlin
   Calypso, Surrey, others from the ASH index that pass the licence rule; eBrIRD restaurant if its licence passes),
   café beds (list in frontier.md). LOCATA dev + eval (19.3 GB zips) goes to Google Drive, not this PC (Johnny 2026-10-29): a Colab cell downloads from Zenodo to Colab's own disk, keeps only the hearing-aid channels + positions + voice activity in `MyDrive/second-ear/locata/`, deletes the zips. `docs/research/c7/sources.md` lists each file's
   licence, rate, directions; `web/CREDITS.md` gets any audio that ships in the site. *Done when:* sources.md complete,
   every file's licence checked on its own page, disk still > 40 GB free.
-- [ ] **phase7-C5 LOCATA real test.** Loader: front hearing-aid mic of each ear → 2 channels; OptiTrack positions →
+- [x] **phase7-C5 LOCATA real test.** (done 2026-10-29, `scripts/eval_locata.py`) Loader: front hearing-aid mic of each ear → 2 channels; OptiTrack positions →
   head-relative az/el per 100 ms; voice-activity → active frames; class-agnostic scoring. Scoring runs in Colab against the Drive copy (models from Drive checkpoints). Score the v2 models (resampled
   to 24 kHz). *Done when:* LOCATA column filled for the v2, C2 and C3 rows; loader tests pass.
-- [ ] **phase7-C6 Renderer v3.** `fs` from config end to end (48 kHz: STFT 2048 / hop 960, 64 mels up to 20 kHz, same
+- [x] **phase7-C6 Renderer v3.** (done 2026-10-29; Johnny's listening check moot at close-out) `fs` from config end to end (48 kHz: STFT 2048 / hop 960, 64 mels up to 20 kHz, same
   feature shape); room = shoebox or a real BRIR room (share set in config); background bed = café/ambience chunks spread
   over several directions through the scene's room, random SNR, unlabelled; more overlap (max 4 at once). Tests; three
   sample scenes for Johnny to listen to. *Done when:* tests pass and Johnny OKs the samples.
-- [ ] **phase7-C7 Scenes v3.** 4,000 / 300 / 300 into `data/binaural_v3/` (same seeds/head split as v2), features,
+- [x] **phase7-C7 Scenes v3.** (done 2026-10-29, features on Drive) 4,000 / 300 / 300 into `data/binaural_v3/` (same seeds/head split as v2), features,
   pack for Drive. Raw train audio deleted after features if disk < 40 GB. *Done when:* counts checked, spot-checks,
   features on Drive.
-- [ ] **phase7-C8 Retrain on v3.** Best encoder + tricks on v3 (Colab). Rows: v2 model on v3 test, v3 model on v3 test,
+- [x] **phase7-C8 Retrain on v3.** (done 2026-10-30: where_v3, rows in ablation.md; did not beat v2) Best encoder + tricks on v3 (Colab). Rows: v2 model on v3 test, v3 model on v3 test,
   both on LOCATA. *Done when:* ablation rows + a short note on what real rooms / 48 kHz / beds changed.
-- [ ] **phase7-C9 One-ear on the winner.** Train ears=right and ears=left on v3; muted evals of the two-ear model; new
+- [x] **phase7-C9 One-ear on the winner.** (closed 2026-11-02: where_v3_right scored; v2 stays the winner, its one-ear table + LOCATA lateral score are final) Train ears=right and ears=left on v3; muted evals of the two-ear model; new
   one-ear table vs humans (Aruffo 2025), v3 + LOCATA. *Done when:* table + interpretation committed.
 - [ ] **phase7-C10 Café clip v2.** Rebuild `web/scenes/coffee_shop.json` render: 48 kHz, real restaurant room (BRIR),
   real café bed, overlapping voices; re-export viewer JSONs from the C8/C9 models. *Done when:* Johnny says it sounds
   like a café.
-- [ ] **phase7-C11 Results.** M7 page (ablation table: each step's gain, sim + real), LEARNING.md Phase 7, README
+- [x] **phase7-C11 Results.** (done 2026-11-02 without an M7 page: README final tables + LOCATA section, LEARNING Phase 7) M7 page (ablation table: each step's gain, sim + real), LEARNING.md Phase 7, README
   numbers. *Done when:* committed, merged, M7 push.
+
+**Captain 2026-11-02 (close-out):** model finished on the Phase 5 models (where_binaural / where_right). Next: C10 café clip (Johnny listens to data/samples_v3/coffee_shop_v2.wav vs _v2b.wav), re-export viewer JSONs from the v2 models, then website refinement.
 
 **Captain 2026-11-02:** do C12 and C13, then C14 (re-evaluate how far the current work can really get). Context: v3
 reading `results/phase7/v3_reading.md`, LOCATA diagnosis `results/phase7/locata_diagnosis.md` (pipeline sound; left/right
@@ -217,7 +219,7 @@ works on real audio, front/back + elevation fail; behind-the-ear vs in-ear HRIR 
   (BTE) mic positions, e.g. the Oldenburg Kayser 2009 in-ear + BTE database and any others; for each, licence (read on
   its own page: CC0 / CC BY / MIT / ODC-By only), size, directions, sample rate, download URL. Output
   `docs/research/c7/bte_hrir.md`. No downloads (Johnny OKs downloads). *Done when:* table + recommendation.
-- [ ] **phase7-C14 Reality check.** (page up 2026-11-02: `.lavish/c14/`, recommends option B: single-source frontal error + left/right score as the new tests 1-2; waiting on Johnny) First Mate, after C12 + C13: what the current pipeline can honestly reach against
+- [x] **phase7-C14 Reality check.** (done 2026-11-02, `.lavish/c14/`; Johnny: close out the model, the real-recording two-vs-one result is enough)
   each finish-line test (sim frontal 12°, one-ear 3x, LOCATA two-vs-one), what each remaining lever buys (BTE HRIRs,
   epoch selection by F20 instead of SELD, Conformer, more data), and a proposal to adjust or keep the bar. On a lavish
   page for Johnny. *Done when:* Johnny has read it and picked a direction.
