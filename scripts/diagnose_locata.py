@@ -18,7 +18,6 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from scipy.optimize import linear_sum_assignment
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eval_heatmap import _binaural_stems, _load_binaural
@@ -27,6 +26,7 @@ from eval_locata import to_model_rate
 from secondear.classical.itd import ClassicalITDLocalizer
 from secondear.core import Event
 from secondear.eval.agnostic import Counts, chance_events, count_clip, match_frame, summarize
+from secondear.eval.lateral import add_counts, empty_counts, lat, lat_summary, lateral_counts
 from secondear.features.gcc import gcc_phat, tdoa_samples
 from secondear.features.stft import HOP, stft
 from secondear.io.starss23 import read_metadata
@@ -38,54 +38,6 @@ from secondear.train.heatmap import load_config
 
 MARK = "<!-- F -->"
 CH_NAMES = ["logmel_L", "logmel_R", "ILD", "IPD_cos", "IPD_sin"]
-
-
-def lat(az) -> np.ndarray:
-    """Lateral angle in [-90, 90]: back half mirrored onto the front (arcsin sin az)."""
-    return np.rad2deg(np.arcsin(np.sin(np.deg2rad(np.asarray(az, dtype=float)))))
-
-
-def lateral_counts(pred: list[Event], truth: list[Event], n_frames: int) -> dict:
-    """Per-frame Hungarian match on |lateral difference|; TP when within 20 deg."""
-    pb: dict[int, list[Event]] = {}
-    tb: dict[int, list[Event]] = {}
-    for e in pred:
-        pb.setdefault(e.frame, []).append(e)
-    for e in truth:
-        tb.setdefault(e.frame, []).append(e)
-    c = {"n_pred": 0, "n_truth": 0, "n_matched": 0, "sum_err": 0.0, "n_tp20": 0}
-    for f in range(n_frames):
-        p, t = pb.get(f, []), tb.get(f, [])
-        c["n_pred"] += len(p)
-        c["n_truth"] += len(t)
-        if p and t:
-            cost = np.abs(lat([e.az_deg for e in p])[:, None] - lat([e.az_deg for e in t])[None])
-            r, k = linear_sum_assignment(cost)
-            for i, j in zip(r, k, strict=True):
-                c["n_matched"] += 1
-                c["sum_err"] += float(cost[i, j])
-                c["n_tp20"] += int(cost[i, j] <= 20.0)
-    return c
-
-
-def lat_summary(c: dict) -> dict:
-    """Lateral F20 / mean lateral error from pooled counts."""
-    prec = c["n_tp20"] / c["n_pred"] if c["n_pred"] else 0.0
-    rec = c["n_tp20"] / c["n_truth"] if c["n_truth"] else 0.0
-    return {
-        "lat_F20": 2 * prec * rec / (prec + rec) if prec + rec else 0.0,
-        "lat_err_deg": c["sum_err"] / c["n_matched"] if c["n_matched"] else None,
-        "lat_recall20": rec,
-        "n_pred": c["n_pred"],
-        "n_truth": c["n_truth"],
-        "n_matched": c["n_matched"],
-    }
-
-
-def add_counts(a: dict, b: dict) -> None:
-    """Accumulate lateral counts b into a."""
-    for k in a:
-        a[k] += b[k]
 
 
 def neg_az(events: list[Event]) -> list[Event]:
@@ -243,7 +195,9 @@ def error_anatomy(res: dict) -> dict:
                 t_el.append(t.el_deg)
                 if abs(np.cos(np.deg2rad(t.az_deg))) > 0.26:  # truth not within 15 deg of the ears
                     n_hemi += 1
-                    n_hemi_ok += int(np.cos(np.deg2rad(p[pi].az_deg)) * np.cos(np.deg2rad(t.az_deg)) > 0)
+                    n_hemi_ok += int(
+                        np.cos(np.deg2rad(p[pi].az_deg)) * np.cos(np.deg2rad(t.az_deg)) > 0
+                    )
     return {
         "n_pred": n_pred,
         "frac_pred_in_frames_without_label": n_pred_idle / n_pred if n_pred else None,
@@ -259,8 +213,8 @@ def check_bc(res: dict, tag: str) -> dict:
     """Variants (C) and lateral metrics (B) pooled over the clips in `res`."""
     names = ["as_is", "swapped_input", "negated_labels", "as_is_elevation_set_to_truth"]
     cnt = {n: Counts() for n in names}
-    lc = {n: dict.fromkeys(["n_pred", "n_truth", "n_matched", "sum_err", "n_tp20"], 0)
-          for n in ["model_as_is", "model_swapped", "classical", "model_chance", "classical_chance"]}  # fmt: skip
+    lc = {n: empty_counts() for n in
+          ["model_as_is", "model_swapped", "classical", "model_chance", "classical_chance"]}  # fmt: skip
     for idx, (stem, d) in enumerate(res.items()):
         tr, nf = d["truth"], d["n_frames"]
         cnt["as_is"].add(count_clip(d["p"].events, tr, nf))
@@ -309,7 +263,10 @@ def xcorr_lag(y: list[np.ndarray], x: list[np.ndarray], lags=range(-10, 11)) -> 
 
 def check_d(res: dict, report: list[dict], split: str) -> dict:
     """Time alignment on single-source clips of `split` present in `res`."""
-    single = {r["stem"]: r for r in report if len(r["sources"]) == 1 and r["split"] == split and r["task"] in (1, 3)
+    single = {
+        r["stem"]: r
+        for r in report
+        if len(r["sources"]) == 1 and r["split"] == split and r["task"] in (1, 3)
     }
     stems = [s for s in res if s in single]
     ys, es, ms = [], [], []
@@ -342,13 +299,9 @@ def check_d(res: dict, report: list[dict], split: str) -> dict:
         act = np.where(y > 0)[0]
         for s in range(-5, 6):
             ks = [k for k in act if 0 <= k + s < n]
-            shift_err[s]["model"] += [
-                abs(float(lat(m_az[k + s]) - lat(t_az[k]))) for k in ks
-            ]
+            shift_err[s]["model"] += [abs(float(lat(m_az[k + s]) - lat(t_az[k]))) for k in ks]
             ks2 = [k for k in ks if (k + s) in c_az]
-            shift_err[s]["classical"] += [
-                abs(float(lat(c_az[k + s]) - lat(t_az[k]))) for k in ks2
-            ]
+            shift_err[s]["classical"] += [abs(float(lat(c_az[k + s]) - lat(t_az[k]))) for k in ks2]
         cand.append((len(act), stem, abs(float(lat(np.nanmean(t_az))))))
         tables[stem] = {
             "frames": [
@@ -372,7 +325,9 @@ def check_d(res: dict, report: list[dict], split: str) -> dict:
     out["angle_error_by_shift"] = {
         str(s): {
             "model_median_lat_err": float(np.median(v["model"])) if v["model"] else None,
-            "classical_median_lat_err": float(np.median(v["classical"])) if v["classical"] else None,
+            "classical_median_lat_err": float(np.median(v["classical"]))
+            if v["classical"]
+            else None,
             "n": len(v["model"]),
         }
         for s, v in shift_err.items()
@@ -453,7 +408,11 @@ def render(R: dict) -> str:
         L.append(f"| {k} | {a['n']} | {f4(a['ild_sign_agree_pct'])} | {f4(a['itd_sign_agree_pct'])} | "
                  f"{f4(a['ild_vs_sin_corr'])} | {f4(a['itd_rec_vs_sin_corr'])} | "
                  f"{f4(a['itd_frame_vs_sin_corr'])} (n={a['n_frames']}) |")  # fmt: skip
-    L += ["", "Near 100 % / strong positive = labels and channel order fine; near 0 % = flipped.", ""]
+    L += [
+        "",
+        "Near 100 % / strong positive = labels and channel order fine; near 0 % = flipped.",
+        "",
+    ]
     C, B = R["C"], R["B"]
     L += ["## B. Lateral-only accuracy on LOCATA eval (front/back folded)", "",
           "| method | lateral F20 | mean lateral error (deg) | recall20 | n_pred | n_truth |",
@@ -467,7 +426,9 @@ def render(R: dict) -> str:
         for k, v in R["B_ref_v2"]["lateral"].items():
             L.append(f"| {k} | {f4(v['lat_F20'])} | {f4(v['lat_err_deg'])} |")
         v = R["B_ref_v2"]["variants"]["as_is"]
-        L.append(f"\nv2 model on those sim clips, full-sphere: F20 {f4(v['F20'])}, error {f4(v['LE_deg'])} deg.")
+        L.append(
+            f"\nv2 model on those sim clips, full-sphere: F20 {f4(v['F20'])}, error {f4(v['LE_deg'])} deg."
+        )
     L += ["", "## C. Input variants, v2 two-ear model, LOCATA eval", "",
           "| variant | F20 | mean error (deg) | front/back rate |", "|---|---|---|---|"]  # fmt: skip
     for k, v in C["variants"].items():
@@ -493,7 +454,9 @@ def render(R: dict) -> str:
               "Median lateral error (deg) when the prediction is shifted by s frames:", "",
               "| s | model | classical | n |", "|---|---|---|---|"]  # fmt: skip
         for s, v in D["angle_error_by_shift"].items():
-            L.append(f"| {s} | {f4(v['model_median_lat_err'])} | {f4(v['classical_median_lat_err'])} | {v['n']} |")
+            L.append(
+                f"| {s} | {f4(v['model_median_lat_err'])} | {f4(v['classical_median_lat_err'])} | {v['n']} |"
+            )
         for stem, t in D["table_clips"].items():
             act = [f for f in t["frames"] if f["label_active"]][:: max(1, len(t["frames"]) // 16)]
             L += ["", f"`{stem}` (every few active frames):", "",
@@ -525,7 +488,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--locata", default="C:/Users/johnn/personal/second-ear/data/locata")
     ap.add_argument("--v2-test", default="C:/Users/johnn/personal/second-ear/data/binaural_v2")
-    ap.add_argument("--ckpt-dir", default="C:/Users/johnn/personal/second-ear/checkpoints/where_binaural")
+    ap.add_argument(
+        "--ckpt-dir", default="C:/Users/johnn/personal/second-ear/checkpoints/where_binaural"
+    )
     ap.add_argument("--config", default="configs/where_binaural.yaml")
     ap.add_argument("--threshold", type=float, default=0.30)
     ap.add_argument("--checks", nargs="+", default=list("ABCDE"))
