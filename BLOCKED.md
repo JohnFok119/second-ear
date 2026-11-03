@@ -1,5 +1,7 @@
 # Blocked — needs Johnny (morning list, 2026-10-29)
 
+**Close-out 2026-11-02:** model work is finished. Only the **café clip v2** pick below is still open; the pretrained-listener licence, v3 listening check, licence holds and Colab popups are moot (no more training).
+
 - **Training speed:** decided 2026-10-29 17:30: stay on the Colab Pro T4, v3 runs only (the v2 trick runs were stopped).
 - **Moving files to Drive:** done 2026-10-29: Johnny uploaded all v3 feature shards, scenes_v3.tar, scenes_v2.tar and locata_scenes.tar; local copies deleted after byte-size checks.
 - **LOCATA (heads-up, First Mate call):** the ship read only the hearing-aid recordings out of the LOCATA zips (4.2 GB on this PC instead of 19 GB), prepared them (0.7 GB) and scored today's model: on these real recordings it is barely better than guessing (error 61 deg vs 66 deg for random guesses; F20 0.10 vs 0.04). That is the starting line Phase 7 has to move. The prepared copy is also packed for Drive (see the upload item) so Colab can score new models on it.
