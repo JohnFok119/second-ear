@@ -217,7 +217,7 @@ works on real audio, front/back + elevation fail; behind-the-ear vs in-ear HRIR 
   (BTE) mic positions, e.g. the Oldenburg Kayser 2009 in-ear + BTE database and any others; for each, licence (read on
   its own page: CC0 / CC BY / MIT / ODC-By only), size, directions, sample rate, download URL. Output
   `docs/research/c7/bte_hrir.md`. No downloads (Johnny OKs downloads). *Done when:* table + recommendation.
-- [ ] **phase7-C14 Reality check.** First Mate, after C12 + C13: what the current pipeline can honestly reach against
+- [ ] **phase7-C14 Reality check.** (page up 2026-11-02: `.lavish/c14/`, recommends option B: single-source frontal error + left/right score as the new tests 1-2; waiting on Johnny) First Mate, after C12 + C13: what the current pipeline can honestly reach against
   each finish-line test (sim frontal 12°, one-ear 3x, LOCATA two-vs-one), what each remaining lever buys (BTE HRIRs,
   epoch selection by F20 instead of SELD, Conformer, more data), and a proposal to adjust or keep the bar. On a lavish
   page for Johnny. *Done when:* Johnny has read it and picked a direction.
