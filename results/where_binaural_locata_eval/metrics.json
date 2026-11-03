@@ -5,7 +5,7 @@
   "threshold": 0.3,
   "threshold_source": "results/where_binaural/threshold_val.json",
   "n_clips": 46,
-  "git_sha": "9c4feacc6ca8505e5dd4f9d3d71cd1d5e0528dcf",
+  "git_sha": "5d5f11dc0f40f5234d3194a66492ce9af4979335",
   "config": {
     "coarse_step_deg": 10,
     "fine_step_deg": 5,
@@ -17,6 +17,7 @@
     "epochs": 60,
     "patience": 10,
     "ram_f16": false,
+    "disk_cache": null,
     "batch_size": 32,
     "threshold": 0.3,
     "seed": 42,
@@ -31,7 +32,7 @@
     "experiment": "where_binaural",
     "input": "LOCATA dummy head, front mic per ear, 48 kHz resampled to model rate"
   },
-  "config_hash": "d4b35a67df9765e8bf6e104c4bbfca10bd9c1374",
+  "config_hash": "ec7c9ad5125b031203fede00d2467a495c4a4aa5",
   "agnostic": true,
   "overall": {
     "LE_deg": 60.9825715689212,
@@ -64,6 +65,23 @@
     "n_tp20": 835,
     "n_fb": 190
   },
+  "lateral": {
+    "lat_F20": 0.4787581326332611,
+    "lat_err_deg": 9.165541406717374,
+    "lat_recall20": 0.8723067964395641,
+    "n_pred": 31784,
+    "n_truth": 12021,
+    "n_matched": 11701
+  },
+  "lateral_chance": {
+    "lat_F20": 0.23431115169501196,
+    "lat_err_deg": 32.264574289862246,
+    "lat_recall20": 0.4269195574411447,
+    "n_pred": 31784,
+    "n_truth": 12021,
+    "n_matched": 11701
+  },
+  "lateral_matching": "front/back folded: lateral angle arcsin(sin az), per-frame Hungarian on |lateral diff|, TP within 20 deg",
   "by_task": {
     "task1": {
       "LE_deg": 68.83709529842858,

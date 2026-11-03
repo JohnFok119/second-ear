@@ -208,12 +208,12 @@ CC BY-SA only for data that is never committed; no NC, ND or Sampling+.
 **Captain 2026-11-02:** do C12 and C13, then C14 (re-evaluate how far the current work can really get). Context: v3
 reading `results/phase7/v3_reading.md`, LOCATA diagnosis `results/phase7/locata_diagnosis.md` (pipeline sound; left/right
 works on real audio, front/back + elevation fail; behind-the-ear vs in-ear HRIR mismatch most likely).
-- [ ] **phase7-C12 Left/right-only LOCATA score.** Add a lateral (front/back-folded) scoring mode to
+- [x] **phase7-C12 Left/right-only LOCATA score.** (done 2026-11-02, v2 models: two ears lateral F20 0.479 vs right 0.207 / left 0.216, chance ~0.22; `results/phase7/locata_lateral.md`; v3 rows wait on Drive checkpoints) Add a lateral (front/back-folded) scoring mode to
   `scripts/eval_locata.py` (reuse the fold from `scripts/diagnose_locata.py`), with tests. Score locally on CPU (take a
   fleet CPU lease) the v2 models (checkpoints/where_binaural, where_left, where_right) and, if their Drive checkpoints are
   pulled down, where_v3 + where_v3_right. Add a "LOCATA lateral F20 / lateral error" column to the ablation table and the
   one-ear table. *Done when:* two ears vs one ear on real audio is stated in one number pair per model, tests pass.
-- [ ] **phase7-C13 Behind-the-ear HRIR search.** Research only (crew-researcher): HRIR/BRIR sets measured at hearing-aid
+- [x] **phase7-C13 Behind-the-ear HRIR search.** (done 2026-11-02: only MMHR-HRTF v1.3.1 BKwHA_s.sofa passes, CC BY 4.0, 212.8 MB, not the LOCATA hardware; `docs/research/c7/bte_hrir.md`) Research only (crew-researcher): HRIR/BRIR sets measured at hearing-aid
   (BTE) mic positions, e.g. the Oldenburg Kayser 2009 in-ear + BTE database and any others; for each, licence (read on
   its own page: CC0 / CC BY / MIT / ODC-By only), size, directions, sample rate, download URL. Output
   `docs/research/c7/bte_hrir.md`. No downloads (Johnny OKs downloads). *Done when:* table + recommendation.
