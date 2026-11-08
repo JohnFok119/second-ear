@@ -22,6 +22,9 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
 - cloud: allowed per the cloud rule until 2026-11-04 (Johnny, 2026-10-23), Claude sessions only, kit on branch `cloud-kit`; GPU cloud spend $0 (local GPU via `fleet\lease.mjs`). **Google Colab allowed** (Johnny, 2026-10-24): free T4 as much as needed; L4/A100/G4 are on his account but may spend compute units, so ask before using them.
 - milestones (Phase 5–6): M5 new model results (`.lavish/m5/`) · M6 new website live (`.lavish/m6/`) · M7 better model, sim + real scores (`.lavish/m7/`)
+- **Phase 8 run (Johnny 2026-11-08, via `.lavish/c14` feedback; plan page `.lavish/phase8/`):** branch `phase8-<chunk>-<slug>`, merge to `main` after verify. Push to `main`: only if Johnny gives the go in the sailing session (he answered "push to main OK this session" on c14; that go does not carry across `/clear`). Cloud: not for this run (needs local data; cloud now counts toward Max). No training, no Colab. Downloads: only the 6 v3 files from Drive (6.4 MB); the 213 MB behind-the-ear set is NOT approved.
+- **stop when (Phase 8):** phase8-C1..C5 ticked AND `uv run pytest -q` passes AND the fundamentals artifact URL is written in phase8-C5. Then ping done; the UI-revamp brainstorm resumes with Johnny (not part of the run).
+- **ping me for (Phase 8):** a decision only Johnny can make, blocked with no other work, the fundamentals artifact (milestone), done.
 
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
@@ -223,6 +226,47 @@ works on real audio, front/back + elevation fail; behind-the-ear vs in-ear HRIR 
   each finish-line test (sim frontal 12°, one-ear 3x, LOCATA two-vs-one), what each remaining lever buys (BTE HRIRs,
   epoch selection by F20 instead of SELD, Conformer, more data), and a proposal to adjust or keep the bar. On a lavish
   page for Johnny. *Done when:* Johnny has read it and picked a direction.
+
+## Phase 8 — Measure it fairly, then explain it → fundamentals artifact
+
+**Captain 2026-11-08** (answers on `.lavish/c14`, delivered 2026-11-08): direction **B · measure it fairly**; v3 Drive
+files OK (6.4 MB); then "create a Claude artifact that breaks down the fundamentals of the model we're using and how it
+pertains to hearing and sound waves … so I can better pivot where we're going"; autonomous run. No training, no Colab.
+New finish-line tests (from c14 option B): **T1** two-ear frontal error on single-source moments ≤ 12° (sim test).
+**T2** left/right score on real audio (LOCATA lateral F20): one ear near chance, two ears ≥ 2x chance. T3 already met
+(C12). T4 = C10 café clip, still Johnny's A/B pick (not in this run).
+
+- [ ] **phase8-C1 Single-source scoring.** Add a `--single-source` flag to `scripts/eval_heatmap.py`: score only frames
+  where exactly one reference sound is active (count reference events per frame; the frame filter applies to both
+  prediction and reference lists before matching, F20 and `fb_counts` in `src/secondear/eval/frontback.py`). Tests for the
+  filter on a hand-made 3-frame case (0, 1, 2 sources). Write results to `results/<experiment>_single/` (val-picked
+  thresholds as in `results/one_ear_where/table.md`). Score the v2 models on the `binaural_v2` test split:
+  `where_binaural` (both ears), `where_right`, `where_left`, and `where_binaural --mute left`. CPU under the lease
+  protocol. *Done when:* `results/phase8/single_source.md` has one row per model (frontal error, F20, guesses per real
+  sound, n frames) and `uv run pytest -q` passes.
+- [ ] **phase8-C2 v3 checkpoints.** Download from Johnny's Drive `MyDrive/second-ear/where_v3/` and `…/where_v3_right/`:
+  `best.pt`, `scaler.npz`, `threshold_val.json` (6 files, about 6.4 MB) into `checkpoints/where_v3/` and
+  `checkpoints/where_v3_right/` (git-ignored). Google Drive connector first; Chrome fallback. Nothing else downloaded.
+  *Done when:* 6 files present, sizes logged, `best.pt` loads with `torch.load(..., map_location="cpu")`.
+- [ ] **phase8-C3 Score v3.** LOCATA lateral score (`scripts/eval_locata.py` lateral mode from C12) for `where_v3` and
+  `where_v3_right`; single-source sim score (C1 flag) for both on the `binaural_v3` test split. Add rows to
+  `results/phase7/locata_lateral.md` and `results/phase8/single_source.md`. *Done when:* both tables have v3 rows.
+- [ ] **phase8-C4 Verdict + write-up.** `results/phase8/verdict.md`: T1 and T2 met / not met per model, plain English,
+  every number linked to its source file. Update README results (new "single-source" table + verdict lines, no other
+  rewrites) and add a short "Phase 8" section to LEARNING.md. Merge to main. *Done when:* merged, pytest passes.
+- [ ] **phase8-C5 Fundamentals artifact (milestone).** A Claude Artifact (Artifact tool; load `artifact-design` and
+  `artifact-diagramming` first), private, for Johnny's understanding (high-school level, every term glossed). Covers:
+  (1) sound waves: pressure, frequency, wavelength, speed, why low vs high pitch behave differently around a head;
+  (2) how two ears find direction: time gap (ITD), loudness gap (ILD), head shadow, ear-shape colouring (HRTF), the
+  front/back "cone of confusion"; (3) what one ear keeps and loses; (4) what our model actually hears: how scenes are
+  rendered (HRTF/BRIR, `src/secondear/scene/`), the input features (read `src/secondear/features/` or wherever
+  extraction lives — describe what the code does, not what is typical), the network (read `src/secondear/models/heatmap.py`)
+  and the heat-map output; (5) how it learns (training data, loss, epoch pick); (6) how it is scored (LE, F20,
+  frontal error, lateral score, chance); (7) the results incl. Phase 8, and the human numbers (3.7° / 22.4°, Aruffo 2025);
+  (8) limits and what each would take to move (from `.lavish/c14`). Interactive diagrams where they teach (e.g. drag a
+  source around a head, watch the time gap; two-ear vs one-ear heat map). Every number from a repo file; cite it.
+  Before publishing, a crew-reviewer fact-checks every claim against the code and results files. *Done when:*
+  published, URL written here, fact-check clean, Johnny pinged.
 
 ---
 
