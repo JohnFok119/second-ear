@@ -25,7 +25,8 @@ from eval_locata import to_model_rate
 
 from secondear.classical.itd import ClassicalITDLocalizer
 from secondear.core import Event
-from secondear.eval.agnostic import Counts, chance_events, count_clip, match_frame, summarize
+from secondear.eval.agnostic import Counts, chance_events, count_clip, summarize
+from secondear.eval.anatomy import error_anatomy
 from secondear.eval.lateral import add_counts, empty_counts, lat, lat_summary, lateral_counts
 from secondear.features.gcc import gcc_phat, tdoa_samples
 from secondear.features.stft import HOP, stft
@@ -169,44 +170,6 @@ def fix_el(pred: list[Event], truth: list[Event]) -> list[Event]:
               e.dist_m, e.score)
         for e in pred
     ]  # fmt: skip
-
-
-def error_anatomy(res: dict) -> dict:
-    """Where the full-sphere error of the as-is model comes from (3-D Hungarian matched pairs)."""
-    n_pred = n_pred_idle = n_pair = n_hemi = n_hemi_ok = 0
-    d_el, p_el, t_el = [], [], []
-    for d in res.values():
-        tb: dict[int, list[Event]] = {}
-        pb: dict[int, list[Event]] = {}
-        for e in d["truth"]:
-            tb.setdefault(e.frame, []).append(e)
-        for e in d["p"].events:
-            pb.setdefault(e.frame, []).append(e)
-        for f, p in pb.items():
-            n_pred += len(p)
-            if f not in tb:
-                n_pred_idle += len(p)
-                continue
-            for pi, ti, _ in match_frame(p, tb[f]):
-                n_pair += 1
-                t = tb[f][ti]
-                d_el.append(abs(p[pi].el_deg - t.el_deg))
-                p_el.append(p[pi].el_deg)
-                t_el.append(t.el_deg)
-                if abs(np.cos(np.deg2rad(t.az_deg))) > 0.26:  # truth not within 15 deg of the ears
-                    n_hemi += 1
-                    n_hemi_ok += int(
-                        np.cos(np.deg2rad(p[pi].az_deg)) * np.cos(np.deg2rad(t.az_deg)) > 0
-                    )
-    return {
-        "n_pred": n_pred,
-        "frac_pred_in_frames_without_label": n_pred_idle / n_pred if n_pred else None,
-        "n_matched_pairs": n_pair,
-        "hemisphere_correct_frac": n_hemi_ok / n_hemi if n_hemi else None,
-        "mean_abs_elevation_error_deg": float(np.mean(d_el)) if d_el else None,
-        "mean_pred_elevation_deg": float(np.mean(p_el)) if p_el else None,
-        "mean_true_elevation_deg": float(np.mean(t_el)) if t_el else None,
-    }
 
 
 def check_bc(res: dict, tag: str) -> dict:

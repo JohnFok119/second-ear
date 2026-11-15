@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from eval_heatmap import _binaural_stems, _load_binaural
 
 from secondear.eval.agnostic import Counts, chance_events, count_clip, summarize
+from secondear.eval.anatomy import AnatomyCounts, anatomy_counts
 from secondear.eval.frontback import FBCounts, fb_counts
 from secondear.eval.lateral import add_counts, empty_counts, lat_summary, lateral_counts
 from secondear.io.starss23 import read_metadata
@@ -55,22 +56,29 @@ def main() -> None:
     ap.add_argument("--splits", nargs="+", default=["dev", "eval"])
     ap.add_argument("--threshold", type=float, default=None, help="default: val-picked, if found")
     ap.add_argument("--results-dir", default="results")
+    ap.add_argument("--max-per-frame", type=int, default=5, help="cap on guesses per frame")
+    ap.add_argument("--tag", default=None, help="result dirs become <exp>_<tag>_locata[_<split>]")
+    ap.add_argument(
+        "--experiment-name", default=None, help="overrides the experiment name in outputs"
+    )
     ap.add_argument("--limit-clips", type=int, default=None)
     ap.add_argument("--device", default="cpu")
     a = ap.parse_args()
 
     cfg = load_config(a.config)
-    exp = cfg["experiment"]
+    cfg_exp = cfg["experiment"]
+    exp = a.experiment_name or cfg_exp
+    out_name = f"{exp}_{a.tag}" if a.tag else exp
     res = Path(a.results_dir)
     if a.threshold is not None:
         thr, thr_src = a.threshold, "flag"
     else:
-        tf = res / exp / "threshold_val.json"
+        tf = res / cfg_exp / "threshold_val.json"
         if not tf.exists():
             ap.error(f"no --threshold and no {tf}")
         thr, thr_src = float(json.loads(tf.read_text(encoding="utf-8"))["chosen"]), tf.as_posix()
     cfg["threshold"] = thr
-    ckpt = Path(a.ckpt_dir or f"checkpoints/{exp}")
+    ckpt = Path(a.ckpt_dir or f"checkpoints/{cfg_exp}")
     mean, scale = load_scaler(ckpt / "scaler.npz")
     loc = BinauralHeatmapLocalizer(
         cfg["ears"],
@@ -81,6 +89,7 @@ def main() -> None:
         name=exp,
         agnostic=True,
         threshold=thr,
+        max_events_per_frame=a.max_per_frame,
         coarse_step_deg=cfg["coarse_step_deg"],
         fine_step_deg=cfg["fine_step_deg"],
     )
@@ -95,6 +104,7 @@ def main() -> None:
         "fb": FBCounts(),
         "lat": empty_counts(),
         "lat_chance": empty_counts(),
+        "anat": AnatomyCounts(),
         "per_clip": {},
     }
     pooled_task: dict[str, Counts] = {}
@@ -102,6 +112,7 @@ def main() -> None:
     for split in a.splits:
         overall, chance, fb_total = Counts(), Counts(), FBCounts()
         lat_t, lat_c = empty_counts(), empty_counts()
+        anat = AnatomyCounts()
         by_task: dict[str, Counts] = {}
         per_clip: dict[str, dict] = {}
         stems = _binaural_stems(root, split)[: a.limit_clips]
@@ -119,6 +130,9 @@ def main() -> None:
             lc = lateral_counts(p.events, truth, n_frames)
             lcc = lateral_counts(chev, truth, n_frames)
             fbc = fb_counts(p.events, truth)
+            ac = anatomy_counts(p.events, truth)
+            for tgt in (anat, pooled["anat"]):
+                tgt.add(ac)
             for tgt in (overall, pooled["overall"], by_task.setdefault(task_of(stem), Counts())):
                 tgt.add(c)
             pooled_task.setdefault(task_of(stem), Counts()).add(c)
@@ -135,7 +149,7 @@ def main() -> None:
             n_total += 1
             print(f"[{split} {idx + 1}/{len(stems)}] {stem}", flush=True)
         _write(
-            res / f"{exp}_locata_{split}",
+            res / f"{out_name}_locata_{split}",
             exp,
             split,
             thr,
@@ -150,11 +164,13 @@ def main() -> None:
             lat_c,
             by_task,
             per_clip,
+            anat,
+            a.max_per_frame,
         )
         print(f"{split} overall:", summarize(overall))
     if len(a.splits) > 1:
         _write(
-            res / f"{exp}_locata",
+            res / f"{out_name}_locata",
             exp,
             "+".join(a.splits),
             thr,
@@ -169,6 +185,8 @@ def main() -> None:
             pooled["lat_chance"],
             pooled_task,
             pooled["per_clip"],
+            pooled["anat"],
+            a.max_per_frame,
         )
 
 
@@ -188,6 +206,8 @@ def _write(
     lat_chance,
     by_task,
     per_clip,
+    anat,
+    max_per_frame,
 ):
     """Write metrics.json (same keys as eval_heatmap.py, plus by_task)."""
     cfg = {**cfg, "input": "LOCATA dummy head, front mic per ear, 48 kHz resampled to model rate"}
@@ -197,12 +217,18 @@ def _write(
         "split": split,
         "threshold": thr,
         "threshold_source": thr_src,
+        "max_per_frame": max_per_frame,
         "n_clips": n,
         "git_sha": sha,
         "config": cfg,
         "config_hash": hashlib.sha1(json.dumps(cfg, sort_keys=True).encode()).hexdigest(),
         "agnostic": True,
         "overall": summarize(overall),
+        "guesses_per_real_sound": overall.n_pred / overall.n_truth if overall.n_truth else None,
+        "anatomy": {
+            "hemisphere_correct_frac": anat.hemisphere_correct_frac,
+            "mean_abs_elevation_error_deg": anat.mean_abs_elevation_error_deg,
+        },
         "front_back_rate": fb.front_back_rate,
         "frontal_azimuth_error": fb.frontal_azimuth_error if fb.n_front else None,
         "front_back_matching": "class-agnostic: per-frame Hungarian match on angle, classes ignored",

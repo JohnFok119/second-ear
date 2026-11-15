@@ -14,7 +14,13 @@ import numpy as np
 import soundfile as sf
 import torch
 
-from secondear.eval.agnostic import Counts, chance_events, count_clip, summarize
+from secondear.eval.agnostic import (
+    Counts,
+    chance_events,
+    count_clip,
+    single_source_filter,
+    summarize,
+)
 from secondear.eval.frontback import FBCounts, fb_counts
 from secondear.eval.official import seld_scores
 from secondear.io.starss23 import clip_paths, list_clips, load_foa, read_metadata
@@ -47,9 +53,13 @@ def _load_binaural(root: Path, split: str, stem: str):
     return np.ascontiguousarray(data.T), fs
 
 
-def default_out_dir(exp: str, mute: str | None, threshold: float | None) -> str:
-    """results/<exp>[_mute_<side>][_thr<t, 2 decimals>]; no threshold suffix for the config value."""
+def default_out_dir(
+    exp: str, mute: str | None, threshold: float | None, single: bool = False
+) -> str:
+    """results/<exp>[_mute_<side>][_single][_thr<t, 2 decimals>]; no threshold suffix for the config value."""
     name = f"results/{exp}_mute_{mute}" if mute else f"results/{exp}"
+    if single:
+        name += "_single"
     return name if threshold is None else f"{name}_thr{threshold:.2f}"
 
 
@@ -75,6 +85,11 @@ def main() -> None:
     ap.add_argument(
         "--out", default=None, help="default results/<experiment>[_mute_<side>][_thr<t>]"
     )
+    ap.add_argument(
+        "--single-source",
+        action="store_true",
+        help="score only frames with exactly one reference event",
+    )
     a = ap.parse_args()
 
     train_cfg = load_config(a.config, data=a.data, ears=a.ears)
@@ -88,7 +103,7 @@ def main() -> None:
     root = Path(a.root or (f"data/{train_cfg['data']}" if binaural else "data/starss23"))
     if a.mute and not binaural:
         ap.error("--mute needs binaural data")
-    default_out = default_out_dir(exp, a.mute, a.threshold)
+    default_out = default_out_dir(exp, a.mute, a.threshold, a.single_source)
     if a.threshold is not None:
         train_cfg["threshold"] = a.threshold
     out, ckpt = Path(a.out or default_out), Path(a.ckpt_dir or f"checkpoints/{exp}")
@@ -129,6 +144,7 @@ def main() -> None:
     by_site = {"sony": Counts(), "tau": Counts()}
     per_clip: dict[str, dict] = {}
     rows = []
+    n_single = 0
     for idx, stem in enumerate(stems):
         if binaural:
             audio, fs = _load_binaural(root, split, stem)
@@ -137,20 +153,26 @@ def main() -> None:
             wav, csv_path = clip_paths(root, stem)
             audio, fs = load_foa(wav)
             truth = read_metadata(csv_path)
-        ref[stem] = truth
         preds = {k: loc.predict(audio, fs) for k, loc in locs.items()}
-        for k, p in preds.items():
-            pred[k][stem] = p.events
+        events = {k: p.events for k, p in preds.items()}
+        if a.single_source:
+            events["best"], truth, kept = single_source_filter(events["best"], truth)
+            events["last"] = [e for e in events["last"] if e.frame in kept]
+            n_single += len(kept)
+        ref[stem] = truth
+        for k, ev in events.items():
+            pred[k][stem] = ev
         p = preds["best"]
+        best_events = events["best"]
         n_frames = max(p.n_frames, max((e.frame for e in truth), default=-1) + 1)
-        c = count_clip(p.events, truth, n_frames)
+        c = count_clip(best_events, truth, n_frames)
         per_frame: dict[int, int] = {}
-        for e in p.events:
+        for e in best_events:
             per_frame[e.frame] = per_frame.get(e.frame, 0) + 1
         ch = count_clip(chance_events(per_frame, np.random.default_rng(idx)), truth, n_frames)
         site = "binaural" if binaural else _site(stem, root)
         overall.add(c)
-        fb_total.add(fb_counts(p.events, truth))
+        fb_total.add(fb_counts(best_events, truth))
         chance.add(ch)
         if not binaural:
             by_site[site].add(c)
@@ -185,6 +207,11 @@ def main() -> None:
         "split": split,
         "threshold_source": "config" if a.threshold is None else "flag",
         "mute": a.mute,
+        **(
+            {"single_source": True, "n_single_source_frames": n_single}
+            if a.single_source
+            else {"single_source": False}
+        ),
         "n_clips": len(stems),
         "git_sha": sha,
         "config": cfg,

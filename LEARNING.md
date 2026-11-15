@@ -273,3 +273,60 @@ are the obvious next step for front/back on real audio.
   was the wrong one for the hardware.
 - Pick the score that matches the claim. "Can it tell left from right?" is the half-deaf story.
 - One change per run, same tests every time, keeps the record honest even when nothing helps.
+
+## Phase 8 — Measure it fairly, then fine-tune on real recordings
+
+**Two fair measurements first.**
+- **One sound at a time.** The simulated test scenes often play two or three sounds at once, which is harder
+  than the human studies we compare against. Scoring only the moments with exactly one sound playing, the
+  two-ear model misses sounds in front by 11.7° on average (19.8° over all moments). That passes the 12° bar,
+  just (`results/phase8/single_source.md`).
+- **Fewer guesses?** On real recordings the model made 2.6 guesses for every real sound. We tried changing only
+  the decoding rule (how sure the map must be before it counts as a guess, and how many guesses per moment), picked
+  on practice recordings. The pick went the other way: *more* guesses scored higher, because when you are often
+  wrong about front vs back, scattering extra guesses lands one near the truth by luck
+  (`results/phase8/decode_notes.md`). Lesson: a score can be gamed by guessing more, so always show guesses per
+  real sound next to it.
+
+**What fine-tuning is.** The model already learned from 4,000 simulated scenes. Fine-tuning means taking that
+finished model and letting it keep learning for a short while on a few real recordings: 12 of the 18 LOCATA
+practice ("dev") recordings, with the other 6 held back to decide when to stop. Analogy: a pianist who learned on
+a keyboard spends an hour on the real concert piano before the show. Then it is tested on the 46 LOCATA test
+("eval") recordings, which it never heard and which were never used to pick anything.
+
+**One change per run.** Each row changes one thing, so a difference has one cause:
+- R2: only the last layer may learn (the part that turns "what I heard" into "where it is").
+- R3: every layer may learn, slowly (a small learning rate, so it does not throw away what it knew).
+- R4 / R5: the one-ear models get the R3 lesson (R3 was picked on the practice recordings, before any test
+  number was looked at).
+Each was run 3 times with different random seeds (and different 12/6 splits); we report the average and the
+lowest-highest range, never the luckiest run.
+
+**What the numbers say** (`results/phase8/finetune.md`, `results/phase8/verdict.md`):
+
+| | Full score (F20) | Left/right score | Left/right by random guessing |
+|---|---|---|---|
+| Two ears, before | 0.099 | 0.479 | 0.234 |
+| Two ears, fine-tuned (all layers) | **0.543** | **0.676** | 0.222 |
+| Right ear only (Johnny's ear), fine-tuned | 0.290 | 0.349 | 0.211 |
+| Left ear only, fine-tuned | 0.309 | 0.374 | 0.214 |
+
+- The two-ear model got much better on real audio: about 5.5x the full score, and it now makes about 1.3 guesses
+  per real sound instead of 2.6.
+- Up/down errors fell from 24.7° to 3.6°, but mostly because almost every LOCATA sound is at ear height, so the
+  model learned "sounds here are at ear height". True for this room, not a general skill.
+- Front vs back: correct half went from 60% to 83% of matched guesses.
+- It forgot some of the simulated world: its simulated test score fell from 0.541 to 0.405.
+
+**The surprise: one ear learned too.** Before fine-tuning, either single ear was at chance on left vs right. After
+the same lesson, one ear reaches about 1.7x chance. LOCATA was recorded in one room with one dummy head
+(`docs/research/c8/locata_setup.md`), so a single ear can learn how that room sounds from each side: a sound on
+the far side of the head arrives quieter and duller. That is what people with one ear learn over years too. Two
+ears still win clearly (0.676 vs about 0.36 on left/right), but the gap is smaller than "two ears vs helpless".
+
+**Takeaways.**
+- A small amount of real data fixes a lot when the test room matches the practice room; it says little about
+  other rooms.
+- Keep the test set out of every decision, or the score is a guess dressed up as a result.
+- Report the seed range, the chance score and the guess count next to every number.
+- A model that adapts to one ear behaves more like an adapted person than like sudden hearing loss.

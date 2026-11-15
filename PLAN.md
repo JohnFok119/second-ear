@@ -22,6 +22,21 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
 - cloud: allowed per the cloud rule until 2026-11-04 (Johnny, 2026-10-23), Claude sessions only, kit on branch `cloud-kit`; GPU cloud spend $0 (local GPU via `fleet\lease.mjs`). **Google Colab allowed** (Johnny, 2026-10-24): free T4 as much as needed; L4/A100/G4 are on his account but may spend compute units, so ask before using them.
 - milestones (Phase 5–6): M5 new model results (`.lavish/m5/`) · M6 new website live (`.lavish/m6/`) · M7 better model, sim + real scores (`.lavish/m7/`)
+- **Phase 8 run contract (Johnny 2026-11-15, "Lets do it" in chat; replaces the 2026-11-08 Phase 8 terms).** Ship name `second-ear-p8`, launched by `fleet\sail.ps1`.
+  - scope: `personal\second-ear` only; one branch `phase8-run` (off `phase8-plan`), one commit per verified step; `main` only through the PR merge below
+  - standing go: commit on `phase8-run`; dispatch crew without per-batch approval; take and release fleet leases; train on the local GPU. **Push, PR and merge (Johnny 2026-11-15, chat, after launch: "i want it to touch main IF the results are promising enough, just give it perms to PR, push, and merge to main"):** push `phase8-run`, open a PR to `main`, and merge that PR into `main` **only if the promising test below passes**; otherwise leave the PR open for Johnny. No force-push, no commits made directly on `main`, no other repo, no deploy beyond the Pages workflow that a merge triggers by itself. (`main` on GitHub is not protected: 404 on 2026-11-15; Johnny's 2026-10-22 decision keeps it that way.)
+  - promising test (First Mate's wording of "promising enough", all four must hold; Johnny can overrule): (a) `uv run pytest -q` passes; (b) the phase8-C5 fact-check is clean; (c) the better fine-tuned two-ear recipe (R2 or R3) beats today's model R0 on LOCATA eval full F20 with **every one of its three seeds** above R0 (0.099) and above its own random-guess score; (d) its LOCATA eval lateral F20 is still at least 2x its random-guess score (T2 holds). If any fails: push the branch, open the PR, do not merge, and say which line failed in the done ping.
+  - models: First Mate Opus 5.5; crew Sonnet, Haiku for mechanical; Fable only if: never
+  - stop when: phase8-C1..C6 ticked AND `uv run pytest -q` passes AND `results/phase8/verdict.md` exists AND `gh pr list --head phase8-run --state all` shows the PR (merged if the promising test passed, open if not)
+  - caps: 40 turns per chunk; lookout burn limit applies
+  - ping me for: a decision only Johnny can make, blocked with no other work, done
+  - milestones: none (the verdict file and the done ping carry the result; the site is built with Johnny afterwards)
+  - cloud: not for this run. No Colab. No downloads (everything needed is on this PC: `data/locata/scenes/{dev,eval}`, `data/features/binaural_v2`, `checkpoints/where_{binaural,left,right}`)
+  - heavy work: GPU and long CPU jobs under the lease protocol (`personal\tasks\resources\PROTOCOL.md`); one bounded job per grant, release after
+  - not in this run: the café clip pick (Johnny's ears), any site build or design direction (Johnny picks the look), the v3 checkpoints on Drive
+  - merge go for the push guard: the line below, at the start of a line so `fleet\main-go.mjs brief --file PLAN.md` can read it
+
+Merge go: JohnFok119/second-ear
 
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
@@ -223,6 +238,71 @@ works on real audio, front/back + elevation fail; behind-the-ear vs in-ear HRIR 
   each finish-line test (sim frontal 12°, one-ear 3x, LOCATA two-vs-one), what each remaining lever buys (BTE HRIRs,
   epoch selection by F20 instead of SELD, Conformer, more data), and a proposal to adjust or keep the bar. On a lavish
   page for Johnny. *Done when:* Johnny has read it and picked a direction.
+
+## Phase 8 — Measure it fairly, then fine-tune on real recordings → the last model chapter
+
+**Captain 2026-11-15** (chat): close the project out with one more model chapter and then a good site. The story so
+far: the model is good at left vs right and bad at front vs back on real recordings, because it only ever practised
+on simulated sound with in-ear head filters (`results/phase7/locata_diagnosis.md`). This phase runs the diagnosis's
+own next step: fine-tune on real recordings and report before / after, one change per run. It replaces the
+2026-11-08 Phase 8 (no training; v3 checkpoints; separate fundamentals artifact). The v3 chunks are dropped (those
+models lost to v2); the fundamentals content moves into the site's "How it works" section (W4), built with Johnny.
+
+Finish-line tests: **T1** two-ear frontal error on single-source moments ≤ 12° (sim test). **T2** left/right score
+on real audio (LOCATA lateral F20): one ear near chance, two ears ≥ 2x chance (met by C12; re-check after
+fine-tuning). **T3 (new)** fine-tuning lifts the two-ear full LOCATA eval F20 clearly above the 0.099 start, and the
+one-ear model given the same lesson stays near chance on left/right.
+
+Rules for every chunk: LOCATA **eval** (46 recordings) is the test and is never used to pick anything (epoch,
+threshold, learning rate, guess cap). All picking happens on LOCATA **dev** (18 recordings). Every row reports the
+matching random-guess score (same guesses per frame), as `scripts/eval_locata.py` already does. Read the code before
+changing it; describe what it does, not what is typical.
+
+- [x] **phase8-C1 Single-source scoring.** Add a `--single-source` flag to `scripts/eval_heatmap.py`: score only frames
+  where exactly one reference sound is active (count reference events per frame; the frame filter applies to both
+  prediction and reference lists before matching, F20 and `fb_counts` in `src/secondear/eval/frontback.py`). Tests for the
+  filter on a hand-made 3-frame case (0, 1, 2 sources). Write results to `results/<experiment>_single/` (val-picked
+  thresholds as in `results/one_ear_where/table.md`). Score the v2 models on the `binaural_v2` test split:
+  `where_binaural` (both ears), `where_right`, `where_left`, and `where_binaural --mute left`. *Done when:*
+  `results/phase8/single_source.md` has one row per model (frontal error, F20, guesses per real sound, n frames) and
+  `uv run pytest -q` passes.
+- [x] **phase8-C2 Fewer guesses, no training.** The v2 two-ear model makes 2.64 guesses per real sound on LOCATA
+  eval, and a no-training timing method gets a better left/right score with one guess per frame (0.629 vs 0.479,
+  `locata_diagnosis.md` §B). Add decode options to the LOCATA scoring path (a threshold and a cap on guesses per
+  frame), pick both on LOCATA dev, score eval once. Tests for the cap. *Done when:* `results/phase8/finetune.md` has
+  row R0 (today's model, as is) and row R1 (same weights, dev-picked decoding): full F20, error, lateral F20, lateral
+  error, chance for each, guesses per real sound, front/back-half correct, mean elevation error.
+- [x] **phase8-C3 Fine-tune harness.** A way to continue training a `where_*` checkpoint on LOCATA dev: start from
+  `checkpoints/<experiment>/best.pt`, keep that model's `scaler.npz` (the one-change rule), same features as
+  `scripts/eval_locata.py` builds (48 kHz → 24 kHz), targets from the tracked positions and voice-activity labels.
+  Options: which layers learn (head only, or all), learning rate, epochs, seed. Split dev by recording into
+  fine-tune-train and fine-tune-val with a fixed seed (no recording in both); epoch and threshold picked on
+  fine-tune-val. Checkpoints to `checkpoints/<experiment>_ft_<mode>_s<seed>/` (git-ignored). Tests: the split has no
+  overlap, frozen layers do not change after a step, the start point reproduces R0's dev score before any step.
+  Sanity run: overfit one dev recording (loss falls, that recording's score rises). Also in this chunk, facts for
+  the write-up (crew-researcher, sources cited, `docs/research/c8/locata_setup.md`): how many rooms and how many
+  dummy heads the LOCATA hearing-aid recordings use, and whether dev and eval share them. *Done when:* tests pass,
+  the overfit check is logged, the facts file exists.
+- [x] **phase8-C4 Fine-tune runs.** Local GPU under the lease. Three seeds per trained row (18 recordings is tiny:
+  report mean and range, never the best seed). **R2** two ears, head only. **R3** two ears, all layers, small
+  learning rate. **R4** right ear only (`where_right`, Johnny's ear), the better of the R2/R3 recipes. **R5** left
+  ear only, same recipe (if the lease and the caps allow; else note it as skipped). Each row scored on LOCATA eval
+  (same columns as R0/R1) **and** on the `binaural_v2` test split (does it forget the simulated scenes?).
+  *Done when:* rows R2..R4 (R5 or its skip note) in `results/phase8/finetune.md`, metrics JSONs under
+  `results/<experiment>_ft_*/`, the GPU lease released.
+- [x] **phase8-C5 Verdict + write-up.** `results/phase8/verdict.md`: T1, T2, T3 met / not met, plain English, every
+  number linked to its source file; what fine-tuning fixed (guessing, front/back, up/down: which moved), what it did
+  not, and the honest limits (18 recordings; the room and dummy-head facts from C3; one ear after the same lesson).
+  Update README results (a "single-source" table, a "fine-tuned on real recordings" table, verdict lines; no other
+  rewrites) and add a "Phase 8" section to LEARNING.md (high-school level: what fine-tuning is, why one change per
+  run, what the numbers mean). A crew-reviewer fact-checks every number in verdict.md, README and LEARNING against
+  the JSON files before the tick. *Done when:* fact-check clean, committed on `phase8-run`, pytest passes.
+- [x] **phase8-C6 Wrap-up.** Day log + whiteboard entry (`worklog` skill), BLOCKED.md brought up to date (café pick
+  still Johnny's), then push `phase8-run`, open the PR to `main`, merge it only if the promising test in the contract
+  passes, and send the done ping saying which way it went. *Done when:* written, committed, pushed, PR open or merged.
+
+**Site (after the run, with Johnny):** reference research for the look is in `docs/research/ui/references.md`
+(2026-11-15). Johnny picks the direction; then W2–W5.
 
 ---
 

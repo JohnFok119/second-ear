@@ -110,6 +110,52 @@ People who have lived with one ear do better than this model (22.4 degrees in fr
 because they learn other cues over years (ear-shape colouring, head turns, known loudness); the
 model shows the raw loss, not an adapted listener.
 
+### Single-source moments (simulated test)
+
+This table scores only the moments with exactly one sound playing (62,228 such moments in the 300
+test scenes). Frontal error is the average angle miss for sounds in front of the head; F20 is the
+share of guesses and real sounds that match within 20 degrees; chance means random directions with
+the same number of guesses.
+
+| Model | Frontal error (deg) | F20 | Chance F20 | Guesses per real sound |
+|---|---|---|---|---|
+| Two ears (where_binaural) | 11.7 | 0.634 | 0.036 | 1.40 |
+| Two-ear model, left muted | 105.3 | 0.039 | 0.023 | 0.63 |
+| Right ear only (where_right, Johnny's ear) | 36.5 | 0.109 | 0.047 | 3.81 |
+| Left ear only (where_left) | 38.2 | 0.122 | 0.045 | 3.48 |
+
+Two ears reach a frontal error of 11.7 deg on single-sound moments, against 19.8 deg on all moments.
+The 12 deg bar (T1) is met, narrowly. Source: `results/phase8/single_source.md`.
+
+### Fine-tuned on real recordings (LOCATA)
+
+Fine-tuning means continuing the training of the finished model on real recordings. Here it used 12
+of the 18 LOCATA dev recordings, with the other 6 held back to pick the epoch and the cut-off. The
+models are scored on the 46 eval recordings. Each row was run with three seeds and is shown as
+mean [lowest-highest].
+
+| Row | Model | Full F20 | Left/right F20 | Left/right chance | Guesses per real sound | Front/back half correct | Simulated test F20 |
+|---|---|---|---|---|---|---|---|
+| R0 | Two ears, as is | 0.099 | 0.479 | 0.234 | 2.644 | 0.604 | 0.541 |
+| R2 | Two ears, last layer only | 0.480 [0.471-0.496] | 0.586 [0.578-0.600] | 0.209 [0.203-0.213] | 1.242 [1.197-1.272] | 0.845 [0.841-0.851] | 0.296 [0.293-0.302] |
+| R3 | Two ears, all layers | 0.543 [0.529-0.555] | 0.676 [0.667-0.683] | 0.222 [0.219-0.225] | 1.302 [1.284-1.332] | 0.825 [0.818-0.832] | 0.405 [0.404-0.409] |
+| R4 | Right ear only (Johnny's ear), all layers | 0.290 [0.284-0.294] | 0.349 [0.336-0.357] | 0.211 [0.197-0.223] | 1.327 [0.868-1.588] | 0.837 [0.829-0.845] | 0.060 [0.040-0.073] |
+| R5 | Left ear only, all layers | 0.309 [0.307-0.310] | 0.374 [0.367-0.379] | 0.214 [0.199-0.227] | 1.379 [0.949-1.700] | 0.841 [0.835-0.853] | 0.067 [0.045-0.080] |
+
+**Verdict:**
+
+- **T1 met:** two-ear frontal error on single-sound moments is 11.7 deg, under the 12 deg bar.
+- **T2 met:** before fine-tuning, two ears score 0.479 vs chance 0.234 on left/right (2.04x), while the right ear (0.207 vs 0.223) and the left ear (0.216 vs 0.226) sit at chance.
+- **T3a met:** fine-tuning lifts the two-ear full F20 on real recordings from 0.099 to 0.543.
+- **T3b not met:** one ear does not stay at chance. After the same lesson it reaches 1.65x chance (right ear) and 1.75x chance (left ear) on left/right. Two ears still win clearly (0.676 vs 0.349 to 0.374).
+
+Caveats: LOCATA is one room and one dummy head, shared by dev and eval, so these scores mean
+"fine-tuned for this room and head", not "works anywhere". The up/down gain (24.7 deg to 3.6 deg
+miss) is mostly the room's fixed ear-height sources, and the fine-tuned models forget part of the
+simulated scenes (two ears 0.541 to 0.405).
+
+Source: `results/phase8/finetune.md`, `results/phase8/verdict.md`.
+
 ## How to run
 
 You need Python 3.11 and [uv](https://docs.astral.sh/uv/). A CUDA graphics card is used for
