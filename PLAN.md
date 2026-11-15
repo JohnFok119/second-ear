@@ -297,7 +297,7 @@ changing it; describe what it does, not what is typical.
   rewrites) and add a "Phase 8" section to LEARNING.md (high-school level: what fine-tuning is, why one change per
   run, what the numbers mean). A crew-reviewer fact-checks every number in verdict.md, README and LEARNING against
   the JSON files before the tick. *Done when:* fact-check clean, committed on `phase8-run`, pytest passes.
-- [ ] **phase8-C6 Wrap-up.** Day log + whiteboard entry (`worklog` skill), BLOCKED.md brought up to date (café pick
+- [x] **phase8-C6 Wrap-up.** Day log + whiteboard entry (`worklog` skill), BLOCKED.md brought up to date (café pick
   still Johnny's), then push `phase8-run`, open the PR to `main`, merge it only if the promising test in the contract
   passes, and send the done ping saying which way it went. *Done when:* written, committed, pushed, PR open or merged.
 

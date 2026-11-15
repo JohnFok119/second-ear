@@ -13,3 +13,9 @@
 - **Site review:** on hold until the new harness (Johnny 2026-10-28).
 
 - **Disk (heads-up):** C: has 45 GB free after the Drive uploads were cleared from C:\temp. The raw v3 training audio (43 GB) is still deletable per C7 if space runs low.
+
+## Phase 8 run (ship second-ear-p8, 2026-11-15)
+- **Merge to main (needs your go, first-hand):** the PR from `phase8-run` is open, not merged. The promising test in the contract passes on all four lines (pytest passes; fact-check clean; R3 beats R0 0.099 on every seed, 0.529 to 0.555, chance about 0.032; R3 lateral about 3x chance). The merge permission reached the ship only as a relay from the planning session, so the ship did not merge. Say "merge" in the ship's pane, or merge the PR yourself.
+- **T3 half not met (heads-up):** the one-ear models also learn left/right after the same fine-tune (1.65x and 1.75x chance), so "one ear stays near chance" does not hold. Explained in `results/phase8/verdict.md`. The site story should say "two ears still win clearly", not "one ear is helpless".
+- **GPU lease still held by second-ear-p8:** `lease.mjs release gpu` answered UNLOAD FIRST (GPU memory 3.7 GB > 3.5 GB limit), but the ship's jobs are all finished; the memory is other apps. Release by hand: `node C:\Users\johnn\personal\fleet\lease.mjs release gpu --holder second-ear-p8` once the GPU is quieter.
+- **Café clip pick:** still yours (above).
