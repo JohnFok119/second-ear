@@ -283,7 +283,7 @@ changing it; describe what it does, not what is typical.
   the write-up (crew-researcher, sources cited, `docs/research/c8/locata_setup.md`): how many rooms and how many
   dummy heads the LOCATA hearing-aid recordings use, and whether dev and eval share them. *Done when:* tests pass,
   the overfit check is logged, the facts file exists.
-- [ ] **phase8-C4 Fine-tune runs.** Local GPU under the lease. Three seeds per trained row (18 recordings is tiny:
+- [x] **phase8-C4 Fine-tune runs.** Local GPU under the lease. Three seeds per trained row (18 recordings is tiny:
   report mean and range, never the best seed). **R2** two ears, head only. **R3** two ears, all layers, small
   learning rate. **R4** right ear only (`where_right`, Johnny's ear), the better of the R2/R3 recipes. **R5** left
   ear only, same recipe (if the lease and the caps allow; else note it as skipped). Each row scored on LOCATA eval
