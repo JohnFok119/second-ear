@@ -1,0 +1,4 @@
+{"rows": [
+ {"id": "R0", "label": "v2 two ears, as is (thr 0.30, cap 5)", "locata": ["results/where_binaural_r0_locata_eval/metrics.json"], "sim": ["results/where_binaural_thr0.30/metrics.json"]},
+ {"id": "R1", "label": "same weights, dev-picked decoding (thr 0.15, cap 5)", "locata": ["results/where_binaural_r1_locata_eval/metrics.json"]}
+]}

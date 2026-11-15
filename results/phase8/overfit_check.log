@@ -1,0 +1,17 @@
+epoch 0 train_loss None best-thr F20 0.1928@0.25 best_epoch 0
+epoch 1 train_loss 0.0015843596775084734 best-thr F20 0.2008@0.25 best_epoch 1
+epoch 2 train_loss 0.001416124519892037 best-thr F20 0.3057@0.25 best_epoch 2
+epoch 3 train_loss 0.0010288669727742672 best-thr F20 0.5647@0.35 best_epoch 3
+epoch 4 train_loss 0.0008119573467411101 best-thr F20 0.5905@0.35 best_epoch 4
+epoch 5 train_loss 0.0005676396540366113 best-thr F20 0.7071@0.35 best_epoch 5
+epoch 6 train_loss 0.0005014402559027076 best-thr F20 0.6796@0.35 best_epoch 5
+epoch 7 train_loss 0.0005038887029513717 best-thr F20 0.6796@0.35 best_epoch 5
+epoch 8 train_loss 0.0004985731211490929 best-thr F20 0.6796@0.35 best_epoch 5
+epoch 9 train_loss 0.0003935226995963603 best-thr F20 0.8000@0.40 best_epoch 9
+epoch 10 train_loss 0.0003712144389282912 best-thr F20 0.7302@0.40 best_epoch 9
+epoch 11 train_loss 0.0003280990931671113 best-thr F20 0.6931@0.35 best_epoch 9
+epoch 12 train_loss 0.00034065041108988225 best-thr F20 0.6931@0.35 best_epoch 9
+epoch 13 train_loss 0.00034341943683102727 best-thr F20 0.6931@0.35 best_epoch 9
+epoch 14 train_loss 0.0002930350601673126 best-thr F20 0.7071@0.35 best_epoch 9
+epoch 15 train_loss 0.00028990639839321375 best-thr F20 0.7216@0.35 best_epoch 9
+best epoch 9 threshold 0.4 F20 0.8000 -> checkpoints\where_binaural_ft_overfit1

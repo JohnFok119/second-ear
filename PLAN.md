@@ -266,13 +266,13 @@ changing it; describe what it does, not what is typical.
   `where_binaural` (both ears), `where_right`, `where_left`, and `where_binaural --mute left`. *Done when:*
   `results/phase8/single_source.md` has one row per model (frontal error, F20, guesses per real sound, n frames) and
   `uv run pytest -q` passes.
-- [ ] **phase8-C2 Fewer guesses, no training.** The v2 two-ear model makes 2.64 guesses per real sound on LOCATA
+- [x] **phase8-C2 Fewer guesses, no training.** The v2 two-ear model makes 2.64 guesses per real sound on LOCATA
   eval, and a no-training timing method gets a better left/right score with one guess per frame (0.629 vs 0.479,
   `locata_diagnosis.md` §B). Add decode options to the LOCATA scoring path (a threshold and a cap on guesses per
   frame), pick both on LOCATA dev, score eval once. Tests for the cap. *Done when:* `results/phase8/finetune.md` has
   row R0 (today's model, as is) and row R1 (same weights, dev-picked decoding): full F20, error, lateral F20, lateral
   error, chance for each, guesses per real sound, front/back-half correct, mean elevation error.
-- [ ] **phase8-C3 Fine-tune harness.** A way to continue training a `where_*` checkpoint on LOCATA dev: start from
+- [x] **phase8-C3 Fine-tune harness.** A way to continue training a `where_*` checkpoint on LOCATA dev: start from
   `checkpoints/<experiment>/best.pt`, keep that model's `scaler.npz` (the one-change rule), same features as
   `scripts/eval_locata.py` builds (48 kHz → 24 kHz), targets from the tracked positions and voice-activity labels.
   Options: which layers learn (head only, or all), learning rate, epochs, seed. Split dev by recording into
