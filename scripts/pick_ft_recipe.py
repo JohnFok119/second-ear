@@ -25,11 +25,16 @@ def best_val_f20(ck: Path) -> float:
 def main() -> None:
     """CLI entry point."""
     out = {}
-    for mode in RECIPES:
+    for mode, lr in RECIPES.items():
         vals = [best_val_f20(Path(f"checkpoints/where_binaural_ft_{mode}_s{s}")) for s in (0, 1, 2)]
-        out[mode] = {"ftval_F20_per_seed": vals, "mean": sum(vals) / len(vals), "lr": RECIPES[mode]}
+        out[mode] = {"ftval_F20_per_seed": vals, "mean": sum(vals) / len(vals), "lr": lr}
     pick = max(out, key=lambda m: out[m]["mean"])
-    rec = {"chosen": pick, "lr": RECIPES[pick], "criterion": "mean best fine-tune-val F20 over 3 seeds (LOCATA dev)", **out}
+    rec = {
+        "chosen": pick,
+        "lr": RECIPES[pick],
+        "criterion": "mean best fine-tune-val F20 over 3 seeds (LOCATA dev)",
+        **out,
+    }
     Path("results/phase8").mkdir(parents=True, exist_ok=True)
     Path("results/phase8/recipe_pick.json").write_text(json.dumps(rec, indent=2), encoding="utf-8")
     print(pick, RECIPES[pick])

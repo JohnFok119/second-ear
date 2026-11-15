@@ -290,7 +290,7 @@ changing it; describe what it does, not what is typical.
   (same columns as R0/R1) **and** on the `binaural_v2` test split (does it forget the simulated scenes?).
   *Done when:* rows R2..R4 (R5 or its skip note) in `results/phase8/finetune.md`, metrics JSONs under
   `results/<experiment>_ft_*/`, the GPU lease released.
-- [ ] **phase8-C5 Verdict + write-up.** `results/phase8/verdict.md`: T1, T2, T3 met / not met, plain English, every
+- [x] **phase8-C5 Verdict + write-up.** `results/phase8/verdict.md`: T1, T2, T3 met / not met, plain English, every
   number linked to its source file; what fine-tuning fixed (guessing, front/back, up/down: which moved), what it did
   not, and the honest limits (18 recordings; the room and dummy-head facts from C3; one ear after the same lesson).
   Update README results (a "single-source" table, a "fine-tuned on real recordings" table, verdict lines; no other

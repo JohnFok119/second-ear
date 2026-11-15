@@ -1,0 +1,6 @@
+{
+  "split": "locata_dev_ftval",
+  "chosen": 0.25,
+  "cap": 5,
+  "criterion": "max pooled F20 on fine-tune-val (LOCATA dev)"
+}
