@@ -43,6 +43,7 @@ __all__ = [
     "BinauralHeatmapLocalizer",
     "HeatmapLocalizer",
     "HeatmapNet",
+    "binaural_model_input",
     "centernet_loss",
     "focal_bce",
     "heatmap_loss",
@@ -309,6 +310,25 @@ class HeatmapLocalizer:
         return Prediction(grid=self.grid, heatmap=hm, events=events)
 
 
+def binaural_model_input(
+    audio: np.ndarray,
+    fs: int,
+    cols: np.ndarray,
+    mean: np.ndarray | None,
+    scale: np.ndarray | None,
+    n_ch: int,
+) -> tuple[torch.Tensor, int] | None:
+    """Binaural [2, n] at `fs` -> (x [N, n_ch, 250, 64], n_label), None if too short.
+
+    `mean`/`scale` are already restricted to `cols`. Shared by the localizer and fine-tuning.
+    """
+    feat = binaural_features(audio, fs)[:, cols]
+    n_label = int(audio.shape[1] / float(feature_class(fs)._label_hop_len))
+    if feat.shape[0] == 0 or n_label == 0:
+        return None
+    return chunks_to_input(feat, mean, scale, n_ch), n_label
+
+
 class BinauralHeatmapLocalizer:
     """HeatmapNet on binaural audio [2, n] in one ear mode: `both`, `left` or `right`.
 
@@ -377,11 +397,13 @@ class BinauralHeatmapLocalizer:
         if self.mute is not None:
             audio = np.array(audio, copy=True)
             audio[0 if self.mute == "left" else 1] = 0.0
-        feat = binaural_features(audio, fs)[:, self.cols]
-        n_label = int(audio.shape[1] / float(feature_class(fs)._label_hop_len))
-        if feat.shape[0] == 0 or n_label == 0:
+        built = binaural_model_input(
+            audio, fs, self.cols, self.feat_mean, self.feat_scale, self.n_ch
+        )
+        if built is None:
             return None
-        x = chunks_to_input(feat, self.feat_mean, self.feat_scale, self.n_ch).to(self.device)
+        x, n_label = built
+        x = x.to(self.device)
         with torch.no_grad():
             maps = torch.sigmoid(self.model(x)).cpu().numpy()
         return maps.reshape(-1, *maps.shape[2:])[:n_label].astype(np.float32)
