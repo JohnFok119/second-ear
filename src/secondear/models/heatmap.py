@@ -333,6 +333,7 @@ class BinauralHeatmapLocalizer:
         agnostic: bool = False,
         encoder: str = "crnn",
         conformer: dict | None = None,
+        max_events_per_frame: int = 5,
     ):
         """feat_mean/feat_scale are the full 320-column scaler; the mode's columns are picked.
 
@@ -367,23 +368,34 @@ class BinauralHeatmapLocalizer:
         self.feat_mean = None if feat_mean is None else np.asarray(feat_mean)[self.cols]
         self.feat_scale = None if feat_scale is None else np.asarray(feat_scale)[self.cols]
         self.threshold = threshold
+        self.max_events_per_frame = max_events_per_frame
         self.grid = self.model.fine
         self.n_ch = n_ch
 
-    def predict(self, audio: np.ndarray, fs: int = FS) -> Prediction:
-        """Binaural [2, n] float32 at `fs` -> Prediction (heat map [frames, 13, 37, 72])."""
+    def heatmap(self, audio: np.ndarray, fs: int = FS) -> np.ndarray | None:
+        """Binaural [2, n] float32 at `fs` -> sigmoid map [frames, C, 37, 72], None if too short."""
         if self.mute is not None:
             audio = np.array(audio, copy=True)
             audio[0 if self.mute == "left" else 1] = 0.0
         feat = binaural_features(audio, fs)[:, self.cols]
         n_label = int(audio.shape[1] / float(feature_class(fs)._label_hop_len))
         if feat.shape[0] == 0 or n_label == 0:
-            return Prediction(grid=self.grid, heatmap=None, events=[])
+            return None
         x = chunks_to_input(feat, self.feat_mean, self.feat_scale, self.n_ch).to(self.device)
         with torch.no_grad():
             maps = torch.sigmoid(self.model(x)).cpu().numpy()
-        hm = maps.reshape(-1, *maps.shape[2:])[:n_label].astype(np.float32)
+        return maps.reshape(-1, *maps.shape[2:])[:n_label].astype(np.float32)
+
+    def predict(self, audio: np.ndarray, fs: int = FS) -> Prediction:
+        """Binaural [2, n] float32 at `fs` -> Prediction (heat map [frames, 13, 37, 72])."""
+        hm = self.heatmap(audio, fs)
+        if hm is None:
+            return Prediction(grid=self.grid, heatmap=None, events=[])
         events = heatmap_to_events(
-            hm, self.grid, self.threshold, single_cls=0 if self.agnostic else None
+            hm,
+            self.grid,
+            self.threshold,
+            max_events_per_frame=self.max_events_per_frame,
+            single_cls=0 if self.agnostic else None,
         )
         return Prediction(grid=self.grid, heatmap=hm, events=events)
