@@ -205,7 +205,7 @@ def test_real_scene_end_to_end(tmp_path):
 
 # ---- phase 7 C6b: real rooms (BRIR) and background beds ----
 
-_BASE_SHA = "329c5c98212e3814468a84f0480bb3f282ebc3ab8e5e9889cfda4fdc0182e88b"
+_BASE_FP = Path(__file__).parent / "fixtures" / "generate_default_fp.npy"
 _BASE_ROWS_SHA = "cd411a8309a52f1e441994051d5b2e0ba65aefb8f843395e200c1b7f2a044cde"
 _FAKE_AZ = np.array([-90.0, -30.0, 0.0, 45.0, 90.0, 90.0])
 _FAKE_DIST = np.array([1.5, 2.0, 2.5, 3.0, 1.5, 4.0])
@@ -245,13 +245,21 @@ def _no_hrir(*_):
     raise AssertionError("HRIRs must not be loaded for a BRIR scene without a bed")
 
 
+def _fingerprint(a: np.ndarray) -> np.ndarray:
+    """Platform-robust summary of scene audio: per-channel sums, abs sums, every 401st sample."""
+    a64 = a.astype(np.float64)
+    return np.concatenate([a64.sum(axis=1), np.abs(a64).sum(axis=1), a64[:, ::401].ravel()])
+
+
 def test_default_config_byte_identical_to_before():
+    """Default config output unchanged. Audio bytes differ by float noise across OS/BLAS
+    (CI on Linux), so audio is checked by a fingerprint with a tight tolerance; labels stay exact."""
     import hashlib
 
     cfg = SceneConfig(duration_s=8.0, mean_events=4.0)
     h = _synthetic_hrirs()
     a, r = generate_scene(cfg, 7, _clips(), ["a", "b", "c"], lambda p, fs: h, _noise_clip)
-    assert hashlib.sha256(a.tobytes()).hexdigest() == _BASE_SHA
+    np.testing.assert_allclose(_fingerprint(a), np.load(_BASE_FP), rtol=1e-5, atol=1e-6)
     assert hashlib.sha256(repr(r).encode()).hexdigest() == _BASE_ROWS_SHA
     plan = plan_scene(cfg, 7, _clips(), ["a", "b", "c"])
     assert plan.brir_room is None and plan.bed is None
