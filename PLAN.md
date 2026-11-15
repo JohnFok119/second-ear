@@ -258,7 +258,7 @@ threshold, learning rate, guess cap). All picking happens on LOCATA **dev** (18 
 matching random-guess score (same guesses per frame), as `scripts/eval_locata.py` already does. Read the code before
 changing it; describe what it does, not what is typical.
 
-- [ ] **phase8-C1 Single-source scoring.** Add a `--single-source` flag to `scripts/eval_heatmap.py`: score only frames
+- [x] **phase8-C1 Single-source scoring.** Add a `--single-source` flag to `scripts/eval_heatmap.py`: score only frames
   where exactly one reference sound is active (count reference events per frame; the frame filter applies to both
   prediction and reference lists before matching, F20 and `fb_counts` in `src/secondear/eval/frontback.py`). Tests for the
   filter on a hand-made 3-frame case (0, 1, 2 sources). Write results to `results/<experiment>_single/` (val-picked
