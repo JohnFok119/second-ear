@@ -22,9 +22,17 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - milestones: M1 classical heat map · M2 model table · M3 one-ear results + coffee shop · M4 viewer live (lavish pages under `.lavish/m<N>/`, push each)
 - cloud: allowed per the cloud rule until 2026-11-04 (Johnny, 2026-10-23), Claude sessions only, kit on branch `cloud-kit`; GPU cloud spend $0 (local GPU via `fleet\lease.mjs`). **Google Colab allowed** (Johnny, 2026-10-24): free T4 as much as needed; L4/A100/G4 are on his account but may spend compute units, so ask before using them.
 - milestones (Phase 5–6): M5 new model results (`.lavish/m5/`) · M6 new website live (`.lavish/m6/`) · M7 better model, sim + real scores (`.lavish/m7/`)
-- **Phase 8 run (Johnny 2026-11-08, via `.lavish/c14` feedback; plan page `.lavish/phase8/`):** branch `phase8-<chunk>-<slug>`, merge to `main` after verify. Push to `main`: only if Johnny gives the go in the sailing session (he answered "push to main OK this session" on c14; that go does not carry across `/clear`). Cloud: not for this run (needs local data; cloud now counts toward Max). No training, no Colab. Downloads: only the 6 v3 files from Drive (6.4 MB); the 213 MB behind-the-ear set is NOT approved.
-- **stop when (Phase 8):** phase8-C1..C5 ticked AND `uv run pytest -q` passes AND the fundamentals artifact URL is written in phase8-C5. Then ping done; the UI-revamp brainstorm resumes with Johnny (not part of the run).
-- **ping me for (Phase 8):** a decision only Johnny can make, blocked with no other work, the fundamentals artifact (milestone), done.
+- **Phase 8 run contract (Johnny 2026-11-15, "Lets do it" in chat; replaces the 2026-11-08 Phase 8 terms).** Ship name `second-ear-p8`, launched by `fleet\sail.ps1`.
+  - scope: `personal\second-ear` only; one branch `phase8-run` (off `phase8-plan`), one commit per verified step; never `main`
+  - standing go: commit on `phase8-run`; dispatch crew without per-batch approval; take and release fleet leases; train on the local GPU. **No push, no merge, no PR, no deploy** (`main` on GitHub is not protected: `gh api …/branches/main/protection` returned 404 on 2026-11-15). Johnny merges and pushes when he is back.
+  - models: First Mate Opus 5.5; crew Sonnet, Haiku for mechanical; Fable only if: never
+  - stop when: phase8-C1..C6 ticked AND `uv run pytest -q` passes AND `results/phase8/verdict.md` exists
+  - caps: 40 turns per chunk; lookout burn limit applies
+  - ping me for: a decision only Johnny can make, blocked with no other work, done
+  - milestones: none (the verdict file and the done ping carry the result; the site is built with Johnny afterwards)
+  - cloud: not for this run. No Colab. No downloads (everything needed is on this PC: `data/locata/scenes/{dev,eval}`, `data/features/binaural_v2`, `checkpoints/where_{binaural,left,right}`)
+  - heavy work: GPU and long CPU jobs under the lease protocol (`personal\tasks\resources\PROTOCOL.md`); one bounded job per grant, release after
+  - not in this run: the café clip pick (Johnny's ears), any site build or design direction (Johnny picks the look), the v3 checkpoints on Drive
 
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
@@ -227,46 +235,69 @@ works on real audio, front/back + elevation fail; behind-the-ear vs in-ear HRIR 
   epoch selection by F20 instead of SELD, Conformer, more data), and a proposal to adjust or keep the bar. On a lavish
   page for Johnny. *Done when:* Johnny has read it and picked a direction.
 
-## Phase 8 — Measure it fairly, then explain it → fundamentals artifact
+## Phase 8 — Measure it fairly, then fine-tune on real recordings → the last model chapter
 
-**Captain 2026-11-08** (answers on `.lavish/c14`, delivered 2026-11-08): direction **B · measure it fairly**; v3 Drive
-files OK (6.4 MB); then "create a Claude artifact that breaks down the fundamentals of the model we're using and how it
-pertains to hearing and sound waves … so I can better pivot where we're going"; autonomous run. No training, no Colab.
-New finish-line tests (from c14 option B): **T1** two-ear frontal error on single-source moments ≤ 12° (sim test).
-**T2** left/right score on real audio (LOCATA lateral F20): one ear near chance, two ears ≥ 2x chance. T3 already met
-(C12). T4 = C10 café clip, still Johnny's A/B pick (not in this run).
+**Captain 2026-11-15** (chat): close the project out with one more model chapter and then a good site. The story so
+far: the model is good at left vs right and bad at front vs back on real recordings, because it only ever practised
+on simulated sound with in-ear head filters (`results/phase7/locata_diagnosis.md`). This phase runs the diagnosis's
+own next step: fine-tune on real recordings and report before / after, one change per run. It replaces the
+2026-11-08 Phase 8 (no training; v3 checkpoints; separate fundamentals artifact). The v3 chunks are dropped (those
+models lost to v2); the fundamentals content moves into the site's "How it works" section (W4), built with Johnny.
+
+Finish-line tests: **T1** two-ear frontal error on single-source moments ≤ 12° (sim test). **T2** left/right score
+on real audio (LOCATA lateral F20): one ear near chance, two ears ≥ 2x chance (met by C12; re-check after
+fine-tuning). **T3 (new)** fine-tuning lifts the two-ear full LOCATA eval F20 clearly above the 0.099 start, and the
+one-ear model given the same lesson stays near chance on left/right.
+
+Rules for every chunk: LOCATA **eval** (46 recordings) is the test and is never used to pick anything (epoch,
+threshold, learning rate, guess cap). All picking happens on LOCATA **dev** (18 recordings). Every row reports the
+matching random-guess score (same guesses per frame), as `scripts/eval_locata.py` already does. Read the code before
+changing it; describe what it does, not what is typical.
 
 - [ ] **phase8-C1 Single-source scoring.** Add a `--single-source` flag to `scripts/eval_heatmap.py`: score only frames
   where exactly one reference sound is active (count reference events per frame; the frame filter applies to both
   prediction and reference lists before matching, F20 and `fb_counts` in `src/secondear/eval/frontback.py`). Tests for the
   filter on a hand-made 3-frame case (0, 1, 2 sources). Write results to `results/<experiment>_single/` (val-picked
   thresholds as in `results/one_ear_where/table.md`). Score the v2 models on the `binaural_v2` test split:
-  `where_binaural` (both ears), `where_right`, `where_left`, and `where_binaural --mute left`. CPU under the lease
-  protocol. *Done when:* `results/phase8/single_source.md` has one row per model (frontal error, F20, guesses per real
-  sound, n frames) and `uv run pytest -q` passes.
-- [ ] **phase8-C2 v3 checkpoints.** Download from Johnny's Drive `MyDrive/second-ear/where_v3/` and `…/where_v3_right/`:
-  `best.pt`, `scaler.npz`, `threshold_val.json` (6 files, about 6.4 MB) into `checkpoints/where_v3/` and
-  `checkpoints/where_v3_right/` (git-ignored). Google Drive connector first; Chrome fallback. Nothing else downloaded.
-  *Done when:* 6 files present, sizes logged, `best.pt` loads with `torch.load(..., map_location="cpu")`.
-- [ ] **phase8-C3 Score v3.** LOCATA lateral score (`scripts/eval_locata.py` lateral mode from C12) for `where_v3` and
-  `where_v3_right`; single-source sim score (C1 flag) for both on the `binaural_v3` test split. Add rows to
-  `results/phase7/locata_lateral.md` and `results/phase8/single_source.md`. *Done when:* both tables have v3 rows.
-- [ ] **phase8-C4 Verdict + write-up.** `results/phase8/verdict.md`: T1 and T2 met / not met per model, plain English,
-  every number linked to its source file. Update README results (new "single-source" table + verdict lines, no other
-  rewrites) and add a short "Phase 8" section to LEARNING.md. Merge to main. *Done when:* merged, pytest passes.
-- [ ] **phase8-C5 Fundamentals artifact (milestone).** A Claude Artifact (Artifact tool; load `artifact-design` and
-  `artifact-diagramming` first), private, for Johnny's understanding (high-school level, every term glossed). Covers:
-  (1) sound waves: pressure, frequency, wavelength, speed, why low vs high pitch behave differently around a head;
-  (2) how two ears find direction: time gap (ITD), loudness gap (ILD), head shadow, ear-shape colouring (HRTF), the
-  front/back "cone of confusion"; (3) what one ear keeps and loses; (4) what our model actually hears: how scenes are
-  rendered (HRTF/BRIR, `src/secondear/scene/`), the input features (read `src/secondear/features/` or wherever
-  extraction lives — describe what the code does, not what is typical), the network (read `src/secondear/models/heatmap.py`)
-  and the heat-map output; (5) how it learns (training data, loss, epoch pick); (6) how it is scored (LE, F20,
-  frontal error, lateral score, chance); (7) the results incl. Phase 8, and the human numbers (3.7° / 22.4°, Aruffo 2025);
-  (8) limits and what each would take to move (from `.lavish/c14`). Interactive diagrams where they teach (e.g. drag a
-  source around a head, watch the time gap; two-ear vs one-ear heat map). Every number from a repo file; cite it.
-  Before publishing, a crew-reviewer fact-checks every claim against the code and results files. *Done when:*
-  published, URL written here, fact-check clean, Johnny pinged.
+  `where_binaural` (both ears), `where_right`, `where_left`, and `where_binaural --mute left`. *Done when:*
+  `results/phase8/single_source.md` has one row per model (frontal error, F20, guesses per real sound, n frames) and
+  `uv run pytest -q` passes.
+- [ ] **phase8-C2 Fewer guesses, no training.** The v2 two-ear model makes 2.64 guesses per real sound on LOCATA
+  eval, and a no-training timing method gets a better left/right score with one guess per frame (0.629 vs 0.479,
+  `locata_diagnosis.md` §B). Add decode options to the LOCATA scoring path (a threshold and a cap on guesses per
+  frame), pick both on LOCATA dev, score eval once. Tests for the cap. *Done when:* `results/phase8/finetune.md` has
+  row R0 (today's model, as is) and row R1 (same weights, dev-picked decoding): full F20, error, lateral F20, lateral
+  error, chance for each, guesses per real sound, front/back-half correct, mean elevation error.
+- [ ] **phase8-C3 Fine-tune harness.** A way to continue training a `where_*` checkpoint on LOCATA dev: start from
+  `checkpoints/<experiment>/best.pt`, keep that model's `scaler.npz` (the one-change rule), same features as
+  `scripts/eval_locata.py` builds (48 kHz → 24 kHz), targets from the tracked positions and voice-activity labels.
+  Options: which layers learn (head only, or all), learning rate, epochs, seed. Split dev by recording into
+  fine-tune-train and fine-tune-val with a fixed seed (no recording in both); epoch and threshold picked on
+  fine-tune-val. Checkpoints to `checkpoints/<experiment>_ft_<mode>_s<seed>/` (git-ignored). Tests: the split has no
+  overlap, frozen layers do not change after a step, the start point reproduces R0's dev score before any step.
+  Sanity run: overfit one dev recording (loss falls, that recording's score rises). Also in this chunk, facts for
+  the write-up (crew-researcher, sources cited, `docs/research/c8/locata_setup.md`): how many rooms and how many
+  dummy heads the LOCATA hearing-aid recordings use, and whether dev and eval share them. *Done when:* tests pass,
+  the overfit check is logged, the facts file exists.
+- [ ] **phase8-C4 Fine-tune runs.** Local GPU under the lease. Three seeds per trained row (18 recordings is tiny:
+  report mean and range, never the best seed). **R2** two ears, head only. **R3** two ears, all layers, small
+  learning rate. **R4** right ear only (`where_right`, Johnny's ear), the better of the R2/R3 recipes. **R5** left
+  ear only, same recipe (if the lease and the caps allow; else note it as skipped). Each row scored on LOCATA eval
+  (same columns as R0/R1) **and** on the `binaural_v2` test split (does it forget the simulated scenes?).
+  *Done when:* rows R2..R4 (R5 or its skip note) in `results/phase8/finetune.md`, metrics JSONs under
+  `results/<experiment>_ft_*/`, the GPU lease released.
+- [ ] **phase8-C5 Verdict + write-up.** `results/phase8/verdict.md`: T1, T2, T3 met / not met, plain English, every
+  number linked to its source file; what fine-tuning fixed (guessing, front/back, up/down: which moved), what it did
+  not, and the honest limits (18 recordings; the room and dummy-head facts from C3; one ear after the same lesson).
+  Update README results (a "single-source" table, a "fine-tuned on real recordings" table, verdict lines; no other
+  rewrites) and add a "Phase 8" section to LEARNING.md (high-school level: what fine-tuning is, why one change per
+  run, what the numbers mean). A crew-reviewer fact-checks every number in verdict.md, README and LEARNING against
+  the JSON files before the tick. *Done when:* fact-check clean, committed on `phase8-run`, pytest passes.
+- [ ] **phase8-C6 Wrap-up.** Day log + whiteboard entry (`worklog` skill), BLOCKED.md brought up to date (café pick
+  still Johnny's), done ping. *Done when:* written and committed.
+
+**Site (after the run, with Johnny):** reference research for the look is in `docs/research/ui/references.md`
+(2026-11-15). Johnny picks the direction; then W2–W5.
 
 ---
 
