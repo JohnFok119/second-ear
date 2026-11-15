@@ -81,6 +81,25 @@ def count_clip(pred_events: list[Event], truth_events: list[Event], n_frames: in
     return c
 
 
+def single_source_filter(
+    pred_events: list[Event], truth_events: list[Event]
+) -> tuple[list[Event], list[Event], set[int]]:
+    """Keep only frames with exactly one reference sound.
+
+    Frames with 0 or 2+ reference sounds are dropped for both lists, before matching.
+    Returns (preds in kept frames, truths in kept frames, kept frame set).
+    """
+    n_truth: dict[int, int] = {}
+    for e in truth_events:
+        n_truth[e.frame] = n_truth.get(e.frame, 0) + 1
+    kept = {f for f, n in n_truth.items() if n == 1}
+    return (
+        [e for e in pred_events if e.frame in kept],
+        [e for e in truth_events if e.frame in kept],
+        kept,
+    )
+
+
 def _ratio(num: float, den: float) -> float:
     return float(num) / den if den else 0.0
 
