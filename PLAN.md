@@ -23,8 +23,10 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - cloud: allowed per the cloud rule until 2026-11-04 (Johnny, 2026-10-23), Claude sessions only, kit on branch `cloud-kit`; GPU cloud spend $0 (local GPU via `fleet\lease.mjs`). **Google Colab allowed** (Johnny, 2026-10-24): free T4 as much as needed; L4/A100/G4 are on his account but may spend compute units, so ask before using them.
 - milestones (Phase 5–6): M5 new model results (`.lavish/m5/`) · M6 new website live (`.lavish/m6/`) · M7 better model, sim + real scores (`.lavish/m7/`)
 - **Phase 8 run contract (Johnny 2026-11-15, "Lets do it" in chat; replaces the 2026-11-08 Phase 8 terms).** Ship name `second-ear-p8`, launched by `fleet\sail.ps1`.
-  - scope: `personal\second-ear` only; one branch `phase8-run` (off `phase8-plan`), one commit per verified step; never `main`
-  - standing go: commit on `phase8-run`; dispatch crew without per-batch approval; take and release fleet leases; train on the local GPU. **No push, no merge, no PR, no deploy** (`main` on GitHub is not protected: `gh api …/branches/main/protection` returned 404 on 2026-11-15). Johnny merges and pushes when he is back.
+  - scope: `personal\second-ear` only; one branch `phase8-run` (off `phase8-plan`), one commit per verified step; `main` only through the PR merge below
+  - standing go: commit on `phase8-run`; dispatch crew without per-batch approval; take and release fleet leases; train on the local GPU. **Push, PR and merge (Johnny 2026-11-15, chat, after launch: "i want it to touch main IF the results are promising enough, just give it perms to PR, push, and merge to main"):** push `phase8-run`, open a PR to `main`, and merge that PR into `main` **only if the promising test below passes**; otherwise leave the PR open for Johnny. No force-push, no commits made directly on `main`, no other repo, no deploy beyond the Pages workflow that a merge triggers by itself. (`main` on GitHub is not protected: 404 on 2026-11-15; Johnny's 2026-10-22 decision keeps it that way.)
+  - Merge go: JohnFok119/second-ear
+  - promising test (First Mate's wording of "promising enough", all four must hold; Johnny can overrule): (a) `uv run pytest -q` passes; (b) the phase8-C5 fact-check is clean; (c) the better fine-tuned two-ear recipe (R2 or R3) beats today's model R0 on LOCATA eval full F20 with **every one of its three seeds** above R0 (0.099) and above its own random-guess score; (d) its LOCATA eval lateral F20 is still at least 2x its random-guess score (T2 holds). If any fails: push the branch, open the PR, do not merge, and say which line failed in the done ping.
   - models: First Mate Opus 5.5; crew Sonnet, Haiku for mechanical; Fable only if: never
   - stop when: phase8-C1..C6 ticked AND `uv run pytest -q` passes AND `results/phase8/verdict.md` exists
   - caps: 40 turns per chunk; lookout burn limit applies
@@ -294,7 +296,8 @@ changing it; describe what it does, not what is typical.
   run, what the numbers mean). A crew-reviewer fact-checks every number in verdict.md, README and LEARNING against
   the JSON files before the tick. *Done when:* fact-check clean, committed on `phase8-run`, pytest passes.
 - [ ] **phase8-C6 Wrap-up.** Day log + whiteboard entry (`worklog` skill), BLOCKED.md brought up to date (café pick
-  still Johnny's), done ping. *Done when:* written and committed.
+  still Johnny's), then push `phase8-run`, open the PR to `main`, merge it only if the promising test in the contract
+  passes, and send the done ping saying which way it went. *Done when:* written, committed, pushed, PR open or merged.
 
 **Site (after the run, with Johnny):** reference research for the look is in `docs/research/ui/references.md`
 (2026-11-15). Johnny picks the direction; then W2–W5.
