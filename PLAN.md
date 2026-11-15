@@ -25,16 +25,18 @@ commit, merge to `main` (standing go, this repo only), clear context, next chunk
 - **Phase 8 run contract (Johnny 2026-11-15, "Lets do it" in chat; replaces the 2026-11-08 Phase 8 terms).** Ship name `second-ear-p8`, launched by `fleet\sail.ps1`.
   - scope: `personal\second-ear` only; one branch `phase8-run` (off `phase8-plan`), one commit per verified step; `main` only through the PR merge below
   - standing go: commit on `phase8-run`; dispatch crew without per-batch approval; take and release fleet leases; train on the local GPU. **Push, PR and merge (Johnny 2026-11-15, chat, after launch: "i want it to touch main IF the results are promising enough, just give it perms to PR, push, and merge to main"):** push `phase8-run`, open a PR to `main`, and merge that PR into `main` **only if the promising test below passes**; otherwise leave the PR open for Johnny. No force-push, no commits made directly on `main`, no other repo, no deploy beyond the Pages workflow that a merge triggers by itself. (`main` on GitHub is not protected: 404 on 2026-11-15; Johnny's 2026-10-22 decision keeps it that way.)
-  - Merge go: JohnFok119/second-ear
   - promising test (First Mate's wording of "promising enough", all four must hold; Johnny can overrule): (a) `uv run pytest -q` passes; (b) the phase8-C5 fact-check is clean; (c) the better fine-tuned two-ear recipe (R2 or R3) beats today's model R0 on LOCATA eval full F20 with **every one of its three seeds** above R0 (0.099) and above its own random-guess score; (d) its LOCATA eval lateral F20 is still at least 2x its random-guess score (T2 holds). If any fails: push the branch, open the PR, do not merge, and say which line failed in the done ping.
   - models: First Mate Opus 5.5; crew Sonnet, Haiku for mechanical; Fable only if: never
-  - stop when: phase8-C1..C6 ticked AND `uv run pytest -q` passes AND `results/phase8/verdict.md` exists
+  - stop when: phase8-C1..C6 ticked AND `uv run pytest -q` passes AND `results/phase8/verdict.md` exists AND `gh pr list --head phase8-run --state all` shows the PR (merged if the promising test passed, open if not)
   - caps: 40 turns per chunk; lookout burn limit applies
   - ping me for: a decision only Johnny can make, blocked with no other work, done
   - milestones: none (the verdict file and the done ping carry the result; the site is built with Johnny afterwards)
   - cloud: not for this run. No Colab. No downloads (everything needed is on this PC: `data/locata/scenes/{dev,eval}`, `data/features/binaural_v2`, `checkpoints/where_{binaural,left,right}`)
   - heavy work: GPU and long CPU jobs under the lease protocol (`personal\tasks\resources\PROTOCOL.md`); one bounded job per grant, release after
   - not in this run: the café clip pick (Johnny's ears), any site build or design direction (Johnny picks the look), the v3 checkpoints on Drive
+  - merge go for the push guard: the line below, at the start of a line so `fleet\main-go.mjs brief --file PLAN.md` can read it
+
+Merge go: JohnFok119/second-ear
 
 **Milestone pages** (lavish, in `.lavish/m<N>/`, linked from the spine log): M1 classical heat map · M2 trained
 model table · M3 one-ear results + coffee-shop scene · M4 viewer live + README.
