@@ -1,9 +1,11 @@
-// Pixel café entry (first version): room + pixel pass + temporary seat camera + time slider.
+// Pixel café entry: room + pixel pass + first-person seat camera + audio clock + controls.
 import * as THREE from 'three';
 import { buildWorld } from './world.js';
 import { createPixelPass } from './pixel.js';
 import { buildPeople } from './people.js';
-import { EAR_Y } from './geo.js';
+import { activeAt } from './geo.js';
+import { createAudio } from './audio.js';
+import { createFirstPerson } from './firstperson.js';
 
 export async function mountCafe(root) {
   // error counter for ?still=1 (window errors + console.error calls since load)
@@ -17,7 +19,9 @@ export async function mountCafe(root) {
   const still = q.get('still') === '1';
   const camMode = q.get('cam') || 'seat';
   const yawDeg = parseFloat(q.get('yaw') || '0') || 0; // seat camera yaw, + = turn left
-  let t = Math.min(30, Math.max(0, parseFloat(q.get('t') || '0') || 0));
+  const earParam = q.get('ear') === 'mine' ? 'mine' : 'two';
+  const DUR = 30;
+  let t = Math.min(DUR, Math.max(0, parseFloat(q.get('t') || '0') || 0));
 
   try {
     const [sceneData, clip] = await Promise.all([
@@ -38,6 +42,9 @@ export async function mountCafe(root) {
     const pass = createPixelPass(THREE, renderer, { height: 320 });
 
     const camera = new THREE.PerspectiveCamera(70, 1.6, 0.05, 40);
+    const firstPerson = createFirstPerson(camera, renderer.domElement);
+    // never touch audio in still (capture) mode
+    const audio = still ? null : createAudio('clips/cafe_v3.mp3');
     if (camMode === 'top') {
       world.anchors.ceiling.visible = false;
       world.anchors.ceilingBeams.forEach((b) => { b.visible = false; });
@@ -48,9 +55,8 @@ export async function mountCafe(root) {
       camera.position.set(0.9, 7.6, 8.2);
       camera.lookAt(0.9, 0.3, 0.7);
     } else {
-      camera.position.set(0, EAR_Y, 0);
-      const ya = (yawDeg * Math.PI) / 180;
-      camera.lookAt(-3 * Math.sin(ya), EAR_Y - 0.18, -3 * Math.cos(ya));
+      firstPerson.enable();
+      if (yawDeg) firstPerson.setYaw(yawDeg);
     }
 
     function resize() {
@@ -64,6 +70,7 @@ export async function mountCafe(root) {
     function draw() {
       world.update(t);
       people.update(t, camera);
+      if (camMode !== 'top') firstPerson.update();
       pass.render(scene, camera);
     }
     resize();
@@ -71,14 +78,71 @@ export async function mountCafe(root) {
 
     const slider = document.getElementById('cafe-time');
     const out = document.getElementById('cafe-time-out');
+    const playBtn = document.getElementById('cafe-play');
+    const earTwo = document.getElementById('cafe-ear-two');
+    const earMine = document.getElementById('cafe-ear-mine');
+    const earStatus = document.getElementById('cafe-ear-status');
+    const caption = document.getElementById('cafe-caption');
+    const hint = document.getElementById('cafe-hint');
+
     const sync = () => {
       if (slider) slider.value = String(t);
-      if (out) out.textContent = `${t.toFixed(1)} s`;
+      if (out) out.textContent = `${t.toFixed(1)} / ${DUR.toFixed(1)} s`;
     };
+    let lastCaptionKey = null;
+    const syncCaption = () => {
+      const labels = [...new Set(activeAt(sceneData.sources, t).map((s) => s.label))];
+      const key = labels.join('|');
+      if (key === lastCaptionKey) return;
+      lastCaptionKey = key;
+      if (caption) caption.textContent = labels.length ? labels.join(' · ') : 'Quiet café';
+    };
+    const setPlayLabel = (playing) => {
+      if (!playBtn) return;
+      playBtn.textContent = playing ? '⏸ Pause' : '▶ Play';
+    };
+    const setEar = (mode) => {
+      const mine = mode === 'mine';
+      if (earTwo) earTwo.setAttribute('aria-pressed', String(!mine));
+      if (earMine) earMine.setAttribute('aria-pressed', String(mine));
+      if (earStatus) {
+        earStatus.textContent = mine
+          ? 'My ear: only the right side reaches you, on both sides, like Johnny hears.'
+          : 'Two ears: both sides play normally.';
+      }
+      if (audio) audio.setEar(mine ? 'mine' : 'two');
+    };
+    setEar(earParam);
+
     if (slider) {
-      slider.addEventListener('input', () => { t = parseFloat(slider.value); sync(); if (!still) draw(); });
+      slider.addEventListener('input', () => {
+        t = parseFloat(slider.value) || 0;
+        if (audio) audio.seek(t);
+        sync(); syncCaption();
+        if (!still) draw();
+      });
     }
-    sync();
+    if (audio) {
+      audio.onEnd(() => { t = DUR; sync(); syncCaption(); setPlayLabel(false); });
+      if (playBtn) {
+        playBtn.addEventListener('click', async () => {
+          if (audio.playing()) { audio.pause(); setPlayLabel(false); return; }
+          try { await audio.ready; } catch (e) { console.error(e); return; }
+          if (t >= DUR - 0.05) t = 0;
+          audio.seek(t);
+          audio.play();
+          setPlayLabel(true);
+        });
+      }
+    }
+    if (earTwo) earTwo.addEventListener('click', () => setEar('two'));
+    if (earMine) earMine.addEventListener('click', () => setEar('mine'));
+    if (hint) {
+      const hide = () => { hint.classList.add('gone'); };
+      renderer.domElement.addEventListener('pointermove', (e) => { if (e.buttons) hide(); });
+      renderer.domElement.addEventListener('keydown', hide);
+    }
+    sync(); syncCaption(); setPlayLabel(false);
     draw();
 
     if (still) {
@@ -88,10 +152,15 @@ export async function mountCafe(root) {
         document.title = `ready errors=${errors}`;
       }));
     } else {
-      const loop = () => { draw(); requestAnimationFrame(loop); };
+      const loop = () => {
+        if (audio && audio.playing()) { t = audio.time(); sync(); syncCaption(); }
+        draw();
+        requestAnimationFrame(loop);
+      };
       requestAnimationFrame(loop);
     }
-    return { scene, camera, world, clip, setTime: (v) => { t = v; sync(); draw(); } };
+    window.__cafe = { audio, firstPerson, getT: () => t };
+    return { scene, camera, world, clip, setTime: (v) => { t = v; if (audio) audio.seek(v); sync(); syncCaption(); draw(); } };
   } catch (e) {
     console.error(e);
     if (still) document.title = `failed errors=${errors}`;

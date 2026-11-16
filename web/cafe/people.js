@@ -1,7 +1,7 @@
 // The café's people: original round-head characters, one per sound source role.
 // Everything is a pure function of the audio time t (no Math.random, no accumulated state),
 // so scrubbing to any t gives the same picture.
-import { azToXZ, activeAt } from './geo.js';
+import { azToXZ, xzToAz, activeAt } from './geo.js';
 
 const HEAD_R = 0.17;
 const HIP_STAND = 0.62; // hip height when standing
@@ -284,15 +284,58 @@ export function buildPeople(THREE, scene, clip) {
     const p = azToXZ(s.az_deg, s.dist_m);
     return { t: (s.t0 + s.t1) / 2, x: p.x, z: p.z };
   });
-  const w1c = trackCentres('walk_1');
+  // Keep each walker waypoint's AZIMUTH exactly (the models are scored on azimuth) and push only its
+  // DISTANCE outward until it is at least 0.6 m from every seated person (capped at the room walls).
+  const ROOM = { x0: -3.6, x1: 5.4, z0: -3.2, z1: 4.6 };
+  const inRoom = (x, z) => x >= ROOM.x0 && x <= ROOM.x1 && z >= ROOM.z0 && z <= ROOM.z1;
+  const clearOfSeated = (x, z) => Object.values(seats).every((s) => Math.hypot(x - s.pos.x, z - s.pos.z) >= 0.6);
+  const pushOut = (k) => {
+    const az = xzToAz(k.x, k.z);
+    let r = Math.hypot(k.x, k.z);
+    const wasIn = inRoom(k.x, k.z);
+    let p = { x: k.x, z: k.z };
+    while (!clearOfSeated(p.x, p.z)) {
+      const next = azToXZ(az, r + 0.05);
+      if (wasIn && !inRoom(next.x, next.z)) break;
+      r += 0.05; p = next;
+    }
+    return { ...k, x: p.x, z: p.z };
+  };
+
+  // The straight-ish path BETWEEN two pushed waypoints can still cut a seat, so the segment waypoints
+  // (flagged in `which`) get one shared extra distance, again azimuth untouched, until the whole path is clear.
+  const spreadKeys = (keys, which) => {
+    const radial = (k, extra) => {
+      const az = xzToAz(k.x, k.z);
+      let r = Math.hypot(k.x, k.z) + extra;
+      let p = azToXZ(az, r);
+      while (!inRoom(p.x, p.z) && r > 0.1) { r -= 0.05; p = azToXZ(az, r); }
+      return { ...k, x: p.x, z: p.z };
+    };
+    const pathClear = (ks) => {
+      const f = makePath(ks);
+      for (let tt = ks[0].t; tt <= ks[ks.length - 1].t; tt += 0.05) {
+        const q = f(tt);
+        if (!clearOfSeated(q.x, q.z)) return false;
+      }
+      return true;
+    };
+    for (let extra = 0; extra <= 2.5; extra += 0.05) {
+      const ks = keys.map((k, i) => (which[i] ? radial(k, extra) : k));
+      if (pathClear(ks)) return ks;
+    }
+    return keys;
+  };
+
+  const w1c = trackCentres('walk_1').map(pushOut);
   const w1keys = [{ t: 1.0, x: -3.0, z: -4.0 }, { t: 1.7, x: -3.05, z: -3.0 }, ...w1c];
-  const w1path = makePath(w1keys);
+  const w1path = makePath(spreadKeys(w1keys, w1keys.map((_, i) => i >= 2 && i < w1keys.length - 1)));
   const w1End = w1c[w1c.length - 1];
   const w1SeatYaw = seatLook(w1End.x, w1End.z, btx, btz);
   const W1_SIT0 = w1End.t, W1_SIT1 = w1End.t + 0.7;
 
   // walker 2: waits at the counter, leaves it at 18 s, walk_2 centres, out through the door
-  const w2c = trackCentres('walk_2');
+  const w2c = trackCentres('walk_2').map(pushOut);
   const w2Wait = { x: gp.x + 0.5, z: 2.85 };
   const w2last = w2c[w2c.length - 1];
   const w2keys = [
@@ -300,7 +343,7 @@ export function buildPeople(THREE, scene, clip) {
     ...w2c,
     { t: w2last.t + 0.6, x: -3.0, z: -3.3 }, { t: 26.25, x: -3.0, z: -4.1 },
   ];
-  const w2path = makePath(w2keys);
+  const w2path = makePath(spreadKeys(w2keys, w2keys.map((_, i) => i >= 2 && i < 2 + w2c.length)));
 
   // door indicator (no person)
   const doorInd = makeIndicator();

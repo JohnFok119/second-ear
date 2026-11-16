@@ -26,7 +26,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 - [x] **pixel-cafe-C4 People.** `web/cafe/people.js`: original cute round-head characters at each source; talk, laugh, walk
   (along the walker paths), barista at the grinder, door swings, all on the audio clock. *Done when:* screenshots at 3 timestamps
   show the right people active; scrubbing keeps them in sync.
-- [ ] **pixel-cafe-C5 First person + ear switch.** `firstperson.js` + `audio.js`: sit in the seat, drag or touch to look,
+- [x] **pixel-cafe-C5 First person + ear switch.** `firstperson.js` + `audio.js`: sit in the seat, drag or touch to look,
   play/pause/scrub, **Two ears / My ear** switch (right channel to both ears), small caption of what is happening.
   *Done when:* switch works mid-play (checked in Chrome), touch look works at 400 px width.
 - [ ] **pixel-cafe-C6 3D overview.** `overview.js`: orbit view of the same café, truth rings, two-ear and one-ear guesses,
