@@ -10,11 +10,11 @@
   },
   "bed": {
     "files": [
-      "13747",
-      "422097"
+      "445094",
+      "252704"
     ],
-    "snr_db": 12.0,
-    "second_rel_db": -6.0,
+    "snr_db": 0.0,
+    "second_rel_db": -3.0,
     "dirs": 8,
     "seed": 7
   },
@@ -37,10 +37,10 @@
       ],
       "gain_db": 0.0,
       "clip": {
-        "fname": "28396",
+        "fname": "82322",
         "license": "CC-BY-3.0",
-        "uploader": "kerouacsamerica",
-        "url": "https://freesound.org/s/28396/"
+        "uploader": "IEDlabs",
+        "url": "https://freesound.org/s/82322/"
       }
     },
     {
@@ -61,10 +61,10 @@
       ],
       "gain_db": 0.0,
       "clip": {
-        "fname": "59512",
+        "fname": "69307",
         "license": "CC0",
-        "uploader": "zeshoog",
-        "url": "https://freesound.org/s/59512/"
+        "uploader": "cognito perceptu",
+        "url": "https://freesound.org/s/69307/"
       }
     },
     {
@@ -85,10 +85,10 @@
       ],
       "gain_db": -2.0,
       "clip": {
-        "fname": "59586",
+        "fname": "238211",
         "license": "CC-BY-3.0",
-        "uploader": "morgantj",
-        "url": "https://freesound.org/s/59586/"
+        "uploader": "IESPAUCLARIS",
+        "url": "https://freesound.org/s/238211/"
       }
     },
     {
@@ -109,10 +109,10 @@
       ],
       "gain_db": -2.0,
       "clip": {
-        "fname": "31569",
-        "license": "CC0",
-        "uploader": "Walter_Odington",
-        "url": "https://freesound.org/s/31569/"
+        "fname": "90422",
+        "license": "CC-BY-3.0",
+        "uploader": "uair01",
+        "url": "https://freesound.org/s/90422/"
       }
     },
     {
@@ -131,12 +131,12 @@
           11.0
         ]
       ],
-      "gain_db": -6.0,
+      "gain_db": -14.0,
       "clip": {
-        "fname": "1942",
-        "license": "CC-BY-3.0",
-        "uploader": "RHumphries",
-        "url": "https://freesound.org/s/1942/"
+        "fname": "36267",
+        "license": "CC0",
+        "uploader": "Piero",
+        "url": "https://freesound.org/s/36267/"
       }
     },
     {
@@ -155,17 +155,17 @@
           24.0
         ]
       ],
-      "gain_db": -6.0,
+      "gain_db": -14.0,
       "clip": {
-        "fname": "35627",
+        "fname": "165189",
         "license": "CC-BY-3.0",
-        "uploader": "fresco",
-        "url": "https://freesound.org/s/35627/"
+        "uploader": "JavierZumer",
+        "url": "https://freesound.org/s/165189/"
       }
     },
     {
       "id": "dishes_3",
-      "label": "Coffee machine",
+      "label": "Kitchen",
       "class": 5,
       "class_name": "Domestic sounds",
       "kind": "cafe",
@@ -179,69 +179,69 @@
           28.0
         ]
       ],
-      "gain_db": -6.0,
+      "gain_db": -14.0,
       "clip": {
-        "fname": "36266",
+        "fname": "378687",
         "license": "CC0",
-        "uploader": "Piero",
-        "url": "https://freesound.org/s/36266/"
+        "uploader": "13FPanska_Novotny_Stepan",
+        "url": "https://freesound.org/s/378687/"
       }
     }
   ],
   "credits": [
     {
-      "title": "Freesound 28396 (Woman, front left)",
-      "uploader": "kerouacsamerica",
+      "title": "Freesound 82322 (Woman, front left)",
+      "uploader": "IEDlabs",
       "license": "CC-BY-3.0",
-      "url": "https://freesound.org/s/28396/"
+      "url": "https://freesound.org/s/82322/"
     },
     {
-      "title": "Freesound 59512 (Man, right)",
-      "uploader": "zeshoog",
+      "title": "Freesound 69307 (Man, right)",
+      "uploader": "cognito perceptu",
       "license": "CC0",
-      "url": "https://freesound.org/s/59512/"
+      "url": "https://freesound.org/s/69307/"
     },
     {
-      "title": "Freesound 59586 (Woman, behind left)",
-      "uploader": "morgantj",
+      "title": "Freesound 238211 (Woman, behind left)",
+      "uploader": "IESPAUCLARIS",
       "license": "CC-BY-3.0",
-      "url": "https://freesound.org/s/59586/"
+      "url": "https://freesound.org/s/238211/"
     },
     {
-      "title": "Freesound 31569 (Man, behind right)",
-      "uploader": "Walter_Odington",
-      "license": "CC0",
-      "url": "https://freesound.org/s/31569/"
-    },
-    {
-      "title": "Freesound 1942 (Dishes)",
-      "uploader": "RHumphries",
+      "title": "Freesound 90422 (Man, behind right)",
+      "uploader": "uair01",
       "license": "CC-BY-3.0",
-      "url": "https://freesound.org/s/1942/"
+      "url": "https://freesound.org/s/90422/"
     },
     {
-      "title": "Freesound 35627 (Cups)",
-      "uploader": "fresco",
-      "license": "CC-BY-3.0",
-      "url": "https://freesound.org/s/35627/"
-    },
-    {
-      "title": "Freesound 36266 (Coffee machine)",
+      "title": "Freesound 36267 (Dishes)",
       "uploader": "Piero",
       "license": "CC0",
-      "url": "https://freesound.org/s/36266/"
+      "url": "https://freesound.org/s/36267/"
     },
     {
-      "title": "Scottish Restaurant.WAV (caf\u00e9 bed)",
-      "uploader": "inchadney",
-      "license": "CC-BY-4.0",
-      "url": "https://freesound.org/s/13747"
+      "title": "Freesound 165189 (Cups)",
+      "uploader": "JavierZumer",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/165189/"
     },
     {
-      "title": "Restaurant Atmosphere (crowded) (second bed)",
-      "uploader": "felix.blume",
+      "title": "Freesound 378687 (Kitchen)",
+      "uploader": "13FPanska_Novotny_Stepan",
       "license": "CC0",
-      "url": "https://freesound.org/s/422097"
+      "url": "https://freesound.org/s/378687/"
+    },
+    {
+      "title": "Coffeehouse Ambience (caf\u00e9 bed)",
+      "uploader": "mars_98",
+      "license": "CC-BY-4.0",
+      "url": "https://freesound.org/s/445094"
+    },
+    {
+      "title": "140812_Vienna_CafeZentral_R.wav (second caf\u00e9 bed)",
+      "uploader": "blaukreuz",
+      "license": "CC0",
+      "url": "https://freesound.org/s/252704"
     },
     {
       "title": "Binaural room impulse responses, Auditorium 3 (KEMAR), Wierstorf and Geier",
