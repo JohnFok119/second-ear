@@ -48,12 +48,13 @@ def main() -> int:
     ap.add_argument("--t", type=float, default=0.0)
     ap.add_argument("--mode", default=None, help="passed through as ?mode=")
     ap.add_argument("--cam", default="seat", choices=["seat", "top"])
+    ap.add_argument("--yaw", type=float, default=0.0, help="seat camera yaw in degrees, + = turn left")
     ap.add_argument("--size", default="desktop", choices=list(SIZES))
     ap.add_argument("--out", default=str(ROOT / "docs" / "research" / "pixel-cafe" / "shot.png"))
     a = ap.parse_args()
 
     w, h = SIZES[a.size]
-    query = f"still=1&t={a.t}&cam={a.cam}" + (f"&mode={a.mode}" if a.mode else "")
+    query = f"still=1&t={a.t}&cam={a.cam}" + (f"&mode={a.mode}" if a.mode else "") + (f"&yaw={a.yaw}" if a.yaw else "")
     url = f"http://127.0.0.1:{PORT}/cafe.html?{query}"
     out = Path(a.out).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)

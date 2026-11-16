@@ -183,7 +183,7 @@ export async function buildWorld(THREE, scene, sceneData = null) {
     put(tb, x, z);
     if (lamp) put(await fit('lampRoundTable', { h: 0.3 }), x + 0.12, z + 0.05, { y: h, yaw: 2.2 });
   })());
-  tableAt(0, -0.75);
+  tableAt(0, -0.75, 0.75, false); // no lamp here: it hid the friend's face from the seat
   add((async () => put(await fit('rugRound', { d: 2.0 }), 0, -0.6))());
   // people's chairs (empty for now). local +Z of a chair faces the look target.
   const chairAt = (name, x, z, look, h = 0.9) => add((async () => put(await fit(name, { h }), x, z, { look }))());

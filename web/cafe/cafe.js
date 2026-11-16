@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { buildWorld } from './world.js';
 import { createPixelPass } from './pixel.js';
+import { buildPeople } from './people.js';
 import { EAR_Y } from './geo.js';
 
 export async function mountCafe(root) {
@@ -15,6 +16,7 @@ export async function mountCafe(root) {
   const q = new URLSearchParams(location.search);
   const still = q.get('still') === '1';
   const camMode = q.get('cam') || 'seat';
+  const yawDeg = parseFloat(q.get('yaw') || '0') || 0; // seat camera yaw, + = turn left
   let t = Math.min(30, Math.max(0, parseFloat(q.get('t') || '0') || 0));
 
   try {
@@ -31,6 +33,8 @@ export async function mountCafe(root) {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x14100d);
     const world = await buildWorld(THREE, scene, sceneData);
+    const people = buildPeople(THREE, scene, clip);
+    scene.add(people.group);
     const pass = createPixelPass(THREE, renderer, { height: 320 });
 
     const camera = new THREE.PerspectiveCamera(70, 1.6, 0.05, 40);
@@ -38,12 +42,15 @@ export async function mountCafe(root) {
       world.anchors.ceiling.visible = false;
       world.anchors.ceilingBeams.forEach((b) => { b.visible = false; });
       world.anchors.outside.visible = false;
+      // the back-wall upper cabinets hide the barista from this camera
+      world.group.children.forEach((o) => { if (o.position.y === 1.5 && o.position.z > 4) o.visible = false; });
       camera.fov = 45;
-      camera.position.set(0.9, 11, 11.5);
+      camera.position.set(0.9, 7.6, 8.2);
       camera.lookAt(0.9, 0.3, 0.7);
     } else {
       camera.position.set(0, EAR_Y, 0);
-      camera.lookAt(0, EAR_Y - 0.18, -3);
+      const ya = (yawDeg * Math.PI) / 180;
+      camera.lookAt(-3 * Math.sin(ya), EAR_Y - 0.18, -3 * Math.cos(ya));
     }
 
     function resize() {
@@ -56,6 +63,7 @@ export async function mountCafe(root) {
     }
     function draw() {
       world.update(t);
+      people.update(t, camera);
       pass.render(scene, camera);
     }
     resize();

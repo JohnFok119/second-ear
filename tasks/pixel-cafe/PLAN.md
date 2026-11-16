@@ -23,7 +23,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 - [x] **pixel-cafe-C3 Room + pixel look.** `web/cafe/world.js` + `pixel.js`: warm room laid out from the scene file (door front
   left, counter back right, Johnny's table at the listener), lamps and window light, low-res render + dither pass.
   *Done when:* page loads with no console errors; desktop and phone screenshots saved.
-- [ ] **pixel-cafe-C4 People.** `web/cafe/people.js`: original cute round-head characters at each source; talk, laugh, walk
+- [x] **pixel-cafe-C4 People.** `web/cafe/people.js`: original cute round-head characters at each source; talk, laugh, walk
   (along the walker paths), barista at the grinder, door swings, all on the audio clock. *Done when:* screenshots at 3 timestamps
   show the right people active; scrubbing keeps them in sync.
 - [ ] **pixel-cafe-C5 First person + ear switch.** `firstperson.js` + `audio.js`: sit in the seat, drag or touch to look,
