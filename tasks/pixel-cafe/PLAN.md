@@ -20,7 +20,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 - [x] **pixel-cafe-C2 Assets.** Pick CC0 café pieces (counter, espresso machine/grinder, tables, chairs, lamps, plants, door,
   cups, window), GLB under `web/assets/cafe/`, `LICENSES.md` with source URL + licence per file. *Done when:* every file listed,
   total under 8 MB.
-- [ ] **pixel-cafe-C3 Room + pixel look.** `web/cafe/world.js` + `pixel.js`: warm room laid out from the scene file (door front
+- [x] **pixel-cafe-C3 Room + pixel look.** `web/cafe/world.js` + `pixel.js`: warm room laid out from the scene file (door front
   left, counter back right, Johnny's table at the listener), lamps and window light, low-res render + dither pass.
   *Done when:* page loads with no console errors; desktop and phone screenshots saved.
 - [ ] **pixel-cafe-C4 People.** `web/cafe/people.js`: original cute round-head characters at each source; talk, laugh, walk
