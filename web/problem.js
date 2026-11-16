@@ -53,7 +53,7 @@ playBtn.addEventListener('click', async () => {
       buffer = await c.decodeAudioData(await r.arrayBuffer());
     }
   } catch (e) { status.textContent = `Could not load the audio (${e.message}).`; return; }
-  document.getElementById('audio')?.pause(); // the viewer in section 2 has its own player
+  window.dispatchEvent(new CustomEvent('secondear:play', { detail: 'hear' })); // the café in section 2 stops
   if (!hear) hear = earChain(c);
   hear.setMine(mine);
   src = c.createBufferSource();
@@ -64,8 +64,8 @@ playBtn.addEventListener('click', async () => {
   playBtn.innerHTML = '&#9632; Stop';
   status.textContent = `Playing. ${modeText()}`;
 });
-// If the viewer starts its own audio, stop this one.
-$('audio')?.addEventListener('play', () => { if (playing) stopHear(); });
+// If the café in section 2 starts playing, stop this one.
+window.addEventListener('secondear:play', (e) => { if (e.detail !== 'hear' && playing) stopHear(); });
 
 // ---------- 2. Drag-the-sound toy ----------
 const R = 0.0875, C = 343;               // head radius (m), speed of sound (m/s)

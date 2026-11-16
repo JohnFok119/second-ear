@@ -45,3 +45,42 @@ def test_binaural_bed_excerpt_keeps_both_channels(tmp_path):
     seg = _binaural_excerpt(str(tmp_path / "bed.wav"), fs, n)
     assert seg.shape == (2, n) and seg[:, 0].max() == 0 and np.abs(seg[1]).max() < 0.51
     assert as_binaural_variant({"name": "a", "bed": {}})["name"] == "coffee_shop_v2b"
+
+
+def test_clean_tags_reject_alarms_and_need_dishes():
+    from secondear.scene.coffee_shop_v2 import clean_for
+
+    assert clean_for("voice", frozenset({"Speech", "Male_speech_and_man_speaking"}))
+    assert not clean_for("voice", frozenset({"Speech", "Siren", "Alarm"}))  # the old man_1 clip
+    assert not clean_for("voice", frozenset())
+    assert clean_for("cafe", frozenset({"Boiling", "Dishes_and_pots_and_pans", "Liquid"}))
+    assert not clean_for("cafe", frozenset({"Boiling", "Liquid"}))  # no dishes tag
+    assert not clean_for("cafe", frozenset({"Mechanical_fan", "Mechanisms"}))
+
+
+@needs_data
+def test_scene_v2_clips_pass_clean_tags():
+    from secondear.scene.coffee_shop_v2 import clean_for, read_fsd50k_tags
+
+    if not (DATA / "fsd50k" / "FSD50K.ground_truth" / "eval.csv").exists():
+        pytest.skip("needs FSD50K ground truth")
+    tags = read_fsd50k_tags(DATA / "fsd50k")
+    scene = build_scene_v2(read_clip_index(DATA / "fsd50k" / "clip_index.csv"), DATA)
+    for s in scene["sources"]:
+        assert clean_for(s["kind"], tags[s["clip"]["fname"]]), s["id"]
+
+
+@needs_data
+def test_scene_v3_on_grid_and_walkers_move():
+    from secondear.scene.coffee_shop_v3 import CLIPS, build_scene_v3
+
+    scene = build_scene_v3(DATA)
+    room = load_brir_room(ROOM, str(DATA / "brir" / "prepared"))
+    for s in scene["sources"]:
+        i = s["brir_idx"]
+        assert (s["az_deg"], s["el_deg"], s["dist_m"]) == (room.az[i], room.el[i], room.dist[i])
+        assert s["clip"]["fname"] in CLIPS
+        assert 0 <= s["intervals"][0][0] < s["intervals"][0][1] <= scene["duration_s"]
+    walk = [s for s in scene["sources"] if s["track"] == "walk_1"]
+    assert len({s["az_deg"] for s in walk}) == len(walk) >= 4  # a new direction every step
+    assert {s["kind"] for s in scene["sources"]} == {"voice", "laugh", "machine", "door", "steps"}

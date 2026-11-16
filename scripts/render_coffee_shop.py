@@ -2,6 +2,8 @@
 
 uv run python scripts/render_coffee_shop.py [--rebuild-scene]
 uv run python scripts/render_coffee_shop.py --v2 [--data DIR] [--out DIR]   (v2: audio only)
+uv run python scripts/render_coffee_shop.py --v3   (v3: a few clear events, audio only)
+uv run python scripts/render_coffee_shop.py --v2 --bed-snr -4 --name coffee_shop_v3_loud  (a try)
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ from secondear.scene.coffee_shop_v2 import (
     render_coffee_shop_v2,
     save_scene_v2,
 )
+from secondear.scene.coffee_shop_v3 import build_scene_v3, render_coffee_shop_v3, save_scene_v3
 from secondear.scene.sources import ROOT
 
 
@@ -30,19 +33,44 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--rebuild-scene", action="store_true", help="re-pick clips, rewrite the JSON")
     ap.add_argument("--v2", action="store_true", help="render café clip v2 (real room, real bed)")
+    ap.add_argument("--v3", action="store_true", help="render café clip v3 (a few clear events)")
     ap.add_argument(
-        "--bed-mode", choices=["diffuse", "binaural"], default="diffuse", help="v2: how bed 13747 is used"
+        "--bed-mode",
+        choices=["diffuse", "binaural"],
+        default="diffuse",
+        help="v2: how bed 13747 is used",
     )
     ap.add_argument("--data", type=Path, default=ROOT / "data", help="v2: folder with fsd50k, ...")
     ap.add_argument("--out", type=Path, default=None, help="v2 output (default <data>/samples_v3)")
+    ap.add_argument(
+        "--bed-snr", type=float, default=None, help="v2: talkers vs crowd, dB (try only)"
+    )
+    ap.add_argument("--name", default=None, help="v2: output name (try only; scene JSON untouched)")
     args = ap.parse_args()
+    if args.v3:
+        scene = build_scene_v3(args.data)
+        if args.bed_snr is not None:
+            scene = {**scene, "bed": {**scene["bed"], "snr_db": args.bed_snr}}
+        else:
+            save_scene_v3(scene)
+        if args.name:
+            scene = {**scene, "name": args.name}
+        paths, stats = render_coffee_shop_v3(scene, args.data, args.out or args.data / "samples_v3")
+        for kind, path in paths.items():
+            print(kind, path)
+        print(stats)
+        return
     if args.v2:
         index = read_clip_index(args.data / "fsd50k" / "clip_index.csv")
         scene = build_scene_v2(index, args.data)
         if args.bed_mode == "binaural":
             scene = as_binaural_variant(scene)
-        else:
+        elif args.bed_snr is None and args.name is None:
             save_scene_v2(scene)
+        if args.bed_snr is not None:
+            scene = {**scene, "bed": {**scene["bed"], "snr_db": args.bed_snr}}
+        if args.name:
+            scene = {**scene, "name": args.name}
         paths, stats = render_coffee_shop_v2(scene, args.data, args.out or args.data / "samples_v3")
         for kind, path in paths.items():
             print(kind, path)

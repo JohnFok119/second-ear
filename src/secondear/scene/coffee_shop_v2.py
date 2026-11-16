@@ -5,6 +5,12 @@ measured BRIR of ``ROOM`` (each source snapped to a measured direction, which is
 and the background is a real café recording (``BED_MAIN``, mono-summed, spread over 8 azimuths
 through the same room as ``generate._render_bed`` does) plus a second, quieter one (``BED_SECOND``).
 
+The crowd bed carries the scene (Johnny 2026-11-15: crowd ambience first, no beeps, machines not
+much louder than the rest), so it sits at the level of the labelled talkers and the kitchen sounds
+sit well below them. Clips are filtered on their FSD50K tags (``CLEAN_TAGS``): the first v2 picks
+were the first clips by file number, which brought in a siren ("All clear" alarm), a train bell, a
+bus and a wood mill under the speech.
+
 Scene file ``web/scenes/coffee_shop_v2.json``: name, duration_s, fs, room {name, rt60, brir, head},
 bed {files, snr_db, second_rel_db, dirs, seed}, sources [{id, label, class, class_name, kind, az_deg,
 el_deg, dist_m, brir_idx, intervals, gain_db, clip}], credits.
@@ -45,36 +51,74 @@ FS = 48000
 DURATION_S = 30.0
 ROOM = "auditorium3"  # full 360 deg azimuth, RT60 closest to a busy café (docs/research/c7)
 ROOM_RT60 = 0.67  # Schroeder T20 median over 40 random directions (the npz has no RT60)
-BED_MAIN, BED_SECOND = "13747", "422097"
-BED_SNR_DB = 12.0  # labelled mix RMS / bed RMS (the v3 preset draws 5..20 dB)
-BED_SECOND_REL_DB = -6.0  # second bed vs main bed
+BED_MAIN, BED_SECOND = "445094", "252704"  # Coffeehouse Ambience, Vienna Café Zentral
+BED_SNR_DB = 0.0  # labelled mix RMS / bed RMS: crowd as loud as the talkers
+BED_SECOND_REL_DB = -3.0  # second bed vs main bed
 BED_DIRS = 8
 BED_SEED = 7
 BED_BINAURAL_OFFSET_S = 60.0  # variant B: where the 13747 excerpt starts
 BED_BINAURAL_FADE_S = 2.0
 # (id, label, class, kind, az_deg, dist_m, on, off, gain_db, k). ``k`` is the rank of the clip among
-# the usable clips of the class that are long enough, so two sources of one class differ.
+# the usable (licence + ``CLEAN_TAGS``) clips of the class that are long enough, so two sources of
+# one class differ.
 SOURCES = [
     ("woman_1", "Woman, front left", 0, "voice", 30.0, 1.5, 0.0, 20.0, 0.0, 0),
     ("man_1", "Man, right", 1, "voice", -60.0, 2.93, 4.0, 27.0, 0.0, 0),
     ("woman_2", "Woman, behind left", 0, "voice", 120.0, 1.5, 8.0, 30.0, -2.0, 1),
     ("man_2", "Man, behind right", 1, "voice", -140.0, 2.93, 12.0, 30.0, -2.0, 1),
-    ("dishes_1", "Dishes", 5, "cafe", 80.0, 3.97, 1.0, 11.0, -6.0, 0),
-    ("dishes_2", "Cups", 5, "cafe", -20.0, 3.97, 14.0, 24.0, -6.0, 1),
-    ("dishes_3", "Coffee machine", 5, "cafe", -120.0, 5.49, 18.0, 28.0, -6.0, 2),
+    ("dishes_1", "Dishes", 5, "cafe", 80.0, 3.97, 1.0, 11.0, -14.0, 0),
+    ("dishes_2", "Cups", 5, "cafe", -20.0, 3.97, 14.0, 24.0, -14.0, 1),
+    ("dishes_3", "Kitchen", 5, "cafe", -120.0, 5.49, 18.0, 28.0, -14.0, 2),
 ]
+# Allowed FSD50K tags per source kind; a clip qualifies only if all its tags are allowed and,
+# when ``need`` is set, it carries at least one of them.
+SPEECH_TAGS = frozenset(
+    {
+        "Speech",
+        "Human_voice",
+        "Male_speech_and_man_speaking",
+        "Female_speech_and_woman_speaking",
+        "Conversation",
+        "Chatter",
+        "Crowd",
+        "Laughter",
+        "Giggle",
+        "Chuckle_and_chortle",
+        "Human_group_actions",
+    }
+)
+CLEAN_TAGS = {
+    "voice": {"allowed": SPEECH_TAGS, "need": None},
+    "cafe": {
+        "allowed": frozenset(
+            {
+                "Dishes_and_pots_and_pans",
+                "Chink_and_clink",
+                "Cutlery_and_silverware",
+                "Glass",
+                "Boiling",
+                "Liquid",
+                "Water",
+                "Domestic_sounds_and_home_sounds",
+            }
+        ),
+        "need": frozenset(
+            {"Dishes_and_pots_and_pans", "Chink_and_clink", "Cutlery_and_silverware"}
+        ),
+    },
+}
 EXTRA_CREDITS = [
     {
-        "title": "Scottish Restaurant.WAV (café bed)",
-        "uploader": "inchadney",
+        "title": "Coffeehouse Ambience (café bed)",
+        "uploader": "mars_98",
         "license": "CC-BY-4.0",
-        "url": "https://freesound.org/s/13747",
+        "url": "https://freesound.org/s/445094",
     },
     {
-        "title": "Restaurant Atmosphere (crowded) (second bed)",
-        "uploader": "felix.blume",
+        "title": "140812_Vienna_CafeZentral_R.wav (second café bed)",
+        "uploader": "blaukreuz",
         "license": "CC0",
-        "url": "https://freesound.org/s/422097",
+        "url": "https://freesound.org/s/252704",
     },
     {
         "title": "Binaural room impulse responses, Auditorium 3 (KEMAR), Wierstorf and Geier",
@@ -85,9 +129,32 @@ EXTRA_CREDITS = [
 ]
 
 
-def _pick_kth(index: list[dict], cls: int, need_s: float, k: int) -> dict:
-    """The k-th (numeric fname order) CC0/CC-BY clip of ``cls`` that lasts at least ``need_s``."""
-    rows = [r for r in index if int(r["class_idx"]) == cls and r["license"] in OK_LICENSES]
+def read_fsd50k_tags(fsd_root: Path) -> dict[str, frozenset[str]]:
+    """fname -> FSD50K label set (dev + eval ground truth)."""
+    tags: dict[str, frozenset[str]] = {}
+    for split in ("dev", "eval"):
+        with open(Path(fsd_root) / "FSD50K.ground_truth" / f"{split}.csv", encoding="utf-8") as f:
+            for r in csv.DictReader(f):
+                tags[r["fname"]] = frozenset(r["labels"].split(","))
+    return tags
+
+
+def clean_for(kind: str, labels: frozenset[str]) -> bool:
+    """True if a clip's tags fit ``CLEAN_TAGS[kind]`` (no alarms, vehicles, tools, ...)."""
+    rule = CLEAN_TAGS[kind]
+    if not labels or not labels <= rule["allowed"]:
+        return False
+    return rule["need"] is None or bool(labels & rule["need"])
+
+
+def _pick_kth(index: list[dict], cls: int, need_s: float, k: int, ok=lambda fname: True) -> dict:
+    """The k-th (numeric fname order) CC0/CC-BY clip of ``cls`` that lasts at least ``need_s``
+    and passes ``ok(fname)``."""
+    rows = [
+        r
+        for r in index
+        if int(r["class_idx"]) == cls and r["license"] in OK_LICENSES and ok(r["fname"])
+    ]
     rows.sort(key=lambda r: int(r["fname"]))
     rows = [r for r in rows if float(r["duration_s"]) >= need_s]
     if k >= len(rows):
@@ -108,12 +175,15 @@ def _snap(room: BrirRoom, az: float, el: float, dist: float) -> int:
 def build_scene_v2(index: list[dict], data_root: Path) -> dict:
     """Assemble the v2 scene dict (needs the FSD50K clip index and the prepared BRIR room)."""
     room = load_brir_room(ROOM, str(Path(data_root) / "brir" / "prepared"))
+    tags = read_fsd50k_tags(Path(data_root) / "fsd50k")
     sources, credits = [], []
     for sid, label, cls, kind, az, dist, on, off, gain, k in SOURCES:
         idx = _snap(room, az, 0.0, dist)
         if abs(wrap_az(float(room.az[idx]) - az)) > 5.0:
             raise ValueError(f"{sid}: no measured direction within 5 deg of {az} at {dist} m")
-        c = _pick_kth(index, cls, off - on, k)
+        c = _pick_kth(
+            index, cls, off - on, k, lambda f, kind=kind: clean_for(kind, tags.get(f, frozenset()))
+        )
         clip = {
             "fname": c["fname"],
             "license": c["license"],
@@ -148,7 +218,12 @@ def build_scene_v2(index: list[dict], data_root: Path) -> dict:
         "name": "coffee_shop_v2",
         "duration_s": DURATION_S,
         "fs": FS,
-        "room": {"name": ROOM, "rt60": ROOM_RT60, "brir": "TU Berlin Auditorium 3", "head": "KEMAR"},
+        "room": {
+            "name": ROOM,
+            "rt60": ROOM_RT60,
+            "brir": "TU Berlin Auditorium 3",
+            "head": "KEMAR",
+        },
         "bed": {
             "files": [BED_MAIN, BED_SECOND],
             "snr_db": BED_SNR_DB,
