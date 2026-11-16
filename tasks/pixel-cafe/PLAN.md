@@ -31,6 +31,6 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
   *Done when:* switch works mid-play (checked in Chrome), touch look works at 400 px width.
 - [x] **pixel-cafe-C6 3D overview.** `overview.js`: orbit view of the same café, truth rings, two-ear and one-ear guesses,
   hit/miss within 20 deg, mode toggle back to first person. *Done when:* screenshots of both modes; marker positions match the JSON.
-- [ ] **pixel-cafe-C7 Into the site.** Replace the W3 showcase section in `web/index.html`, mobile layout, frame rate check
+- [x] **pixel-cafe-C7 Into the site.** Replace the W3 showcase section in `web/index.html`, mobile layout, frame rate check
   (desktop 60 fps, phone usable), no-WebGL fallback, README + credits. *Done when:* pytest passes, screenshots + short recording
   in `docs/research/pixel-cafe/`, PR open.

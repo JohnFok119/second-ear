@@ -1,14 +1,14 @@
 // Pure marker data for the overview: which truths and guesses exist at time t, and which guesses hit.
 // No three.js here. overview.js draws exactly this data; scripts/check_overview_markers.mjs checks it.
 //
-// HIT RULE = the site's showcase rule (web/showcase.js: angleDeg + HIT_DEG): the angle between a guess
+// HIT RULE = the rule of the old site showcase (angleDeg + HIT_DEG in the old web/showcase.js, now removed): the angle between a guess
 // and a truth, measured around the sphere (azimuth AND elevation, great-circle), is at most 20 degrees.
 // A guess is a hit when ANY truth in the same frame is that close, whatever the sound class.
 
 export const HIT_DEG = 20;
 const D2R = Math.PI / 180;
 
-/** Great-circle angle in degrees between two (az, el) directions (same maths as showcase.js angleDeg). */
+/** Great-circle angle in degrees between two (az, el) directions (same maths as angleDeg in the old, now removed, showcase.js). */
 export function angleDeg(a, b) {
   const e1 = a.el * D2R, e2 = b.el * D2R, da = (a.az - b.az) * D2R;
   const c = Math.sin(e1) * Math.sin(e2) + Math.cos(e1) * Math.cos(e2) * Math.cos(da);

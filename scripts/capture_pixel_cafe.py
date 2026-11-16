@@ -3,6 +3,8 @@
 Needs the dev server on http://127.0.0.1:8777/ (serves web/); starts one if it is down.
 Runs Chrome once with --dump-dom to read the page title (ready errors=N), then once for the PNG.
 Usage: uv run python scripts/capture_pixel_cafe.py --size desktop --cam seat --out docs/research/pixel-cafe/x.png
+       --page index loads index.html?focus=1#showcase (only the showcase section; headless cannot shoot a scrolled page) instead (no capture params; reads data-cafe-errors from the mount).
+       --nowebgl forces the still-image fallback path (cafe.html only).
 """
 import argparse
 import re
@@ -49,13 +51,19 @@ def main() -> int:
     ap.add_argument("--mode", default=None, help="passed through as ?mode=")
     ap.add_argument("--cam", default="seat", choices=["seat", "top"])
     ap.add_argument("--yaw", type=float, default=0.0, help="seat camera yaw in degrees, + = turn left")
+    ap.add_argument("--page", default="cafe", choices=["cafe", "index"], help="cafe.html (default) or the real site")
+    ap.add_argument("--nowebgl", action="store_true", help="force the no-WebGL fallback (cafe.html only)")
     ap.add_argument("--size", default="desktop", choices=list(SIZES))
     ap.add_argument("--out", default=str(ROOT / "docs" / "research" / "pixel-cafe" / "shot.png"))
     a = ap.parse_args()
 
     w, h = SIZES[a.size]
-    query = f"still=1&t={a.t}&cam={a.cam}" + (f"&mode={a.mode}" if a.mode else "") + (f"&yaw={a.yaw}" if a.yaw else "")
-    url = f"http://127.0.0.1:{PORT}/cafe.html?{query}"
+    if a.page == "index":
+        url = f"http://127.0.0.1:{PORT}/index.html?focus=1#showcase"
+    else:
+        query = (f"still=1&t={a.t}&cam={a.cam}" + (f"&mode={a.mode}" if a.mode else "")
+                 + (f"&yaw={a.yaw}" if a.yaw else "") + ("&nowebgl=1" if a.nowebgl else ""))
+        url = f"http://127.0.0.1:{PORT}/cafe.html?{query}"
     out = Path(a.out).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -65,8 +73,13 @@ def main() -> int:
                              check=False, capture_output=True, text=True, timeout=180)
         m = re.search(r"<title>([^<]*)</title>", dom.stdout)
         title = m.group(1) if m else ""
-        found = re.search(r"ready errors=(\d+)", title)
-        print(f"title: {title!r}")
+        if a.page == "index":
+            found = (re.search(r'data-cafe-errors="(\d+)"', dom.stdout)
+                     if 'data-cafe-ready="1"' in dom.stdout else None)
+            print("fallback active" if 'data-cafe-fallback="1"' in dom.stdout else "webgl active")
+        else:
+            found = re.search(r"ready errors=(\d+)", title)
+            print(f"title: {title!r}")
         if not found:
             print("not ready")
             return 1
