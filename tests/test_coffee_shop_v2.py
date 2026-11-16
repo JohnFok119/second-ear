@@ -68,3 +68,19 @@ def test_scene_v2_clips_pass_clean_tags():
     scene = build_scene_v2(read_clip_index(DATA / "fsd50k" / "clip_index.csv"), DATA)
     for s in scene["sources"]:
         assert clean_for(s["kind"], tags[s["clip"]["fname"]]), s["id"]
+
+
+@needs_data
+def test_scene_v3_on_grid_and_walkers_move():
+    from secondear.scene.coffee_shop_v3 import CLIPS, build_scene_v3
+
+    scene = build_scene_v3(DATA)
+    room = load_brir_room(ROOM, str(DATA / "brir" / "prepared"))
+    for s in scene["sources"]:
+        i = s["brir_idx"]
+        assert (s["az_deg"], s["el_deg"], s["dist_m"]) == (room.az[i], room.el[i], room.dist[i])
+        assert s["clip"]["fname"] in CLIPS
+        assert 0 <= s["intervals"][0][0] < s["intervals"][0][1] <= scene["duration_s"]
+    walk = [s for s in scene["sources"] if s["track"] == "walk_1"]
+    assert len({s["az_deg"] for s in walk}) == len(walk) >= 4  # a new direction every step
+    assert {s["kind"] for s in scene["sources"]} == {"voice", "laugh", "machine", "door", "steps"}
