@@ -17,10 +17,19 @@
   #cafe-time-out { min-width:7.5em; text-align:right; font-variant-numeric:tabular-nums; }
   #cafe-caption { min-height:1.6em; margin:8px 0 2px; font-weight:600; font-size:1.05rem; }
   #cafe-ear-status { margin:6px 0; }
+  #cafe-legend[hidden] { display:none; }
+  #cafe-legend p { margin:6px 0; }
+  #cafe-live { font-weight:600; }
+  .cafe-key { list-style:none; margin:8px 0 4px; padding:0; display:flex; flex-wrap:wrap; gap:6px 18px; }
+  .cafe-key li { display:flex; align-items:center; gap:6px; }
+  .sw { display:inline-block; width:16px; height:16px; border-radius:50%; flex:none; }
+  .sw.two { background:#19e6ff; } .sw.one { background:#ff3fb4; }
+  .sw.truth { border:3px solid #ffe27a; box-sizing:border-box; } .sw.fill { background:#fff; }
   @media (max-width: 600px) {
     #cafe { aspect-ratio:4/5; max-height:none; }
     .cafe-main .bigbtn, .cafe-main .seg button { min-height:44px; }
-    .cafe-main .small, .cafe-main p, .cafe-main output, .cafe-main .sc-lbl { font-size:14px; }
+    .cafe-key { flex-direction:column; }
+    .cafe-main .small, .cafe-main .cafe-key li, .cafe-main p, .cafe-main output, .cafe-main .sc-lbl { font-size:14px; }
     .cafe-main .sc-controls { gap:8px 10px; }
     #cafe-time-out { min-width:0; text-align:left; }
     .cafe-main .seg button { padding:8px 14px; }
@@ -45,6 +54,23 @@
   <button id="cafe-play" class="bigbtn" type="button">&#9654; Play</button>
   <input id="cafe-time" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time in the clip">
   <output id="cafe-time-out" for="cafe-time">0.0 / 30.0 s</output>
+</div>
+<div class="sc-controls">
+  <span class="sc-lbl" id="cafe-mode-lbl">View:</span>
+  <div class="seg" role="group" aria-labelledby="cafe-mode-lbl">
+    <button type="button" id="cafe-mode-seat" aria-pressed="true">Sit in my seat</button>
+    <button type="button" id="cafe-mode-over" aria-pressed="false">See from above</button>
+  </div>
+</div>
+<div id="cafe-legend" hidden>
+  <ul class="cafe-key">
+    <li><i class="sw two"></i> Teal: two ears</li>
+    <li><i class="sw one"></i> Pink: one ear (right)</li>
+    <li><i class="sw truth"></i> Yellow ring: where the sound really was</li>
+    <li><i class="sw fill"></i> Filled: within 20° of a real sound. Hollow with an x: a miss</li>
+  </ul>
+  <p id="cafe-live" aria-live="polite"></p>
+  <p id="cafe-clipline"></p>
 </div>
 <div class="sc-controls">
   <span class="sc-lbl" id="cafe-listen-lbl">Listen as:</span>

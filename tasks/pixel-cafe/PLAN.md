@@ -29,7 +29,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 - [x] **pixel-cafe-C5 First person + ear switch.** `firstperson.js` + `audio.js`: sit in the seat, drag or touch to look,
   play/pause/scrub, **Two ears / My ear** switch (right channel to both ears), small caption of what is happening.
   *Done when:* switch works mid-play (checked in Chrome), touch look works at 400 px width.
-- [ ] **pixel-cafe-C6 3D overview.** `overview.js`: orbit view of the same café, truth rings, two-ear and one-ear guesses,
+- [x] **pixel-cafe-C6 3D overview.** `overview.js`: orbit view of the same café, truth rings, two-ear and one-ear guesses,
   hit/miss within 20 deg, mode toggle back to first person. *Done when:* screenshots of both modes; marker positions match the JSON.
 - [ ] **pixel-cafe-C7 Into the site.** Replace the W3 showcase section in `web/index.html`, mobile layout, frame rate check
   (desktop 60 fps, phone usable), no-WebGL fallback, README + credits. *Done when:* pytest passes, screenshots + short recording
