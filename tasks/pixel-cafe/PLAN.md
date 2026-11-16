@@ -14,7 +14,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 - milestones: screenshots + a short screen recording in `docs/research/pixel-cafe/`, summarised in the done ping
 
 ## Chunks
-- [ ] **pixel-cafe-C1 Data.** `scripts/export_cafe_v3.py`: run `where_binaural` and `where_right` on the v3 clip; write
+- [x] **pixel-cafe-C1 Data.** `scripts/export_cafe_v3.py`: run `where_binaural` and `where_right` on the v3 clip; write
   `web/clips/cafe_v3.json` (truth tracks with per-frame positions, both models' guesses per frame) and `web/clips/cafe_v3.mp3`;
   credits into `web/CREDITS.md`. *Done when:* tests for the JSON shape pass; file under 2 MB; scores printed.
 - [ ] **pixel-cafe-C2 Assets.** Pick CC0 café pieces (counter, espresso machine/grinder, tables, chairs, lamps, plants, door,
