@@ -49,13 +49,15 @@ def grab(args: tuple[int, float, Path]) -> Path:
     i, t, tmp = args
     png = tmp / f"f{i:03d}.png"
     size = f"--window-size={WINDOW[0]},{WINDOW[1]}"
+    # a fresh profile per frame, so a cached copy of an edited module is never served
+    flags = [*FLAGS, f"--user-data-dir={tempfile.mkdtemp(prefix='cafe-rec-')}"]
     for _ in range(5):
-        dom = subprocess.run([CHROME, *FLAGS, size, "--dump-dom", url_for(t)],
+        dom = subprocess.run([CHROME, *flags, size, "--dump-dom", url_for(t)],
                              check=False, capture_output=True, text=True, timeout=240).stdout
         if "ready errors=0" not in dom or 'data-cafe-fallback="1"' in dom:
             continue
         png.unlink(missing_ok=True)
-        subprocess.run([CHROME, *FLAGS, size, f"--screenshot={png}", url_for(t)],
+        subprocess.run([CHROME, *flags, size, f"--screenshot={png}", url_for(t)],
                        check=False, capture_output=True, timeout=240)
         if png.exists() and png.stat().st_size > 1000:
             return png
