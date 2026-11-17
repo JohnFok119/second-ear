@@ -163,7 +163,7 @@ Research: `docs/research/c5/showcase.md`.
   toggle (both ears vs right ear only, headphones note), drag-the-sound toy (which ear hears it first).
 - [ ] **W3 The showcase.** (built 2026-10-24, merged; waits on C5.4 JSONs + a real-device touch/60 fps check) Full-width scene, two ears | my ear side by side on one timeline, hit/miss rings,
   top-down radar, one plain score sentence instead of the stats panel, plain legend, simulation caveat.
-- [ ] **W4 How it works.** Pipeline diagram (inline SVG), ML-work cards, model card, links to code + LEARNING.md.
+- [x] **W4 How it works.** (2026-11-16, branch cafe-env-w4; screenshots docs/research/w4/) Pipeline diagram (inline SVG), ML-work cards, model card, links to code + LEARNING.md.
 - [ ] **W5 Polish + ship.** Chrome + Firefox + phone checks, README links, portfolio card headline (feature branch),
   M6 page + push notification.
 
