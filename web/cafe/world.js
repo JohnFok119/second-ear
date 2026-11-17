@@ -2,6 +2,7 @@
 // Coordinates follow geo.js: seat at the origin facing -Z, az + is left (-X).
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { azToXZ } from './geo.js';
+import { seats, tables, backTable } from './layout.js';
 
 const ASSETS = 'assets/cafe/'; // relative to cafe.html
 
@@ -183,23 +184,23 @@ export async function buildWorld(THREE, scene, sceneData = null) {
     put(tb, x, z);
     if (lamp) put(await fit('lampRoundTable', { h: 0.3 }), x + 0.12, z + 0.05, { y: h, yaw: 2.2 });
   })());
-  tableAt(0, -0.75, 0.75, false); // no lamp here: it hid the friend's face from the seat
+  tableAt(tables.johnny.x, tables.johnny.z, 0.75, false); // no lamp here: it hid the friend's face from the seat
   add((async () => put(await fit('rugRound', { d: 2.0 }), 0, -0.6))());
   // people's chairs (empty for now). local +Z of a chair faces the look target.
   const chairAt = (name, x, z, look, h = 0.9) => add((async () => put(await fit(name, { h }), x, z, { look }))());
-  const f = azToXZ(0, 1.5), l = azToXZ(90, 1.5), r = azToXZ(-90, 1.5);
-  chairAt('chair', f.x, f.z, [0, 0]);
-  chairAt('chairRounded', l.x, l.z, [0, 0]);
-  chairAt('chair', r.x, r.z, [0, 0]);
-  // neighbouring small tables on each side, with a plant
-  tableAt(-1.5, -1.4, 0.7, true, 0.7);
-  tableAt(1.5, -1.4, 0.7, false, 0.7);
-  add((async () => put(await fit('plantSmall1', { h: 0.28 }), 1.5, -1.4, { y: 0.7 }))());
-  chairAt('chairRounded', -1.5, -2.2, [-1.5, -1.4], 0.85);
-  chairAt('chair', 1.5, -2.2, [1.5, -1.4], 0.85);
+  const chairFor = (name, seat, h) => chairAt(name, seat.pos.x, seat.pos.z, seat.look, h);
+  chairFor('chair', seats.friend);
+  chairFor('chairRounded', seats.left);
+  chairFor('chair', seats.right);
+  // each side person has a companion across their own small table (positions from layout.js)
+  chairFor('chair', seats.leftCompanion, 0.85);
+  chairFor('chairRounded', seats.rightCompanion, 0.85);
+  tableAt(tables.left.x, tables.left.z, 0.7, false, tables.left.r * 2);
+  tableAt(tables.right.x, tables.right.z, 0.7, false, tables.right.r * 2);
+  add((async () => put(await fit('plantSmall1', { h: 0.28 }), tables.right.x, tables.right.z, { y: 0.7 }))());
   // table behind: seats at az 160 and 180, 2.93 m
+  const btx = backTable.x, btz = backTable.z;
   const b1 = azToXZ(160, 2.93), b2 = azToXZ(180, 2.93);
-  const btx = (b1.x + b2.x) / 2 - 0.1, btz = (b1.z + b2.z) / 2 + 0.55;
   tableAt(btx, btz);
   chairAt('chair', b1.x, b1.z, [btx, btz]);
   chairAt('chairRounded', b2.x, b2.z, [btx, btz]);
