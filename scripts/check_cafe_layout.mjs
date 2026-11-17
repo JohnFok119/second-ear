@@ -1,11 +1,11 @@
-// Checks the café floor layout (web/cafe/layout.js) against web/clips/cafe_v3.json. Prints PASS or FAIL lines.
+// Checks the café floor layout (web/cafe/layout.js) against web/clips/cafe_v4.json. Prints PASS or FAIL lines.
 // Run: node scripts/check_cafe_layout.mjs
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const clip = JSON.parse(readFileSync(path.join(root, 'web/clips/cafe_v3.json'), 'utf8'));
+const clip = JSON.parse(readFileSync(path.join(root, 'web/clips/cafe_v4.json'), 'utf8'));
 const L = await import(pathToFileURL(path.join(root, 'web/cafe/layout.js')).href);
 const G = await import(pathToFileURL(path.join(root, 'web/cafe/geo.js')).href);
 

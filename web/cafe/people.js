@@ -295,12 +295,19 @@ export function buildPeople(THREE, scene, clip) {
   };
 
   // ---------- companions: a pure function of t (no state, no randomness) ----------
+  // companion timings come from the clip's scene intervals (first start, last end), not constants
+  const span = (id) => {
+    const iv = clip.sources.filter((s) => s.id === id).flatMap((s) => s.intervals);
+    return [Math.min(...iv.map((i) => i[0])), Math.max(...iv.map((i) => i[1]))];
+  };
+  const [talkL0, talkL1] = span('talk_left');
+  const [laughR0, laughR1] = span('laugh_right');
   const bump = (t, a, b, ramp = 0.4) => smooth((t - a) / ramp) * (1 - smooth((t - b) / ramp)); // 0..1 inside [a, b]
   function companionPose(d, t) {
     const sd = d.seed;
     const out = { armL: -0.85, armR: -0.85, tilt: 0, yaw: 0, roll: 0, headDy: 0, lean: 0, rigDy: 0, laughing: false };
     // their partner talks (left) or laughs (right): listen, with slow nods
-    const partner = d.companion === 'left' ? bump(t, 10.5, 19) : bump(t, 26, 29.5, 0.25);
+    const partner = d.companion === 'left' ? bump(t, talkL0, talkL1) : bump(t, laughR0, laughR1, 0.25);
     const idle = 1 - partner;
     // a sip every 9 s (own phase), small gestures between
     const ph = ((t + sd * 1.7) % 9 + 9) % 9;
@@ -312,12 +319,12 @@ export function buildPeople(THREE, scene, clip) {
     out.yaw = 0.1 * idle * Math.sin(2 * Math.PI * 0.11 * t + sd);
     if (d.companion === 'left') {
       // slow nods and a small head tilt while the left person talks
-      const nod = bump(t, 10.5, 19, 0.6);
+      const nod = bump(t, talkL0, talkL1, 0.6);
       out.tilt += nod * (0.1 + 0.1 * Math.sin(2 * Math.PI * 0.45 * t));
       out.roll = nod * 0.06;
     } else {
       // leans in and gestures in the 2 s before the laugh, then laughs along with the body only
-      const lead = bump(t, 24, 26, 0.5);
+      const lead = bump(t, laughR0 - 2, laughR0, 0.5);
       out.lean = 0.28 * lead;
       const g = lead * Math.max(0, Math.sin(2 * Math.PI * 1.1 * t));
       out.armL -= 0.5 * g; out.armR -= 0.6 * g;

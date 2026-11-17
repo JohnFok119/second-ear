@@ -5,8 +5,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const clip = JSON.parse(readFileSync(path.join(root, 'web/clips/cafe_v3.json'), 'utf8'));
-const scene = JSON.parse(readFileSync(path.join(root, 'web/scenes/coffee_shop_v3.json'), 'utf8'));
+const clip = JSON.parse(readFileSync(path.join(root, 'web/clips/cafe_v4.json'), 'utf8'));
+const scene = JSON.parse(readFileSync(path.join(root, 'web/scenes/coffee_shop_v4.json'), 'utf8'));
 const { markerData } = await import(pathToFileURL(path.join(root, 'web/cafe/markers.js')).href);
 
 // independent great-circle angle (azimuth + elevation), same 20 degree threshold as the showcase

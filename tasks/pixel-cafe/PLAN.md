@@ -62,7 +62,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
   aid (Fortnite "visualize sound effects"), original design.
 - Branch `cafe-clarity` off main; same standing go (commit per verified chunk, push branch, PR, no merge).
 
-- [ ] **pixel-cafe-C11 Clear English voices.** Swap `talk_front` and `talk_left` to clear English speech with a known
+- [x] **pixel-cafe-C11 Clear English voices.** Swap `talk_front` and `talk_left` to clear English speech with a known
   transcript and a licence the site allows (public domain, CC0 or CC BY); Johnny approves each download. Re-render the
   clip (v4), re-run both models, new `web/clips/cafe_v4.json` + mp3; update CREDITS. *Done when:* clip renders, tests pass,
   new scores printed.

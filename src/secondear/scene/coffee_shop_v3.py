@@ -21,6 +21,7 @@ from functools import partial
 from pathlib import Path
 
 import numpy as np
+import soundfile as sf
 
 from secondear.scene.coffee_shop_v2 import (
     BED_DIRS,
@@ -179,6 +180,8 @@ def _plan(scene: dict, only: list[str] | None = None) -> ScenePlan:
                 "duration_s": off - on,
                 "offset_s": s["clip_offset_s"],
             }
+            if "path" in s["clip"]:  # a prepared wav under data/ instead of an FSD50K clip
+                clip["path"] = s["clip"]["path"]
             plan.events.append(
                 EventPlan(clip, float(on), float(off - on), s["az_deg"], s["el_deg"],
                           s["dist_m"], s["gain_db"], seen.index(s["track"]), s["brir_idx"])
@@ -189,7 +192,12 @@ def _plan(scene: dict, only: list[str] | None = None) -> ScenePlan:
 
 def _loader(row: dict, fs: int, root: Path) -> np.ndarray:
     """``duration_s`` of the clip from ``offset_s`` (looped if short), with short fades."""
-    x = load_clip(row, fs, root)
+    if "path" in row:  # relative to data/ (root is data/fsd50k); 48 kHz mono, prepared
+        x, fs0 = sf.read(str(root.parent / row["path"]), dtype="float64")
+        if fs0 != fs:
+            raise ValueError(f"{row['path']}: expected {fs} Hz, got {fs0}")
+    else:
+        x = load_clip(row, fs, root)
     n, start = round(row["duration_s"] * fs), round(row.get("offset_s", 0.0) * fs)
     x = x[start:]
     if len(x) < n:

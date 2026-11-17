@@ -135,8 +135,8 @@ export async function mountCafe(root, opts = {}) {
 
   // ---------- data ----------
   const [sceneData, clip] = await Promise.all([
-    fetch('scenes/coffee_shop_v3.json').then((r) => r.json()),
-    fetch('clips/cafe_v3.json').then((r) => r.json()),
+    fetch('scenes/coffee_shop_v4.json').then((r) => r.json()),
+    fetch('clips/cafe_v4.json').then((r) => r.json()),
   ]);
 
   try {
@@ -201,7 +201,7 @@ export async function mountCafe(root, opts = {}) {
     }
 
     // never touch audio in still (capture) mode
-    const audio = still ? null : createAudio('clips/cafe_v3.mp3');
+    const audio = still ? null : createAudio('clips/cafe_v4.mp3');
 
     function resize() {
       if (!gl3) return;

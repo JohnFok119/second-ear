@@ -41,6 +41,19 @@ Generated from `web/scenes/coffee_shop_v3.json`.
 
 Room: BRIRs are TU Berlin Auditorium 3, KEMAR.
 
+## Café v4 clip
+
+Same scene as v3 (`web/scenes/coffee_shop_v4.json`), with two talkers replaced by clear English speech. Everything else is credited in the v3 table above.
+
+Speech: LibriSpeech (Panayotov, Chen, Povey, Khudanpur, ICASSP 2015), dev-clean, CC BY 4.0, https://www.openslr.org/12. The recordings come from LibriVox (public domain audiobooks).
+
+| Utterance | Reader | Book | Used for |
+|---|---|---|---|
+| 1988-24833-0003 and 1988-24833-0004 | speaker 1988, "Ransom" (F) | "Here's to Cat!" (chapter 18) of It's Like This, Cat (Version 2) | talk_front |
+| 2428-83699-0042 | speaker 2428, Stephen Kinford (M) | An Old-Fashioned Christmas, Chapter 1 (chapter 23) | talk_left |
+
+Changes: resampled 16 kHz to 48 kHz and level-matched; the two front utterances are joined with 0.35 s of silence. The v3 clips 346960 and 238211 are not used in v4.
+
 ## Café 3D models
 
 Furniture: Kenney Furniture Kit 2.0, CC0 (https://kenney.nl/assets/furniture-kit). Per-file list in `web/assets/cafe/LICENSES.md`.

@@ -137,8 +137,9 @@ def export_cafe_v3(
     ckpt_root: Path,
     results_root: Path,
     device: str = "cpu",
+    clip_name: str = "cafe_v3",
 ) -> tuple[Path, Path]:
-    """Write cafe_v3.json and cafe_v3.mp3 into out_dir; returns both paths."""
+    """Write <clip_name>.json and .mp3 into out_dir; returns both paths."""
     scene = json.loads(Path(scene_path).read_text(encoding="utf-8"))
     audio, fs = sf.read(wav_path, dtype="float32", always_2d=True)
     audio = to_model_rate(audio.T, fs)
@@ -164,7 +165,7 @@ def export_cafe_v3(
 
     data = {
         "version": 1,
-        "clip": "cafe_v3",
+        "clip": clip_name,
         "fps": FPS,
         "duration_s": scene["duration_s"],
         "hit_deg": HIT_DEG,
@@ -181,34 +182,35 @@ def export_cafe_v3(
     }
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_json = out_dir / "cafe_v3.json"
+    out_json = out_dir / f"{clip_name}.json"
     out_json.write_text(json.dumps(data, separators=(",", ":")), encoding="utf-8")
     if out_json.stat().st_size >= MAX_BYTES:
         raise RuntimeError(f"{out_json} is {out_json.stat().st_size} bytes, over 2 MB")
-    out_mp3 = out_dir / "cafe_v3.mp3"
+    out_mp3 = out_dir / f"{clip_name}.mp3"
     shutil.copyfile(mp3_path, out_mp3)
     return out_json, out_mp3
 
 
-def main() -> None:
-    """CLI entry point."""
+def main(version: str = "v3") -> None:
+    """CLI entry point (``version`` picks scene, samples folder and clip name)."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--ckpt-root", default="checkpoints")
     ap.add_argument("--results", default="results")
     ap.add_argument("--out-dir", default="web/clips")
     ap.add_argument("--device", default="cpu")
     a = ap.parse_args()
-    d = ROOT / "data" / "samples_v3"
+    d = ROOT / "data" / f"samples_{version}"
     try:
         out_json, out_mp3 = export_cafe_v3(
-            ROOT / "web" / "scenes" / "coffee_shop_v3.json",
-            d / "coffee_shop_v3.wav",
-            d / "coffee_shop_v3_labels.csv",
-            d / "coffee_shop_v3.mp3",
+            ROOT / "web" / "scenes" / f"coffee_shop_{version}.json",
+            d / f"coffee_shop_{version}.wav",
+            d / f"coffee_shop_{version}_labels.csv",
+            d / f"coffee_shop_{version}.mp3",
             Path(a.out_dir),
             Path(a.ckpt_root),
             Path(a.results),
             a.device,
+            f"cafe_{version}",
         )
     except FileNotFoundError as e:
         raise SystemExit(f"error: {e}") from None

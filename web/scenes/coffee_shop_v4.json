@@ -1,0 +1,586 @@
+{
+  "name": "coffee_shop_v4",
+  "duration_s": 30.0,
+  "fs": 48000,
+  "room": {
+    "name": "auditorium3",
+    "rt60": 0.67,
+    "brir": "TU Berlin Auditorium 3",
+    "head": "KEMAR"
+  },
+  "bed": {
+    "files": [
+      "445094",
+      "252704"
+    ],
+    "snr_db": 15.0,
+    "second_rel_db": -3.0,
+    "dirs": 8,
+    "seed": 7
+  },
+  "sources": [
+    {
+      "id": "talk_front",
+      "label": "Talking, in front",
+      "class": 0,
+      "kind": "voice",
+      "track": "talk_front",
+      "az_deg": -0.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 365,
+      "intervals": [
+        [
+          0.0,
+          11.01
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "1988-24833-0003+1988-24833-0004",
+        "path": "speech_v4/talk_front.wav",
+        "url": "https://www.openslr.org/12"
+      }
+    },
+    {
+      "id": "door_open_1",
+      "label": "Door opens",
+      "class": 7,
+      "kind": "door",
+      "track": "door_open_1",
+      "az_deg": 50.0,
+      "el_deg": -0.72,
+      "dist_m": 3.97,
+      "brir_idx": 240,
+      "intervals": [
+        [
+          1.0,
+          2.25
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": -14.0,
+      "clip": {
+        "fname": "352439",
+        "url": "https://freesound.org/s/352439/"
+      }
+    },
+    {
+      "id": "walk_1_0",
+      "label": "Footsteps, passing on my left",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_1",
+      "az_deg": 60.0,
+      "el_deg": -0.72,
+      "dist_m": 3.97,
+      "brir_idx": 180,
+      "intervals": [
+        [
+          2.0,
+          3.0
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "118985",
+        "url": "https://freesound.org/s/118985/"
+      }
+    },
+    {
+      "id": "walk_1_1",
+      "label": "Footsteps, passing on my left",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_1",
+      "az_deg": 80.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 63,
+      "intervals": [
+        [
+          3.0,
+          4.0
+        ]
+      ],
+      "clip_offset_s": 1.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "118985",
+        "url": "https://freesound.org/s/118985/"
+      }
+    },
+    {
+      "id": "door_close_1",
+      "label": "Door closes",
+      "class": 7,
+      "kind": "door",
+      "track": "door_close_1",
+      "az_deg": 50.0,
+      "el_deg": -0.72,
+      "dist_m": 3.97,
+      "brir_idx": 240,
+      "intervals": [
+        [
+          4.0,
+          5.0
+        ]
+      ],
+      "clip_offset_s": 2.6,
+      "gain_db": -14.0,
+      "clip": {
+        "fname": "352439",
+        "url": "https://freesound.org/s/352439/"
+      }
+    },
+    {
+      "id": "walk_1_2",
+      "label": "Footsteps, passing on my left",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_1",
+      "az_deg": 100.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 124,
+      "intervals": [
+        [
+          4.0,
+          5.0
+        ]
+      ],
+      "clip_offset_s": 2.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "118985",
+        "url": "https://freesound.org/s/118985/"
+      }
+    },
+    {
+      "id": "walk_1_3",
+      "label": "Footsteps, passing on my left",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_1",
+      "az_deg": 120.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 4,
+      "intervals": [
+        [
+          5.0,
+          6.0
+        ]
+      ],
+      "clip_offset_s": 3.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "118985",
+        "url": "https://freesound.org/s/118985/"
+      }
+    },
+    {
+      "id": "walk_1_4",
+      "label": "Footsteps, passing on my left",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_1",
+      "az_deg": 159.59,
+      "el_deg": -1.95,
+      "dist_m": 2.93,
+      "brir_idx": 956,
+      "intervals": [
+        [
+          6.0,
+          7.0
+        ]
+      ],
+      "clip_offset_s": 4.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "118985",
+        "url": "https://freesound.org/s/118985/"
+      }
+    },
+    {
+      "id": "grinder",
+      "label": "Coffee grinder",
+      "class": 5,
+      "kind": "machine",
+      "track": "grinder",
+      "az_deg": -129.5,
+      "el_deg": -0.52,
+      "dist_m": 5.49,
+      "brir_idx": 1009,
+      "intervals": [
+        [
+          8.0,
+          16.2
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": -5.0,
+      "clip": {
+        "fname": "56563",
+        "url": "https://freesound.org/s/56563/"
+      }
+    },
+    {
+      "id": "talk_left",
+      "label": "Talking, on my left",
+      "class": 0,
+      "kind": "voice",
+      "track": "talk_left",
+      "az_deg": 90.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 3,
+      "intervals": [
+        [
+          11.5,
+          17.93
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "2428-83699-0042",
+        "path": "speech_v4/talk_left.wav",
+        "url": "https://www.openslr.org/12"
+      }
+    },
+    {
+      "id": "laugh_behind",
+      "label": "Laugh, behind",
+      "class": 4,
+      "kind": "laugh",
+      "track": "laugh_behind",
+      "az_deg": 159.59,
+      "el_deg": -1.95,
+      "dist_m": 2.93,
+      "brir_idx": 956,
+      "intervals": [
+        [
+          12.5,
+          14.0
+        ]
+      ],
+      "clip_offset_s": 0.5,
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "345023",
+        "url": "https://freesound.org/s/345023/"
+      }
+    },
+    {
+      "id": "talk_behind",
+      "label": "Talking, behind",
+      "class": 0,
+      "kind": "voice",
+      "track": "talk_behind",
+      "az_deg": 179.59,
+      "el_deg": -1.95,
+      "dist_m": 2.93,
+      "brir_idx": 836,
+      "intervals": [
+        [
+          17.0,
+          27.0
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "82322",
+        "url": "https://freesound.org/s/82322/"
+      }
+    },
+    {
+      "id": "walk_2_0",
+      "label": "Footsteps, behind then across",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_2",
+      "az_deg": -150.41,
+      "el_deg": -1.95,
+      "dist_m": 2.93,
+      "brir_idx": 656,
+      "intervals": [
+        [
+          19.5,
+          20.5
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "172361",
+        "url": "https://freesound.org/s/172361/"
+      }
+    },
+    {
+      "id": "walk_2_1",
+      "label": "Footsteps, behind then across",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_2",
+      "az_deg": -110.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 1025,
+      "intervals": [
+        [
+          20.5,
+          21.5
+        ]
+      ],
+      "clip_offset_s": 1.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "172361",
+        "url": "https://freesound.org/s/172361/"
+      }
+    },
+    {
+      "id": "walk_2_2",
+      "label": "Footsteps, behind then across",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_2",
+      "az_deg": -70.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 785,
+      "intervals": [
+        [
+          21.5,
+          22.5
+        ]
+      ],
+      "clip_offset_s": 2.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "172361",
+        "url": "https://freesound.org/s/172361/"
+      }
+    },
+    {
+      "id": "walk_2_3",
+      "label": "Footsteps, behind then across",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_2",
+      "az_deg": -30.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 545,
+      "intervals": [
+        [
+          22.5,
+          23.5
+        ]
+      ],
+      "clip_offset_s": 3.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "172361",
+        "url": "https://freesound.org/s/172361/"
+      }
+    },
+    {
+      "id": "walk_2_4",
+      "label": "Footsteps, behind then across",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_2",
+      "az_deg": 10.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 305,
+      "intervals": [
+        [
+          23.5,
+          24.5
+        ]
+      ],
+      "clip_offset_s": 4.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "172361",
+        "url": "https://freesound.org/s/172361/"
+      }
+    },
+    {
+      "id": "walk_2_5",
+      "label": "Footsteps, behind then across",
+      "class": 6,
+      "kind": "steps",
+      "track": "walk_2",
+      "az_deg": 40.0,
+      "el_deg": -0.72,
+      "dist_m": 3.97,
+      "brir_idx": 300,
+      "intervals": [
+        [
+          24.5,
+          25.5
+        ]
+      ],
+      "clip_offset_s": 5.0,
+      "gain_db": -6.0,
+      "clip": {
+        "fname": "172361",
+        "url": "https://freesound.org/s/172361/"
+      }
+    },
+    {
+      "id": "door_open_2",
+      "label": "Door opens",
+      "class": 7,
+      "kind": "door",
+      "track": "door_open_2",
+      "az_deg": 50.0,
+      "el_deg": -0.72,
+      "dist_m": 3.97,
+      "brir_idx": 240,
+      "intervals": [
+        [
+          25.0,
+          26.25
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": -14.0,
+      "clip": {
+        "fname": "352439",
+        "url": "https://freesound.org/s/352439/"
+      }
+    },
+    {
+      "id": "laugh_right",
+      "label": "Laugh, on my right",
+      "class": 4,
+      "kind": "laugh",
+      "track": "laugh_right",
+      "az_deg": -90.0,
+      "el_deg": -3.81,
+      "dist_m": 1.5,
+      "brir_idx": 905,
+      "intervals": [
+        [
+          26.0,
+          29.5
+        ]
+      ],
+      "clip_offset_s": 0.0,
+      "gain_db": 0.0,
+      "clip": {
+        "fname": "89286",
+        "url": "https://freesound.org/s/89286/"
+      }
+    },
+    {
+      "id": "door_close_2",
+      "label": "Door closes",
+      "class": 7,
+      "kind": "door",
+      "track": "door_close_2",
+      "az_deg": 50.0,
+      "el_deg": -0.72,
+      "dist_m": 3.97,
+      "brir_idx": 240,
+      "intervals": [
+        [
+          28.0,
+          29.0
+        ]
+      ],
+      "clip_offset_s": 2.6,
+      "gain_db": -14.0,
+      "clip": {
+        "fname": "352439",
+        "url": "https://freesound.org/s/352439/"
+      }
+    }
+  ],
+  "credits": [
+    {
+      "title": "women speaking slavic hall verb.wav",
+      "uploader": "IEDlabs",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/82322/"
+    },
+    {
+      "title": "Laugh1",
+      "uploader": "leszekstan",
+      "license": "CC0",
+      "url": "https://freesound.org/s/345023/"
+    },
+    {
+      "title": "ccc_laughter.wav",
+      "uploader": "uair01",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/89286/"
+    },
+    {
+      "title": "coffeegrinder.wav",
+      "uploader": "guitarguy1985",
+      "license": "CC0",
+      "url": "https://freesound.org/s/56563/"
+    },
+    {
+      "title": "Wooden Door, Open, Soft Close, Hard Close",
+      "uploader": "Kinoton",
+      "license": "CC0",
+      "url": "https://freesound.org/s/352439/"
+    },
+    {
+      "title": "male-foot-walk-marble-stereo.aif",
+      "uploader": "ragamuffin",
+      "license": "CC0",
+      "url": "https://freesound.org/s/118985/"
+    },
+    {
+      "title": "High heels on wooden floor, approaching",
+      "uploader": "avakas",
+      "license": "CC-BY-3.0",
+      "url": "https://freesound.org/s/172361/"
+    },
+    {
+      "title": "Coffeehouse Ambience (café bed)",
+      "uploader": "mars_98",
+      "license": "CC-BY-4.0",
+      "url": "https://freesound.org/s/445094"
+    },
+    {
+      "title": "140812_Vienna_CafeZentral_R.wav (second café bed)",
+      "uploader": "blaukreuz",
+      "license": "CC0",
+      "url": "https://freesound.org/s/252704"
+    },
+    {
+      "title": "Binaural room impulse responses, Auditorium 3 (KEMAR), Wierstorf and Geier",
+      "uploader": "TU Berlin",
+      "license": "CC-BY-4.0",
+      "url": "https://doi.org/10.5281/zenodo.160749"
+    },
+    {
+      "title": "LibriSpeech dev-clean 1988-24833-0003 and -0004 (reader 1988 Ransom, \"It's Like This, Cat\", LibriVox)",
+      "uploader": "Panayotov et al.",
+      "license": "CC-BY-4.0",
+      "url": "https://www.openslr.org/12"
+    },
+    {
+      "title": "LibriSpeech dev-clean 2428-83699-0042 (reader 2428 Stephen Kinford, \"An Old-Fashioned Christmas\", LibriVox)",
+      "uploader": "Panayotov et al.",
+      "license": "CC-BY-4.0",
+      "url": "https://www.openslr.org/12"
+    }
+  ],
+  "transcripts": {
+    "talk_front": "when are you getting rid of these cats i'm not fixing to start an annex to kate's cat home right away when i bring home my new program he says how come you're taking one less course this half",
+    "talk_left": "we've lost the key of the cellar and there's nothing out except water and i don't think you'd care for that"
+  }
+}
