@@ -9,6 +9,7 @@ Usage: uv run python scripts/capture_pixel_cafe.py --size desktop --cam seat --o
 import argparse
 import re
 import subprocess
+import tempfile
 import sys
 import time
 import urllib.request
@@ -49,10 +50,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--t", type=float, default=0.0)
     ap.add_argument("--mode", default=None, help="passed through as ?mode=")
-    ap.add_argument("--cam", default="seat", choices=["seat", "top"])
+    ap.add_argument("--cam", default="seat", choices=["seat", "top", "free"])
+    ap.add_argument("--pos", default=None, help="with --cam free: camera x,y,z")
+    ap.add_argument("--look", default=None, help="with --cam free: look-at x,y,z")
+    ap.add_argument("--fov", type=float, default=None, help="with --cam free: field of view")
+    ap.add_argument("--noroof", action="store_true", help="with --cam free: hide the ceiling")
     ap.add_argument("--yaw", type=float, default=0.0, help="seat camera yaw in degrees, + = turn left")
     ap.add_argument("--page", default="cafe", choices=["cafe", "index"], help="cafe.html (default) or the real site")
     ap.add_argument("--nowebgl", action="store_true", help="force the no-WebGL fallback (cafe.html only)")
+    ap.add_argument("--stats", action="store_true", help="print draw calls, triangles and ms per frame (no screenshot)")
     ap.add_argument("--size", default="desktop", choices=list(SIZES))
     ap.add_argument("--out", default=str(ROOT / "docs" / "research" / "pixel-cafe" / "shot.png"))
     a = ap.parse_args()
@@ -62,14 +68,20 @@ def main() -> int:
         url = f"http://127.0.0.1:{PORT}/index.html?focus=1#showcase"
     else:
         query = (f"still=1&t={a.t}&cam={a.cam}" + (f"&mode={a.mode}" if a.mode else "")
-                 + (f"&yaw={a.yaw}" if a.yaw else "") + ("&nowebgl=1" if a.nowebgl else ""))
+                 + (f"&yaw={a.yaw}" if a.yaw else "") + ("&nowebgl=1" if a.nowebgl else "")
+                 + ("&stats=1" if a.stats else "")
+                 + (f"&pos={a.pos}" if a.pos else "") + (f"&look={a.look}" if a.look else "")
+                 + (f"&fov={a.fov}" if a.fov else "") + ("&roof=0" if a.noroof else ""))
         url = f"http://127.0.0.1:{PORT}/cafe.html?{query}"
     out = Path(a.out).resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
 
     server = ensure_server()
     try:
-        dom = subprocess.run([CHROME, *FLAGS, f"--window-size={w},{h}", "--dump-dom", url],
+        # a fresh profile every run, so a cached copy of an edited module is never served
+        prof = tempfile.mkdtemp(prefix="cafe-cap-")
+        FL = [*FLAGS, f"--user-data-dir={prof}"]
+        dom = subprocess.run([CHROME, *FL, f"--window-size={w},{h}", "--dump-dom", url],
                              check=False, capture_output=True, text=True, timeout=180)
         m = re.search(r"<title>([^<]*)</title>", dom.stdout)
         title = m.group(1) if m else ""
@@ -84,8 +96,12 @@ def main() -> int:
             print("not ready")
             return 1
         n = int(found.group(1))
+        if a.stats:
+            sm = re.search(r'data-cafe-stats="([^"]*)"', dom.stdout)
+            print("stats:", sm.group(1).replace("&quot;", '"') if sm else "none")
+            return 0
         print(f"errors={n}")
-        subprocess.run([CHROME, *FLAGS, f"--window-size={w},{h}", f"--screenshot={out}", url],
+        subprocess.run([CHROME, *FL, f"--window-size={w},{h}", f"--screenshot={out}", url],
                        check=True, capture_output=True, timeout=180)
         print(f"wrote {out}")
         return 1 if n > 0 else 0

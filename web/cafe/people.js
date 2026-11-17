@@ -21,10 +21,8 @@ function lerpAngle(a, b, p) {
   return a + d * p;
 }
 
-export function buildPeople(THREE, scene, clip) {
-  const group = new THREE.Group();
-  group.name = 'cafe-people';
-
+// Builds the round-head character maker (shared by the café cast and the street passers-by).
+export function createCharacterFactory(THREE) {
   const lam = new Map();
   const lambert = (color) => {
     if (!lam.has(color)) lam.set(color, new THREE.MeshLambertMaterial({ color }));
@@ -184,6 +182,14 @@ export function buildPeople(THREE, scene, clip) {
 
     return { root, rig, torso, head, arms, legs, legsStand, legsSeat, setFace, seed, spec };
   }
+  return { makeCharacter, lambert };
+}
+
+export function buildPeople(THREE, scene, clip) {
+  const group = new THREE.Group();
+  group.name = 'cafe-people';
+
+  const { makeCharacter } = createCharacterFactory(THREE);
 
   // ---------- sound indicator: three little arcs (voice, laugh, machine) or two foot dots (steps) ----------
   function makeIndicator() {
@@ -253,11 +259,22 @@ export function buildPeople(THREE, scene, clip) {
   // walker 2: waits at the counter, leaves it at 18 s, walk_2 points, out through the door.
   // Waypoints keep their segment azimuth; only the distance moves (see layout.js and scripts/check_cafe_layout.mjs).
   const wk = walkerKeys(clip);
-  const w1path = makePath(wk.w1);
+  const w1door = wk.w1[0]; // t = 1.0, in front of the door, outside
+  const w1road = makePath(wk.w1);
+  // before 1 s he walks up the near sidewalk of the street to the door (outside leg, a pure function of t)
+  const W1_FROM = { x: -1.7, z: -4.8 };
+  const w1path = (t) => {
+    if (t >= w1door.t) return w1road(t);
+    const p = clamp(t / w1door.t, 0, 1);
+    const e = 0.5 * p + 0.5 * (1 - (1 - p) * (1 - p));
+    return { x: W1_FROM.x + (w1door.x - W1_FROM.x) * e, z: W1_FROM.z + (w1door.z - W1_FROM.z) * e };
+  };
   const w1End = wk.w1End;
   const w1SeatYaw = seatLook(walkerSeat.pos.x, walkerSeat.pos.z, btx, btz);
   const W1_SIT0 = w1End.t, W1_SIT1 = w1End.t + 0.7;
-  const w2path = makePath(wk.w2);
+  // after the door (about 25.6 s) he turns right and walks away along the near sidewalk, past the shop window
+  const w2path = makePath([...wk.w2, { t: 27.6, x: -1.3, z: -4.9 }, { t: 31.5, x: 3.2, z: -5.0 }]);
+  const W2_END = 30.5;
 
   // door indicator (no person)
   const doorInd = makeIndicator();
@@ -340,7 +357,7 @@ export function buildPeople(THREE, scene, clip) {
       let visible = true, sit = c.kind === 'seated' ? 1 : 0, speed = 0;
 
       if (d.id === 'walker1') {
-        visible = t >= 1.0;
+        visible = true;
         const p = w1path(t);
         x = p.x; z = p.z;
         const a = w1path(t - 0.15), b = w1path(t + 0.15);
@@ -352,13 +369,13 @@ export function buildPeople(THREE, scene, clip) {
         yaw = lerpAngle(walkYaw, w1SeatYaw, smooth((t - W1_SIT0) / (W1_SIT1 - W1_SIT0)));
         sit = smooth((t - W1_SIT0) / (W1_SIT1 - W1_SIT0));
       } else if (d.id === 'walker2') {
-        visible = t < 26.25;
+        visible = t < W2_END;
         const p = w2path(t);
         x = p.x; z = p.z;
         const a = w2path(t - 0.15), b = w2path(t + 0.15);
         const vx = b.x - a.x, vz = b.z - a.z;
         speed = Math.hypot(vx, vz) / 0.3;
-        const tH = clamp(t, 18.4, 26.0);
+        const tH = clamp(t, 18.4, 30.2);
         const ha = w2path(tH - 0.15), hb = w2path(tH + 0.15);
         const walkYaw = Math.atan2(hb.x - ha.x, hb.z - ha.z);
         yaw = lerpAngle(0, walkYaw, smooth((t - 18.0) / 0.5)); // waits facing the counter (+Z)

@@ -49,7 +49,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 - [x] **pixel-cafe-C9 Outdoor assets.** CC0 street pieces (buildings, road, sidewalk, trees, street lamps, benches, cars, bikes)
   from kenney.nl / quaternius.com / poly.pizza, GLB under `web/assets/street/`, `LICENSES.md` per file. *Done when:* every file
   listed, total under 6 MB.
-- [ ] **pixel-cafe-C10 The street outside.** `web/cafe/outdoor.js`: the café sits on a street corner; real glass openings in the
+- [x] **pixel-cafe-C10 The street outside.** `web/cafe/outdoor.js`: the café sits on a street corner; real glass openings in the
   left wall and a new shopfront window in the front wall; street, sidewalk, buildings across, trees, lamps, parked cars and bikes,
   sky, silent passers-by on the sidewalk (pure function of t); visible through the open door and the windows; overview still
   readable; phone still usable. *Done when:* screenshots (seat: ahead, left window, door open; overview) desktop + phone, no

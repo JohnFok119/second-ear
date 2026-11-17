@@ -118,26 +118,52 @@ export async function buildWorld(THREE, scene, sceneData = null) {
     if (y0 < WAIN) wallSpan(kind, a0, a1, y0, Math.min(WAIN, y1), C.teal);
     if (y1 > WAIN) wallSpan(kind, a0, a1, Math.max(WAIN, y0), y1, C.cream);
   }
-  // front wall with the door opening
+  // Walls with real openings: the door and the shop window in the front wall, two windows in the left wall.
+  const WIN = { y0: 0.95, y1: 2.25, w: 1.5, zs: [-1.2, 2.2] }; // left wall windows
+  const SHOP = { x0: -2.1, x1: 2.1, y0: 0.75, y1: 2.45 }; // front shop window, right of the door
+  // wall pieces around a list of openings [{ a0, a1, y0, y1 }] (sorted by a0); the opening itself stays empty
+  function wallOpenings(kind, a0, a1, holes) {
+    let cur = a0;
+    for (const o of holes) {
+      if (o.a0 > cur) wallFull(kind, cur, o.a0);
+      if (o.y0 > 0) wallFull(kind, o.a0, o.a1, 0, o.y0);
+      if (o.y1 < H) wallFull(kind, o.a0, o.a1, o.y1, H);
+      cur = o.a1;
+    }
+    if (a1 > cur) wallFull(kind, cur, a1);
+  }
   const dl = DOOR_X - DOOR_W / 2, dr = DOOR_X + DOOR_W / 2;
-  wallFull('front', X0, dl);
-  wallFull('front', dr, X1);
-  wallFull('front', dl, dr, DOOR_H, H);
+  wallOpenings('front', X0, X1, [
+    { a0: dl, a1: dr, y0: 0, y1: DOOR_H },
+    { a0: SHOP.x0, a1: SHOP.x1, y0: SHOP.y0, y1: SHOP.y1 },
+  ]);
   wallFull('back', X0, X1);
   wallFull('right', Z0, Z1);
-  wallFull('left', Z0, Z1);
-  // chair rail along the walls
+  wallOpenings('left', Z0, Z1, WIN.zs.map((zc) => ({ a0: zc - WIN.w / 2, a1: zc + WIN.w / 2, y0: WIN.y0, y1: WIN.y1 })));
+  // chair rail along the walls (broken where a window opening crosses its height)
+  const rail = (a0, a1, kind) => {
+    if (a1 - a0 < 0.01) return;
+    if (kind === 'x') box(a1 - a0, 0.06, 0.05, C.darkWood, (a0 + a1) / 2, WAIN, Z0 + 0.025);
+    else box(0.05, 0.06, a1 - a0, C.darkWood, X0 + 0.025, WAIN, (a0 + a1) / 2);
+  };
   box(X1 - X0, 0.06, 0.05, C.darkWood, wallCx, WAIN, Z1 - 0.025);
   box(0.05, 0.06, Z1 - Z0, C.darkWood, X1 - 0.025, WAIN, wallCz);
-  box(0.05, 0.06, Z1 - Z0, C.darkWood, X0 + 0.025, WAIN, wallCz);
-  box(dl - X0, 0.06, 0.05, C.darkWood, (X0 + dl) / 2, WAIN, Z0 + 0.025);
-  box(X1 - dr, 0.06, 0.05, C.darkWood, (X1 + dr) / 2, WAIN, Z0 + 0.025);
+  rail(X0, dl, 'x');
+  rail(dr, SHOP.x0, 'x');
+  rail(SHOP.x1, X1, 'x');
+  { let cur = Z0; for (const zc of WIN.zs) { rail(cur, zc - WIN.w / 2, 'z'); cur = zc + WIN.w / 2; } rail(cur, Z1, 'z'); }
 
-  // outside, seen through the open door
-  const outside = new THREE.Mesh(new THREE.PlaneGeometry(4, 3), new THREE.MeshBasicMaterial({ color: C.sky }));
-  outside.position.set(DOOR_X, 1.3, Z0 - 1.2);
-  group.add(outside);
-  anchors.outside = outside;
+  // faint glass for the openings (transparent, slightly tinted, no depth write so the street shows through)
+  const glassMat = new THREE.MeshBasicMaterial({ color: 0xe6f0ec, transparent: true, opacity: 0.05, depthWrite: false, side: THREE.DoubleSide });
+  anchors.glassMat = glassMat;
+  const glassPane = (w, h, x, y, z, rotY) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), glassMat);
+    m.position.set(x, y, z);
+    m.rotation.y = rotY;
+    m.renderOrder = 2;
+    group.add(m);
+    return m;
+  };
 
   // ---------- door: frame + a slab on a hinge pivot ----------
   const frameZ = Z0 - 0.02;
@@ -149,18 +175,15 @@ export async function buildWorld(THREE, scene, sceneData = null) {
   const slab = box(DOOR_W - 0.02, DOOR_H - 0.02, 0.05, C.doorWood, (DOOR_W - 0.02) / 2 + 0.01, (DOOR_H - 0.02) / 2, 0, pivot);
   box(0.04, 0.04, 0.12, 0xd9b45a, DOOR_W - 0.12, 1.0, 0, pivot); // handle
   // a little glass panel so the door reads as a shop door
-  box(0.5, 0.7, 0.06, C.sky, DOOR_W / 2, 1.55, 0, pivot).material = new THREE.MeshBasicMaterial({ color: C.sky });
+  box(0.5, 0.7, 0.04, C.sky, DOOR_W / 2, 1.55, 0, pivot).material = glassMat;
   group.add(pivot);
   anchors.door = pivot;
   anchors.doorSlab = slab;
 
   // ---------- windows on the left wall ----------
-  function windowAt(zc, w = 1.5, y0 = 0.95, y1 = 2.25) {
+  function windowAt(zc, w = WIN.w, y0 = WIN.y0, y1 = WIN.y1) {
     const x = X0 + 0.02, h = y1 - y0, ym = (y0 + y1) / 2;
-    const pane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: C.sky }));
-    pane.position.set(x, ym, zc);
-    pane.rotation.y = Math.PI / 2;
-    group.add(pane);
+    glassPane(w, h, X0 + 0.015, ym, zc, Math.PI / 2);
     const t = 0.07;
     box(0.08, t, w + 2 * t, C.darkWood, x + 0.03, y0 - t / 2, zc);
     box(0.08, t, w + 2 * t, C.darkWood, x + 0.03, y1 + t / 2, zc);
@@ -168,9 +191,24 @@ export async function buildWorld(THREE, scene, sceneData = null) {
     box(0.08, h, t, C.darkWood, x + 0.03, ym, zc + w / 2 + t / 2);
     box(0.06, h, 0.05, C.darkWood, x + 0.03, ym, zc);
     box(0.06, 0.05, w, C.darkWood, x + 0.03, ym, zc);
+    box(0.22, 0.04, w + 2 * t + 0.08, C.darkWood, X0 - 0.07, y0 - t - 0.02, zc); // outside sill
   }
-  windowAt(-1.2);
-  windowAt(2.2);
+  WIN.zs.forEach((zc) => windowAt(zc));
+
+  // front shop window, same frame style
+  {
+    const w = SHOP.x1 - SHOP.x0, h = SHOP.y1 - SHOP.y0, xm = (SHOP.x0 + SHOP.x1) / 2, ym = (SHOP.y0 + SHOP.y1) / 2;
+    const z = Z0 + 0.05, t = 0.06;
+    glassPane(w, h, xm, ym, Z0 + 0.015, 0);
+    box(w + 2 * t, t, 0.08, C.darkWood, xm, SHOP.y0 - t / 2, z);
+    box(w + 2 * t, t, 0.08, C.darkWood, xm, SHOP.y1 + t / 2, z);
+    box(t, h, 0.08, C.darkWood, SHOP.x0 - t / 2, ym, z);
+    box(t, h, 0.08, C.darkWood, SHOP.x1 + t / 2, ym, z);
+    box(0.035, h, 0.05, C.darkWood, xm - w / 4, ym, z);
+    box(0.035, h, 0.05, C.darkWood, xm + w / 4, ym, z);
+    box(w, 0.035, 0.05, C.darkWood, xm, ym, z);
+    box(w + 2 * t + 0.08, 0.04, 0.22, C.darkWood, xm, SHOP.y0 - t - 0.02, Z0 - 0.07); // outside sill
+  }
 
   // ---------- furniture ----------
   const tasks = [];

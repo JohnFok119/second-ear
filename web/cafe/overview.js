@@ -5,7 +5,7 @@ import { azToXZ } from './geo.js';
 import { markerData } from './markers.js';
 
 export const RING_R = 2.2; // compass ring radius, metres
-const CENTER = [0.9, 0, 0.7];
+const CENTER = [0.9, 0, 0.1];
 const COL = { two: 0x19e6ff, right: 0xff3fb4, truth: 0xffe27a, you: 0xffffff };
 const POOL = { truth: 8, guess: 16 };
 
@@ -130,7 +130,7 @@ export function createOverview(THREE, camera, dom, clip, scene) {
   controls.minPolarAngle = 20 * Math.PI / 180;
   controls.maxPolarAngle = 70 * Math.PI / 180;
   controls.minDistance = 5;
-  controls.maxDistance = 14;
+  controls.maxDistance = 22;
   controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
   controls.enabled = false;
 
@@ -141,7 +141,7 @@ export function createOverview(THREE, camera, dom, clip, scene) {
       group.visible = true;
       camera.rotation.order = 'XYZ';
       camera.fov = 45;
-      camera.position.set(0.9, 7.6, 8.2);
+      camera.position.set(0.9, 11.2, 11.2); // far enough back to see the street around the café
       camera.updateProjectionMatrix();
       controls.enabled = true;
       controls.update();
