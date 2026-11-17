@@ -44,3 +44,4 @@ Room: BRIRs are TU Berlin Auditorium 3, KEMAR.
 ## Café 3D models
 
 Furniture: Kenney Furniture Kit 2.0, CC0 (https://kenney.nl/assets/furniture-kit). Per-file list in `web/assets/cafe/LICENSES.md`.
+Street (outdoor scene): Kenney City Kit Commercial, City Kit Suburban, City Kit Roads, Nature Kit and Car Kit, all CC0 (https://kenney.nl/assets/city-kit-commercial, https://kenney.nl/assets/city-kit-suburban, https://kenney.nl/assets/city-kit-roads, https://kenney.nl/assets/nature-kit, https://kenney.nl/assets/car-kit). Per-file list in `web/assets/street/LICENSES.md`.

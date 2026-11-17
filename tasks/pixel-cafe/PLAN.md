@@ -46,7 +46,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
   companion across their own small table; companions listen, nod, gesture and never show talk/mouth (they make no sound).
   *Done when:* `scripts/check_cafe_layout.mjs` passes (walkers keep azimuth, clear of people and tables, inside the room),
   screenshots of both sides from the seat and the overview.
-- [ ] **pixel-cafe-C9 Outdoor assets.** CC0 street pieces (buildings, road, sidewalk, trees, street lamps, benches, cars, bikes)
+- [x] **pixel-cafe-C9 Outdoor assets.** CC0 street pieces (buildings, road, sidewalk, trees, street lamps, benches, cars, bikes)
   from kenney.nl / quaternius.com / poly.pizza, GLB under `web/assets/street/`, `LICENSES.md` per file. *Done when:* every file
   listed, total under 6 MB.
 - [ ] **pixel-cafe-C10 The street outside.** `web/cafe/outdoor.js`: the café sits on a street corner; real glass openings in the
