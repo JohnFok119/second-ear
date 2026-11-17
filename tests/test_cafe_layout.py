@@ -12,5 +12,5 @@ def test_cafe_layout_check_passes():
     node = shutil.which("node")
     if node is None:
         pytest.skip("node is not installed")
-    r = subprocess.run([node, "scripts/check_cafe_layout.mjs"], cwd=ROOT, capture_output=True, text=True, timeout=120)
+    r = subprocess.run([node, "scripts/check_cafe_layout.mjs"], check=False, cwd=ROOT, capture_output=True, text=True, timeout=120)
     assert r.returncode == 0, r.stdout + r.stderr

@@ -9,8 +9,8 @@ Usage: uv run python scripts/capture_pixel_cafe.py --size desktop --cam seat --o
 import argparse
 import re
 import subprocess
-import tempfile
 import sys
+import tempfile
 import time
 import urllib.request
 from pathlib import Path
