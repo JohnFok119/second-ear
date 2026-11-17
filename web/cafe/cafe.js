@@ -74,7 +74,8 @@ export async function mountCafe(root, opts = {}) {
 
   const q = new URLSearchParams(capture ? location.search : '');
   const still = q.get('still') === '1';
-  const camMode = q.get('cam') || 'seat'; // legacy static top camera (captures)
+  const camMode = q.get('cam') || 'seat'; // legacy static top camera (captures); 'free' = pos/look/fov params
+  const fixedCam = camMode === 'top' || camMode === 'free';
   const startMode = q.get('mode') === 'overview' ? 'overview' : 'seat';
   const yawDeg = parseFloat(q.get('yaw') || '0') || 0; // seat camera yaw, + = turn left
   const earParam = q.get('ear') === 'mine' ? 'mine' : 'two';
@@ -143,8 +144,8 @@ export async function mountCafe(root, opts = {}) {
     try {
       if (forceNoGl) throw new Error('forced by ?nowebgl=1');
       if (!webglAvailable()) throw new Error('no WebGL context available');
-      const [THREE, { buildWorld }, { createOverview }] = await Promise.all([
-        import('three'), import('./world.js'), import('./overview.js'),
+      const [THREE, { buildWorld }, { createOverview }, { buildOutdoor }] = await Promise.all([
+        import('three'), import('./world.js'), import('./overview.js'), import('./outdoor.js'),
       ]);
       const renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: still });
       renderer.setPixelRatio(1);
@@ -155,24 +156,32 @@ export async function mountCafe(root, opts = {}) {
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0x14100d);
       const world = await buildWorld(THREE, scene, sceneData);
+      const outdoor = await buildOutdoor(THREE, scene, { light: stage.clientWidth < 600 }); // the street, seen through the openings
       const people = buildPeople(THREE, scene, clip);
       scene.add(people.group);
       const pass = createPixelPass(THREE, renderer, { height: 320 });
-      const camera = new THREE.PerspectiveCamera(70, 1.6, 0.05, 40);
+      const camera = new THREE.PerspectiveCamera(70, 1.6, 0.1, 400);
       const firstPerson = createFirstPerson(camera, renderer.domElement);
       // parts that block the view from above: ceiling, beams, outside, back-wall upper cabinets
       const upperCabinets = world.group.children.filter((o) => o.position.y === 1.5 && o.position.z > 4);
       const setRoofHidden = (hide) => {
         world.anchors.ceiling.visible = !hide;
         world.anchors.ceilingBeams.forEach((b) => { b.visible = !hide; });
-        world.anchors.outside.visible = !hide;
+        outdoor.setOverview(hide); // low neighbours and back yards only show in the overview
         upperCabinets.forEach((o) => { o.visible = !hide; });
       };
       const overview = createOverview(THREE, camera, renderer.domElement, clip, sceneData);
       scene.add(overview.group);
-      gl3 = { THREE, renderer, scene, camera, world, people, pass, firstPerson, overview, setRoofHidden };
+      gl3 = { THREE, renderer, scene, camera, world, outdoor, people, pass, firstPerson, overview, setRoofHidden };
       renderer.domElement.setAttribute('aria-hidden', 'true');
-      if (camMode === 'top' && startMode !== 'overview') {
+      if (camMode === 'free' && startMode !== 'overview') {
+        const nums = (k, d) => (q.get(k) ? q.get(k).split(',').map(Number) : d);
+        const [px, py, pz] = nums('pos', [0, 1.15, 0]), [lx, ly, lz] = nums('look', [0, 1.15, -5]);
+        camera.fov = parseFloat(q.get('fov') || '70');
+        camera.position.set(px, py, pz);
+        camera.lookAt(lx, ly, lz);
+        if (q.get('roof') === '0') setRoofHidden(true);
+      } else if (camMode === 'top' && startMode !== 'overview') {
         setRoofHidden(true);
         camera.fov = 45;
         camera.position.set(0.9, 7.6, 8.2);
@@ -202,17 +211,18 @@ export async function mountCafe(root, opts = {}) {
       pass.setSize(w, h);
       camera.aspect = w / h;
       if (mode === 'overview') camera.fov = w / h < 1 ? 62 : 45;
-      else if (camMode !== 'top') camera.fov = w / h < 1 ? 80 : 70;
+      else if (!fixedCam) camera.fov = w / h < 1 ? 80 : 70;
       camera.updateProjectionMatrix();
     }
     function draw() {
       if (!gl3) return;
       try {
-        const { world, people, overview, firstPerson, pass, scene, camera } = gl3;
+        const { world, outdoor, people, overview, firstPerson, pass, scene, camera } = gl3;
         world.update(t);
+        outdoor.update(t);
         people.update(t, camera);
-        if (mode === 'overview') { overview.update(t); syncLive(); }
-        else if (camMode !== 'top') firstPerson.update();
+        if (mode === 'overview') { overview.update(t); outdoor.updateView(camera); syncLive(); }
+        else if (!fixedCam) firstPerson.update();
         pass.render(scene, camera);
       } catch (e) {
         console.error(e);
@@ -369,6 +379,7 @@ export async function mountCafe(root, opts = {}) {
       root.dataset.cafeErrors = String(errors);
       root.dataset.cafeReady = '1';
       if (still) document.title = `ready errors=${errors}`;
+      if (capture && q.get('stats') === '1' && window.__cafe) root.dataset.cafeStats = JSON.stringify(window.__cafe.stats(40));
     };
     // let the browser present the frame, then flag ready (no canvas in the fallback: wait for the image instead)
     const afterPresent = (fn) => {
@@ -399,9 +410,24 @@ export async function mountCafe(root, opts = {}) {
       audio,
       firstPerson: gl3 && gl3.firstPerson,
       overview: gl3 && gl3.overview,
-      setMode, getMode: () => mode, getT: () => t, fps,
+      setMode, getMode: () => mode, getT: () => t, fps, scene: gl3 && gl3.scene,
       isFallback: () => fellBack,
       isRunning: () => rafId !== 0,
+      // render cost of one frame (draw calls, triangles) and the speed of n back-to-back frames (ms per frame)
+      stats: (n = 30) => {
+        if (!gl3) return null;
+        const { renderer, pass, scene, camera } = gl3;
+        renderer.info.autoReset = false;
+        renderer.info.reset();
+        pass.render(scene, camera);
+        const calls = renderer.info.render.calls - 1; // minus the full-screen pass
+        const triangles = renderer.info.render.triangles - 2;
+        renderer.info.autoReset = true;
+        const t0 = performance.now();
+        for (let i = 0; i < n; i++) draw();
+        renderer.getContext().finish();
+        return { calls, triangles, msPerFrame: (performance.now() - t0) / n };
+      },
     };
     return {
       scene: gl3 && gl3.scene, camera: gl3 && gl3.camera, world: gl3 && gl3.world, clip,

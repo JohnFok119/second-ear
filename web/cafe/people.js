@@ -1,7 +1,8 @@
 // The café's people: original round-head characters, one per sound source role.
 // Everything is a pure function of the audio time t (no Math.random, no accumulated state),
 // so scrubbing to any t gives the same picture.
-import { azToXZ, xzToAz, activeAt } from './geo.js';
+import { azToXZ, activeAt } from './geo.js';
+import { seats, makePath, walkerKeys, walkerSeat, backTable } from './layout.js';
 
 const HEAD_R = 0.17;
 const HIP_STAND = 0.62; // hip height when standing
@@ -20,35 +21,8 @@ function lerpAngle(a, b, p) {
   return a + d * p;
 }
 
-// ---------- paths: cubic Hermite through timed keys (passes exactly through every key) ----------
-function makePath(keys) {
-  const n = keys.length;
-  const tan = keys.map((k, i) => {
-    if (i === 0 || i === n - 1) return { x: 0, z: 0 };
-    const a = keys[i - 1], b = keys[i + 1];
-    const dt = b.t - a.t;
-    return { x: (b.x - a.x) / dt, z: (b.z - a.z) / dt };
-  });
-  return (t) => {
-    if (t <= keys[0].t) return { x: keys[0].x, z: keys[0].z };
-    if (t >= keys[n - 1].t) return { x: keys[n - 1].x, z: keys[n - 1].z };
-    let i = 0;
-    while (t >= keys[i + 1].t) i++;
-    const k0 = keys[i], k1 = keys[i + 1];
-    const h = k1.t - k0.t, s = (t - k0.t) / h;
-    const s2 = s * s, s3 = s2 * s;
-    const h00 = 2 * s3 - 3 * s2 + 1, h10 = s3 - 2 * s2 + s, h01 = -2 * s3 + 3 * s2, h11 = s3 - s2;
-    return {
-      x: h00 * k0.x + h10 * h * tan[i].x + h01 * k1.x + h11 * h * tan[i + 1].x,
-      z: h00 * k0.z + h10 * h * tan[i].z + h01 * k1.z + h11 * h * tan[i + 1].z,
-    };
-  };
-}
-
-export function buildPeople(THREE, scene, clip) {
-  const group = new THREE.Group();
-  group.name = 'cafe-people';
-
+// Builds the round-head character maker (shared by the café cast and the street passers-by).
+export function createCharacterFactory(THREE) {
   const lam = new Map();
   const lambert = (color) => {
     if (!lam.has(color)) lam.set(color, new THREE.MeshLambertMaterial({ color }));
@@ -208,6 +182,14 @@ export function buildPeople(THREE, scene, clip) {
 
     return { root, rig, torso, head, arms, legs, legsStand, legsSeat, setFace, seed, spec };
   }
+  return { makeCharacter, lambert };
+}
+
+export function buildPeople(THREE, scene, clip) {
+  const group = new THREE.Group();
+  group.name = 'cafe-people';
+
+  const { makeCharacter } = createCharacterFactory(THREE);
 
   // ---------- sound indicator: three little arcs (voice, laugh, machine) or two foot dots (steps) ----------
   function makeIndicator() {
@@ -239,21 +221,15 @@ export function buildPeople(THREE, scene, clip) {
   const cast = {};
   const seatLook = (x, z, lx, lz) => Math.atan2(lx - x, lz - z);
 
-  // back table seats (same maths as world.js)
-  const b1 = azToXZ(159.6, 2.93), b2 = azToXZ(179.6, 2.93);
-  const bq1 = azToXZ(160, 2.93), bq2 = azToXZ(180, 2.93);
-  const btx = (bq1.x + bq2.x) / 2 - 0.1, btz = (bq1.z + bq2.z) / 2 + 0.55;
+  // seats and walker paths come from layout.js (the same numbers world.js and the layout check use)
+  const btx = backTable.x, btz = backTable.z;
 
-  const seats = {
-    friend: { pos: azToXZ(0, 1.5), look: [0, 0] },
-    left: { pos: azToXZ(90, 1.5), look: [0, 0] },
-    right: { pos: azToXZ(-90, 1.5), look: [0, 0] },
-    back: { pos: b2, look: [btx, btz] },
-  };
   const defs = [
     { id: 'friend', seat: 'friend', skin: 0xf1c9a5, shirt: 0xd9542c, hair: 0x3a2418, hairStyle: 'short', seed: 1 },
     { id: 'left', seat: 'left', skin: 0x8d5a3c, shirt: 0xe8b84a, hair: 0x1b1411, hairStyle: 'bun', seed: 2 },
     { id: 'right', seat: 'right', skin: 0xe0ac86, shirt: 0xb5533c, hair: 0x6a3f22, hairStyle: 'cap', capColor: 0x2f6b62, seed: 3 },
+    { id: 'leftCompanion', seat: 'leftCompanion', companion: 'left', skin: 0xb97a56, shirt: 0x4a78b0, hair: 0xd8cfc0, hairStyle: 'short', cup: true, seed: 8 },
+    { id: 'rightCompanion', seat: 'rightCompanion', companion: 'right', skin: 0xf6d7c3, shirt: 0x7b5ea8, hair: 0x9a2f1f, hairStyle: 'bun', cup: true, seed: 9 },
     { id: 'back', seat: 'back', skin: 0xc68642, shirt: 0xc9785a, hair: 0x2c1c10, hairStyle: 'short', seed: 4 },
     { id: 'walker1', skin: 0xf4d3b6, shirt: 0x3f9a8e, hair: 0xc8793a, hairStyle: 'bun', seed: 5 },
     { id: 'walker2', skin: 0x6b4129, shirt: 0xe0903a, hair: 0x201812, hairStyle: 'cap', capColor: 0x8a5a3b, cup: true, seed: 6 },
@@ -279,71 +255,26 @@ export function buildPeople(THREE, scene, clip) {
   cast.barista.pos = { x: gp.x - 0.95, z: 4.1 };
   cast.barista.yaw = Math.atan2(gp.x - cast.barista.pos.x, gp.z - cast.barista.pos.z);
 
-  // walker 1: outside the door, in as it opens, along the walk_1 segment centres, then the back-table seat at az 159.6
-  const trackCentres = (name) => (clip.tracks.find((tr) => tr.track === name) || { segments: [] }).segments.map((s) => {
-    const p = azToXZ(s.az_deg, s.dist_m);
-    return { t: (s.t0 + s.t1) / 2, x: p.x, z: p.z };
-  });
-  // Keep each walker waypoint's AZIMUTH exactly (the models are scored on azimuth) and push only its
-  // DISTANCE outward until it is at least 0.6 m from every seated person (capped at the room walls).
-  const ROOM = { x0: -3.6, x1: 5.4, z0: -3.2, z1: 4.6 };
-  const inRoom = (x, z) => x >= ROOM.x0 && x <= ROOM.x1 && z >= ROOM.z0 && z <= ROOM.z1;
-  const clearOfSeated = (x, z) => Object.values(seats).every((s) => Math.hypot(x - s.pos.x, z - s.pos.z) >= 0.6);
-  const pushOut = (k) => {
-    const az = xzToAz(k.x, k.z);
-    let r = Math.hypot(k.x, k.z);
-    const wasIn = inRoom(k.x, k.z);
-    let p = { x: k.x, z: k.z };
-    while (!clearOfSeated(p.x, p.z)) {
-      const next = azToXZ(az, r + 0.05);
-      if (wasIn && !inRoom(next.x, next.z)) break;
-      r += 0.05; p = next;
-    }
-    return { ...k, x: p.x, z: p.z };
+  // walker 1: outside the door, in as it opens, along the walk_1 segment points, then the back-table seat.
+  // walker 2: waits at the counter, leaves it at 18 s, walk_2 points, out through the door.
+  // Waypoints keep their segment azimuth; only the distance moves (see layout.js and scripts/check_cafe_layout.mjs).
+  const wk = walkerKeys(clip);
+  const w1door = wk.w1[0]; // t = 1.0, in front of the door, outside
+  const w1road = makePath(wk.w1);
+  // before 1 s he walks up the near sidewalk of the street to the door (outside leg, a pure function of t)
+  const W1_FROM = { x: -1.7, z: -4.8 };
+  const w1path = (t) => {
+    if (t >= w1door.t) return w1road(t);
+    const p = clamp(t / w1door.t, 0, 1);
+    const e = 0.5 * p + 0.5 * (1 - (1 - p) * (1 - p));
+    return { x: W1_FROM.x + (w1door.x - W1_FROM.x) * e, z: W1_FROM.z + (w1door.z - W1_FROM.z) * e };
   };
-
-  // The straight-ish path BETWEEN two pushed waypoints can still cut a seat, so the segment waypoints
-  // (flagged in `which`) get one shared extra distance, again azimuth untouched, until the whole path is clear.
-  const spreadKeys = (keys, which) => {
-    const radial = (k, extra) => {
-      const az = xzToAz(k.x, k.z);
-      let r = Math.hypot(k.x, k.z) + extra;
-      let p = azToXZ(az, r);
-      while (!inRoom(p.x, p.z) && r > 0.1) { r -= 0.05; p = azToXZ(az, r); }
-      return { ...k, x: p.x, z: p.z };
-    };
-    const pathClear = (ks) => {
-      const f = makePath(ks);
-      for (let tt = ks[0].t; tt <= ks[ks.length - 1].t; tt += 0.05) {
-        const q = f(tt);
-        if (!clearOfSeated(q.x, q.z)) return false;
-      }
-      return true;
-    };
-    for (let extra = 0; extra <= 2.5; extra += 0.05) {
-      const ks = keys.map((k, i) => (which[i] ? radial(k, extra) : k));
-      if (pathClear(ks)) return ks;
-    }
-    return keys;
-  };
-
-  const w1c = trackCentres('walk_1').map(pushOut);
-  const w1keys = [{ t: 1.0, x: -3.0, z: -4.0 }, { t: 1.7, x: -3.05, z: -3.0 }, ...w1c];
-  const w1path = makePath(spreadKeys(w1keys, w1keys.map((_, i) => i >= 2 && i < w1keys.length - 1)));
-  const w1End = w1c[w1c.length - 1];
-  const w1SeatYaw = seatLook(w1End.x, w1End.z, btx, btz);
+  const w1End = wk.w1End;
+  const w1SeatYaw = seatLook(walkerSeat.pos.x, walkerSeat.pos.z, btx, btz);
   const W1_SIT0 = w1End.t, W1_SIT1 = w1End.t + 0.7;
-
-  // walker 2: waits at the counter, leaves it at 18 s, walk_2 centres, out through the door
-  const w2c = trackCentres('walk_2').map(pushOut);
-  const w2Wait = { x: gp.x + 0.5, z: 2.85 };
-  const w2last = w2c[w2c.length - 1];
-  const w2keys = [
-    { t: 18.0, ...w2Wait }, { t: 18.9, x: 3.5, z: 1.9 },
-    ...w2c,
-    { t: w2last.t + 0.6, x: -3.0, z: -3.3 }, { t: 26.25, x: -3.0, z: -4.1 },
-  ];
-  const w2path = makePath(spreadKeys(w2keys, w2keys.map((_, i) => i >= 2 && i < 2 + w2c.length)));
+  // after the door (about 25.6 s) he turns right and walks away along the near sidewalk, past the shop window
+  const w2path = makePath([...wk.w2, { t: 27.6, x: -1.3, z: -4.9 }, { t: 31.5, x: 3.2, z: -5.0 }]);
+  const W2_END = 30.5;
 
   // door indicator (no person)
   const doorInd = makeIndicator();
@@ -362,6 +293,49 @@ export function buildPeople(THREE, scene, clip) {
     if (id.startsWith('door')) return 'door';
     return null;
   };
+
+  // ---------- companions: a pure function of t (no state, no randomness) ----------
+  const bump = (t, a, b, ramp = 0.4) => smooth((t - a) / ramp) * (1 - smooth((t - b) / ramp)); // 0..1 inside [a, b]
+  function companionPose(d, t) {
+    const sd = d.seed;
+    const out = { armL: -0.85, armR: -0.85, tilt: 0, yaw: 0, roll: 0, headDy: 0, lean: 0, rigDy: 0, laughing: false };
+    // their partner talks (left) or laughs (right): listen, with slow nods
+    const partner = d.companion === 'left' ? bump(t, 10.5, 19) : bump(t, 26, 29.5, 0.25);
+    const idle = 1 - partner;
+    // a sip every 9 s (own phase), small gestures between
+    const ph = ((t + sd * 1.7) % 9 + 9) % 9;
+    const sip = idle * Math.sin(Math.PI * clamp((ph - 5) / 1.8, 0, 1));
+    const gest = idle * (1 - sip) * Math.max(0, Math.sin(2 * Math.PI * 0.28 * t + sd)) * (0.5 + 0.5 * Math.sin(2 * Math.PI * 0.07 * t + sd * 3));
+    out.armR = -0.85 - 1.05 * sip - 0.3 * gest;
+    out.armL = -0.85 - 0.28 * gest;
+    out.tilt = -0.28 * sip + 0.04 * Math.sin(2 * Math.PI * 0.3 * t + sd);
+    out.yaw = 0.1 * idle * Math.sin(2 * Math.PI * 0.11 * t + sd);
+    if (d.companion === 'left') {
+      // slow nods and a small head tilt while the left person talks
+      const nod = bump(t, 10.5, 19, 0.6);
+      out.tilt += nod * (0.1 + 0.1 * Math.sin(2 * Math.PI * 0.45 * t));
+      out.roll = nod * 0.06;
+    } else {
+      // leans in and gestures in the 2 s before the laugh, then laughs along with the body only
+      const lead = bump(t, 24, 26, 0.5);
+      out.lean = 0.28 * lead;
+      const g = lead * Math.max(0, Math.sin(2 * Math.PI * 1.1 * t));
+      out.armL -= 0.5 * g; out.armR -= 0.6 * g;
+      const lg = partner;
+      if (lg > 0.01) {
+        const b = Math.abs(Math.sin(2 * Math.PI * 3.0 * t));
+        out.laughing = lg > 0.5;
+        out.lean = -0.14 * lg + 0.28 * lead * (1 - lg);
+        out.headDy = 0.025 * b * lg;
+        out.rigDy = 0.02 * b * lg;
+        out.tilt = -0.25 * lg + 0.05 * Math.sin(2 * Math.PI * 6 * t) * lg;
+        out.roll = 0.09 * lg * Math.sin(2 * Math.PI * 1.5 * t);
+        out.armL = -0.85 - 0.5 * lg - 0.2 * lg * Math.sin(2 * Math.PI * 3 * t);
+        out.armR = -0.85 - 0.5 * lg + 0.2 * lg * Math.sin(2 * Math.PI * 3 * t);
+      }
+    }
+    return out;
+  }
 
   // ---------- per-frame pose, a pure function of t ----------
   const tmpV = new THREE.Vector3();
@@ -383,7 +357,7 @@ export function buildPeople(THREE, scene, clip) {
       let visible = true, sit = c.kind === 'seated' ? 1 : 0, speed = 0;
 
       if (d.id === 'walker1') {
-        visible = t >= 1.0;
+        visible = true;
         const p = w1path(t);
         x = p.x; z = p.z;
         const a = w1path(t - 0.15), b = w1path(t + 0.15);
@@ -395,13 +369,13 @@ export function buildPeople(THREE, scene, clip) {
         yaw = lerpAngle(walkYaw, w1SeatYaw, smooth((t - W1_SIT0) / (W1_SIT1 - W1_SIT0)));
         sit = smooth((t - W1_SIT0) / (W1_SIT1 - W1_SIT0));
       } else if (d.id === 'walker2') {
-        visible = t < 26.25;
+        visible = t < W2_END;
         const p = w2path(t);
         x = p.x; z = p.z;
         const a = w2path(t - 0.15), b = w2path(t + 0.15);
         const vx = b.x - a.x, vz = b.z - a.z;
         speed = Math.hypot(vx, vz) / 0.3;
-        const tH = clamp(t, 18.4, 26.0);
+        const tH = clamp(t, 18.4, 30.2);
         const ha = w2path(tH - 0.15), hb = w2path(tH + 0.15);
         const walkYaw = Math.atan2(hb.x - ha.x, hb.z - ha.z);
         yaw = lerpAngle(0, walkYaw, smooth((t - 18.0) / 0.5)); // waits facing the counter (+Z)
@@ -467,6 +441,16 @@ export function buildPeople(THREE, scene, clip) {
       } else if (c.kind === 'barista') { // idle behind the counter, hands resting on it
         armL = -0.85; armR = -0.85;
       }
+      let lean = 0;
+      if (d.companion) { // listens, gestures and sips; never opens the mouth, never shows the talk indicator
+        const pose = companionPose(d, t);
+        armL = pose.armL; armR = pose.armR;
+        tilt = pose.tilt; yawSway = pose.yaw; roll = pose.roll;
+        headY += pose.headDy; lean = pose.lean;
+        eyes = pose.laughing ? 'l' : blink ? 'b' : 'o';
+        c.rig.position.y += pose.rigDy;
+      }
+      c.torso.rotation.x = lean;
       if (c.kind === 'walker' && walking > 0.05) {
         const sw = Math.sin(ph);
         armL = -0.12 - 0.8 * walking * sw;

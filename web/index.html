@@ -180,104 +180,114 @@
 <section class="story" id="how">
   <div class="wrap">
     <p class="eyebrow">3 &middot; How it works</p>
-    <h2>From sound to a map</h2>
+    <h2>From two ears to a guess in the café</h2>
 
     <div class="how">
-      <svg class="pipe" viewBox="0 0 320 590" role="img" aria-label="Four steps: sound, then a spectrogram (a picture of the sound), then a neural network, then a map of where the sounds are.">
-        <defs>
-          <radialGradient id="blob"><stop offset="0" stop-color="#fff6a0"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>
-          <linearGradient id="spec" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#3b0f70"/><stop offset=".55" stop-color="#e5602b"/><stop offset="1" stop-color="#fcfdbf"/></linearGradient>
-        </defs>
-        <!-- 1 sound -->
-        <rect class="box" x="10" y="10" width="300" height="100" rx="12"/>
-        <polyline class="ink" points="22,60 34,60 40,36 48,84 56,28 64,92 72,44 80,74 88,56 100,60"/>
-        <text x="122" y="52">1. Sound</text>
-        <text class="sub" x="122" y="72">what the ears pick up</text>
-        <text class="sub" x="122" y="90">(left and right)</text>
-        <path class="arrow" d="M160 112 V150"/><path class="arrowhead" d="M150 148 L170 148 L160 160 Z"/>
-        <!-- 2 spectrogram -->
-        <rect class="box" x="10" y="162" width="300" height="100" rx="12"/>
-        <g fill="url(#spec)">
-          <rect x="22" y="206" width="9" height="40"/><rect x="33" y="190" width="9" height="56" opacity=".8"/>
-          <rect x="44" y="178" width="9" height="68"/><rect x="55" y="198" width="9" height="48" opacity=".7"/>
-          <rect x="66" y="186" width="9" height="60"/><rect x="77" y="214" width="9" height="32" opacity=".85"/>
-          <rect x="88" y="182" width="9" height="64" opacity=".9"/><rect x="99" y="200" width="9" height="46"/>
-        </g>
-        <text x="122" y="204">2. Spectrogram</text>
-        <text class="sub" x="122" y="224">a picture of sound:</text>
-        <text class="sub" x="122" y="242">pitch up, time across</text>
-        <path class="arrow" d="M160 264 V302"/><path class="arrowhead" d="M150 300 L170 300 L160 312 Z"/>
-        <!-- 3 network -->
-        <rect class="box" x="10" y="314" width="300" height="100" rx="12"/>
-        <g class="ink" stroke-width="1">
-          <path d="M30 340L60 332M30 340L60 360M30 340L60 388M30 366L60 332M30 366L60 360M30 366L60 388M30 392L60 332M30 392L60 360M30 392L60 388"/>
-          <path d="M60 332L92 346M60 332L92 378M60 360L92 346M60 360L92 378M60 388L92 346M60 388L92 378"/>
-        </g>
-        <g class="node"><circle cx="30" cy="340" r="5"/><circle cx="30" cy="366" r="5"/><circle cx="30" cy="392" r="5"/>
-          <circle cx="60" cy="332" r="5"/><circle cx="60" cy="360" r="5"/><circle cx="60" cy="388" r="5"/>
-          <circle cx="92" cy="346" r="5"/><circle cx="92" cy="378" r="5"/></g>
-        <text x="122" y="356">3. Neural network</text>
-        <text class="sub" x="122" y="376">a program that learned</text>
-        <text class="sub" x="122" y="394">from examples</text>
-        <path class="arrow" d="M160 416 V454"/><path class="arrowhead" d="M150 452 L170 452 L160 464 Z"/>
-        <!-- 4 map -->
-        <rect class="box" x="10" y="466" width="300" height="100" rx="12"/>
-        <circle class="ink" cx="64" cy="516" r="36"/>
-        <circle cx="48" cy="500" r="16" fill="url(#blob)"/><circle cx="78" cy="530" r="13" fill="url(#blob)"/>
-        <text x="122" y="508">4. Map of sounds</text>
-        <text class="sub" x="122" y="528">bright = "a sound is</text>
-        <text class="sub" x="122" y="546">probably from here"</text>
-      </svg>
-
+<svg class="pipe" viewBox="0 0 340 630" role="img" aria-label="Five steps: the sound that reaches two ears, a spectrogram (a picture of the sound), a neural network, a map of directions, and guesses in the café shown as pucks near the true ring positions.">
+<g transform="translate(0,8)">
+<rect class="shadow" x="13" y="5" width="320" height="92"/><rect class="panel" x="8" y="0" width="320" height="92"/>
+<text class="ln" x="18" y="34">L</text><text class="ln" x="18" y="68">R</text><rect class="t" x="36" y="25" width="6" height="6"/><rect class="t" x="45" y="21" width="6" height="14"/><rect class="t" x="54" y="17" width="6" height="22"/><rect class="t" x="63" y="23" width="6" height="10"/><rect class="t" x="72" y="15" width="6" height="26"/><rect class="t" x="81" y="20" width="6" height="16"/><rect class="t" x="90" y="24" width="6" height="8"/><rect class="a" x="36" y="58" width="6" height="8"/><rect class="a" x="45" y="54" width="6" height="16"/><rect class="a" x="54" y="49" width="6" height="26"/><rect class="a" x="63" y="57" width="6" height="10"/><rect class="a" x="72" y="51" width="6" height="22"/><rect class="a" x="81" y="55" width="6" height="14"/><rect class="a" x="90" y="59" width="6" height="6"/><text x="104" y="32">1. Two ears hear</text><text class="sub" x="104" y="54">Left and right ears get</text><text class="sub" x="104" y="74">slightly different sound</text>
+</g>
+<g class="arrow"><rect x="164" y="108" width="8" height="10"/><rect x="156" y="118" width="24" height="4"/><rect x="160" y="122" width="16" height="4"/><rect x="164" y="126" width="8" height="4"/></g>
+<g transform="translate(0,132)">
+<rect class="shadow" x="13" y="5" width="320" height="92"/><rect class="panel" x="8" y="0" width="320" height="92"/>
+<rect class="s0" x="20" y="20" width="10" height="10"/><rect class="s0" x="30" y="20" width="10" height="10"/><rect class="s1" x="40" y="20" width="10" height="10"/><rect class="s2" x="50" y="20" width="10" height="10"/><rect class="s1" x="60" y="20" width="10" height="10"/><rect class="s0" x="70" y="20" width="10" height="10"/><rect class="s0" x="80" y="20" width="10" height="10"/><rect class="s0" x="20" y="30" width="10" height="10"/><rect class="s1" x="30" y="30" width="10" height="10"/><rect class="s2" x="40" y="30" width="10" height="10"/><rect class="s3" x="50" y="30" width="10" height="10"/><rect class="s2" x="60" y="30" width="10" height="10"/><rect class="s1" x="70" y="30" width="10" height="10"/><rect class="s0" x="80" y="30" width="10" height="10"/><rect class="s1" x="20" y="40" width="10" height="10"/><rect class="s2" x="30" y="40" width="10" height="10"/><rect class="s3" x="40" y="40" width="10" height="10"/><rect class="s2" x="50" y="40" width="10" height="10"/><rect class="s3" x="60" y="40" width="10" height="10"/><rect class="s2" x="70" y="40" width="10" height="10"/><rect class="s1" x="80" y="40" width="10" height="10"/><rect class="s0" x="20" y="50" width="10" height="10"/><rect class="s1" x="30" y="50" width="10" height="10"/><rect class="s2" x="40" y="50" width="10" height="10"/><rect class="s1" x="50" y="50" width="10" height="10"/><rect class="s2" x="60" y="50" width="10" height="10"/><rect class="s1" x="70" y="50" width="10" height="10"/><rect class="s0" x="80" y="50" width="10" height="10"/><rect class="s0" x="20" y="60" width="10" height="10"/><rect class="s0" x="30" y="60" width="10" height="10"/><rect class="s1" x="40" y="60" width="10" height="10"/><rect class="s0" x="50" y="60" width="10" height="10"/><rect class="s1" x="60" y="60" width="10" height="10"/><rect class="s0" x="70" y="60" width="10" height="10"/><rect class="s0" x="80" y="60" width="10" height="10"/><rect class="frame" x="20" y="20" width="70" height="50"/><text x="104" y="32">2. Spectrogram</text><text class="sub" x="104" y="54">a picture of sound: pitch</text><text class="sub" x="104" y="74">goes up, time goes across</text>
+</g>
+<g class="arrow"><rect x="164" y="232" width="8" height="10"/><rect x="156" y="242" width="24" height="4"/><rect x="160" y="246" width="16" height="4"/><rect x="164" y="250" width="8" height="4"/></g>
+<g transform="translate(0,256)">
+<rect class="shadow" x="13" y="5" width="320" height="92"/><rect class="panel" x="8" y="0" width="320" height="92"/>
+<line class="wire" x1="26" y1="26" x2="56" y2="18"/><line class="wire" x1="26" y1="26" x2="56" y2="38"/><line class="wire" x1="26" y1="26" x2="56" y2="58"/><line class="wire" x1="26" y1="26" x2="56" y2="78"/><line class="wire" x1="26" y1="46" x2="56" y2="18"/><line class="wire" x1="26" y1="46" x2="56" y2="38"/><line class="wire" x1="26" y1="46" x2="56" y2="58"/><line class="wire" x1="26" y1="46" x2="56" y2="78"/><line class="wire" x1="26" y1="66" x2="56" y2="18"/><line class="wire" x1="26" y1="66" x2="56" y2="38"/><line class="wire" x1="26" y1="66" x2="56" y2="58"/><line class="wire" x1="26" y1="66" x2="56" y2="78"/><line class="wire" x1="56" y1="18" x2="86" y2="34"/><line class="wire" x1="56" y1="18" x2="86" y2="62"/><line class="wire" x1="56" y1="38" x2="86" y2="34"/><line class="wire" x1="56" y1="38" x2="86" y2="62"/><line class="wire" x1="56" y1="58" x2="86" y2="34"/><line class="wire" x1="56" y1="58" x2="86" y2="62"/><line class="wire" x1="56" y1="78" x2="86" y2="34"/><line class="wire" x1="56" y1="78" x2="86" y2="62"/><rect class="node" x="21" y="21" width="10" height="10"/><rect class="node" x="21" y="41" width="10" height="10"/><rect class="node" x="21" y="61" width="10" height="10"/><rect class="node" x="51" y="13" width="10" height="10"/><rect class="node" x="51" y="33" width="10" height="10"/><rect class="node" x="51" y="53" width="10" height="10"/><rect class="node" x="51" y="73" width="10" height="10"/><rect class="node" x="81" y="29" width="10" height="10"/><rect class="node" x="81" y="57" width="10" height="10"/><text x="104" y="32">3. Neural network</text><text class="sub" x="104" y="54">a program that learned</text><text class="sub" x="104" y="74">from many examples</text>
+</g>
+<g class="arrow"><rect x="164" y="356" width="8" height="10"/><rect x="156" y="366" width="24" height="4"/><rect x="160" y="370" width="16" height="4"/><rect x="164" y="374" width="8" height="4"/></g>
+<g transform="translate(0,380)">
+<rect class="shadow" x="13" y="5" width="320" height="92"/><rect class="panel" x="8" y="0" width="320" height="92"/>
+<rect class="dot" x="85" y="43" width="6" height="6"/><rect class="dot" x="83" y="55" width="6" height="6"/><rect class="dot" x="76" y="66" width="6" height="6"/><rect class="dot" x="65" y="73" width="6" height="6"/><rect class="dot" x="53" y="75" width="6" height="6"/><rect class="dot" x="41" y="73" width="6" height="6"/><rect class="dot" x="30" y="66" width="6" height="6"/><rect class="dot" x="23" y="55" width="6" height="6"/><rect class="dot" x="21" y="43" width="6" height="6"/><rect class="dot" x="23" y="31" width="6" height="6"/><rect class="dot" x="30" y="20" width="6" height="6"/><rect class="dot" x="41" y="13" width="6" height="6"/><rect class="dot" x="53" y="11" width="6" height="6"/><rect class="dot" x="65" y="13" width="6" height="6"/><rect class="dot" x="76" y="20" width="6" height="6"/><rect class="dot" x="83" y="31" width="6" height="6"/><rect class="ear" x="52" y="42" width="8" height="8"/><rect class="h1" x="60" y="22" width="20" height="20"/><rect class="h2" x="64" y="26" width="12" height="12"/><rect class="h3" x="67" y="29" width="6" height="6"/><rect class="h1" x="28" y="46" width="20" height="20"/><rect class="h2" x="32" y="50" width="12" height="12"/><text x="104" y="32">4. Map of directions</text><text class="sub" x="104" y="54">bright means: a sound</text><text class="sub" x="104" y="74">probably comes from here</text>
+</g>
+<g class="arrow"><rect x="164" y="480" width="8" height="10"/><rect x="156" y="490" width="24" height="4"/><rect x="160" y="494" width="16" height="4"/><rect x="164" y="498" width="8" height="4"/></g>
+<g transform="translate(0,504)">
+<rect class="shadow" x="13" y="5" width="320" height="92"/><rect class="panel" x="8" y="0" width="320" height="92"/>
+<circle class="orbit" cx="56" cy="46" r="31"/><rect class="ear" x="52" y="42" width="8" height="8"/><circle class="truth" cx="76" cy="22" r="7"/><rect class="puck" x="75" y="22" width="10" height="10"/><circle class="truth" cx="29" cy="62" r="7"/><rect class="puck" x="54" y="72" width="10" height="10"/><text x="104" y="32">5. Guesses in the café</text><text class="sub" x="104" y="54">pucks are guesses, rings</text><text class="sub" x="104" y="74">are truth. Hit: within 20&deg;</text>
+</g>
+</svg>
       <div>
-        <p class="lead">Think of a doctor reading an X-ray. The program cannot "listen" the way we do, so we first turn sound into a picture, then let a pattern-finding program read the picture.</p>
-        <p>Every tenth of a second it answers: for each direction around the listener, <em>how likely is it that a sound comes from there?</em> The answers are painted as a heat map, bright where it thinks a sound is.</p>
+        <p class="lead">A computer cannot "listen" the way we do. So the sound is first turned into a picture, and a pattern finding program reads the picture.</p>
+        <p>Ten times a second the program answers one question for every direction around the listener, in 5 degree steps: <em>how likely is it that a sound comes from there?</em> The answers are painted as a heat map (a picture where bright means "yes, probably"). Then the brightest spots become guesses.</p>
+        <p>In the café overview, each guess is a <strong>puck</strong> on a ring around the listener, and each real sound is a <strong>ring marker</strong>. If the puck is within 20 degrees of the true spot, it counts as a hit.</p>
         <ul class="legend">
           <li><span class="sw heat"></span>Bright patch: the model thinks a sound is in that direction</li>
-          <li><span class="sw bars"></span>Dark purple to pale yellow: quiet to loud (spectrogram and floor)</li>
+          <li><span class="sw truth"></span>Ring marker: where the sound really is</li>
         </ul>
       </div>
     </div>
 
-    <h3 style="margin-top:30px">What I did, in five pieces</h3>
-    <div class="grid two">
-      <article class="card">
-        <h3>1. Training scenes from real ear measurements</h3>
-        <p>Practice sound scenes were built by mixing free sound clips (FSD50K) through measured "ear filters" called HRIRs (head-related impulse responses: how a real head and ear change a sound that arrives from each direction). The filters come from two public sets, HUTUBS and SADIE II, so no single person's ears are learned. 4,000 such scenes were made for training, plus 300 for choosing settings and 300 for the final test. The test scenes use head filters the model never trained on.</p>
-        <p class="small">These scenes are rendered by computer, not recorded in real rooms.</p>
-      </article>
-      <article class="card">
-        <h3>2. The heat-map model</h3>
-        <p>It reuses the front end of the published DCASE 2023 contest baseline, then draws one map of every direction (in 5-degree steps), 10 times a second, showing where sounds are whatever their type. One map can show several sounds at once, and it feeds the 3D viewer directly.</p>
-      </article>
-      <article class="card">
-        <h3>3. Fair testing</h3>
-        <p>The cut-off a bright spot must pass to count as a guess was chosen on 300 separate practice scenes, once per model, and never on the test scenes. Tuning it on the test scenes would be cheating. Every method is scored by the same code.</p>
-      </article>
-      <article class="card">
-        <h3>4. Sudden loss vs an adapted listener</h3>
-        <p><strong>Sudden loss</strong>: the two-ear model with one ear silenced, like losing an ear yesterday. <strong>Adapted</strong>: a model trained on one ear from the start, like someone who has lived with it for years. Sudden loss collapsed the model's fair score more than tenfold (two ears 54%, left ear muted 4.6%), and the adapted models won back part of it (13 to 14%).</p>
-        <p class="small">Adapted models also made about 2.5 guesses per real sound, which flatters them. People with one ear still beat every model here.</p>
-      </article>
-      <article class="card">
-        <h3>5. Bugs found and fixed</h3>
-        <ul>
-          <li>The first heat-map run fired on every frame because the last layer started at 50% "sound here". Starting it near zero fixed it, and the model then memorised one clip perfectly, the standard sanity check.</li>
-          <li>The heat-map model under-detects because its cut-off was fixed before testing; choosing it on held-out scenes is what the one-ear tests do instead.</li>
-          <li>Converting the real recordings to two ears loses much of the delay between the ears, so the two-ear data is rendered from head filters instead.</li>
-        </ul>
-      </article>
+    <h3 class="sec">What I did</h3>
+    <p class="small">Six steps, in the order they happened. "Hit score" (called F20 in the project files) is the share of guesses and real sounds that match within 20 degrees. Higher is better, and 100% is perfect.</p>
+    <ol class="tl">
+      <li>
+        <h4>Build practice scenes on the computer</h4>
+        <p>I mixed free sound clips (from a library called FSD50K) through measured head filters (two public sets named HUTUBS and SADIE II). A head filter copies how a real head and ear bend a sound that comes from one direction. The result is left ear and right ear audio. I made 4,000 scenes to practice on and 300 to test on, and the test scenes use head filters the model never practiced with.</p>
+        <p class="small">These scenes are made by computer, not recorded in real rooms.</p>
+      </li>
+      <li>
+        <h4>Teach a heat map model</h4>
+        <p>A neural network (a program that learns from examples). It reuses the front end of the published DCASE 2023 contest baseline (DCASE stands for Detection and Classification of Acoustic Scenes and Events, a yearly sound contest) and adds a part that draws the direction map. One map shows every sound at once, whatever its type.</p>
+      </li>
+      <li>
+        <h4>Choose the cut-off fairly</h4>
+        <p>A bright spot only becomes a guess if it passes a cut-off. I picked each model's cut-off on separate scenes, never on the test scenes, because tuning on the test would be cheating (two ears 0.30, one ear 0.20). An earlier model with a fixed cut-off of 0.5 missed most sounds: it found 13.5% of them, against 35.7% for the contest baseline.</p>
+      </li>
+      <li>
+        <h4>Take one ear away</h4>
+        <p>On the 300 test scenes, the two ear model gets a hit score of <span class="chip hi">54%</span>. Silence its left ear at test time and it falls to <span class="chip lo">4.6%</span>, like losing an ear yesterday. Models trained with one ear from the start reach <span class="chip mid">13% to 14%</span>, like someone who has lived with it for years.</p>
+        <p class="small">Those one ear models made about 2.4 to 2.5 guesses for each real sound, which flatters their score. People with one ear still beat every model here.</p>
+      </li>
+      <li>
+        <h4>Try real recordings</h4>
+        <p>LOCATA is a public set of real recordings made with hearing aid microphones on a dummy head (46 test recordings). Asked only "left or right?", the two ear model scored 0.479 where random guessing scores 0.234. Either single ear scored 0.207 or 0.216, which is no better than chance. After more training on 12 of the 18 practice recordings, the two ear hit score on real audio rose from 0.099 to 0.543.</p>
+        <p class="small">That is one room and one dummy head, so it means "tuned for this room", not "works anywhere".</p>
+      </li>
+      <li>
+        <h4>Put it in the café</h4>
+        <p>I ran two of these models on the same 30 second café clip and drew their guesses in the 3D scene above. The box below says how they did.</p>
+      </li>
+    </ol>
+
+    <div class="cafebox">
+      <h3>What the café shows</h3>
+      <p>The café clip is <strong>simulated</strong>, not a recording. Both models listened to the same 30 seconds. A guess counts as a hit if it lands within 20 degrees of the real sound.</p>
+      <div class="stat">
+        <div class="statrow"><span class="who">Two ears</span><span class="meter" role="img" aria-label="Two ears hit score 43 percent"><span class="fill f2" style="--w:42.9%"></span></span><span class="val">43%</span></div>
+        <div class="statrow"><span class="who">My ear only (right)</span><span class="meter" role="img" aria-label="One ear hit score 6 percent"><span class="fill f1" style="--w:5.9%"></span></span><span class="val">6%</span></div>
+      </div>
+      <p>In plain words: with two ears the model put about half of the real sounds (50%) within 20 degrees. With only my ear it found about one in nine (11%) and scattered many more wrong guesses (1,482 guesses, against 769 for two ears). The average miss was 33 degrees with two ears and 48 degrees with one.</p>
     </div>
 
-    <h3 style="margin-top:30px">Model card</h3>
-    <div class="card">
-      <ul>
-        <li><strong>Intended use:</strong> research, learning and a portfolio project: exploring how much direction information one ear loses. <strong>Not a medical device</strong>, not a hearing aid, not for safety decisions.</li>
-        <li><strong>Data:</strong> STARSS23 (real recordings from 16 rooms in Finland and Japan) for the first models; rendered two-ear scenes from FSD50K clips with HUTUBS and SADIE II head filters for the one-ear experiment.</li>
-        <li><strong>Where it works so far:</strong> on 300 unseen test scenes, the two-ear model finds 54% of sounds within 20 degrees (F20), misses by 24.9&deg; on average (19.8&deg; in front) and makes about 1.1 guesses per real sound.</li>
-        <li><strong>Limits:</strong> it misses many real sounds; echoes pull guesses off course; overlapping sounds blur; with one ear, front and back are easily confused (so the model draws a map, not one arrow). It says where a sound is, not what it is; only a few head shapes, and the 3D floor waves are a simple simulation, not real acoustics.</li>
-      </ul>
+    <h3 class="sec">Model card</h3>
+    <div class="mc">
+      <p class="mc-head">Heat map model, short version</p>
+      <dl>
+        <dt>What it is</dt>
+        <dd>The encoder (front end) of the DCASE 2023 baseline plus a map head. Every 0.1 second it draws a grid of directions in 5 degree steps. The café uses the "where only" versions, which ignore what kind of sound it is and only say where.</dd>
+        <dt>Trained on</dt>
+        <dd>First models: STARSS23 (Sony-TAu Realistic Spatial Soundscapes 2023), real recordings in rooms in Finland and Japan. Ear models: 4,000 computer made scenes from FSD50K clips with HUTUBS and SADIE II head filters. Fine tuning: 12 of the 18 LOCATA practice recordings.</dd>
+        <dt>Tested on</dt>
+        <dd>300 computer made scenes with head filters never seen in training, then 46 real LOCATA recordings.</dd>
+        <dt>Where it works</dt>
+        <dd>Two ears, simulated test: hit score 54%, average miss 24.9 degrees, about 1.09 guesses per real sound. When only one sound plays, the miss for sounds in front drops to 11.7 degrees.</dd>
+        <dt>Where it fails</dt>
+        <dd>It misses many real sounds. Echoes pull guesses off course and overlapping sounds blur. With one ear, front and back are easily confused, which is why it draws a map and not one arrow. On real recordings it gets left and right but not front and back. Harder practice scenes with real rooms and café noise did not beat the earlier models. The original model knows 13 sound types and only the rooms in Finland and Japan. Only a few head shapes were used, and the floor waves in the advanced view are a simple simulation, not real acoustics.</dd>
+        <dt>Intended use</dt>
+        <dd>Research, learning and a portfolio project: finding out how much direction information one ear loses. <strong>Not a medical device</strong>, not a hearing aid, not for safety decisions.</dd>
+      </dl>
     </div>
+
+    <h3 class="sec">Read the code</h3>
+    <ul class="links">
+      <li><a class="pill" href="https://github.com/JohnFok119/second-ear">GitHub repository</a></li>
+      <li><a class="pill" href="https://github.com/JohnFok119/second-ear/blob/main/LEARNING.md">LEARNING.md: the project in plain words</a></li>
+      <li><a class="pill" href="https://github.com/JohnFok119/second-ear/tree/main/src/secondear">src/secondear/: the model code</a></li>
+      <li><a class="pill" href="https://github.com/JohnFok119/second-ear/tree/main/web/cafe">web/cafe/: the café viewer</a></li>
+    </ul>
   </div>
 </section>
 </main>
