@@ -41,5 +41,13 @@ ok(H.bandBars(clip, 'talk_left', 'two', 5.0) === null, 'bandBars must be null wh
 ok(H.wordsLost(clip, 'talk_left', 'mine', 13.0) && !H.wordsLost(clip, 'talk_left', 'two', 13.0), 'caption note at 13.0');
 ok(!H.wordsLost(clip, 'talk_front', 'mine', 3.5), 'no caption note for front at 3.5');
 
+// C13b: muffled look, direction labels, bar styles
+ok(H.muffled(clip, 'talk_left', 'mine', 15.2) && !H.muffled(clip, 'talk_left', 'two', 15.2), 'talk_left must be muffled only in mine at 15.2');
+ok(!H.muffled(clip, 'talk_front', 'mine', 2.0), 'talk_front must not be muffled at 2.0');
+ok(H.dirLabel(-70) === 'on your left' && H.dirLabel(70) === 'on your right' && H.dirLabel(170) === 'behind you' && H.dirLabel(5) === 'ahead', 'dirLabel');
+const hollow = H.barStyle(-60, 0.1), solid = H.barStyle(-35, 0.9), mid = H.barStyle(-45, 0.42);
+ok(hollow.fill === 0 && solid.fill === 1 && mid.fill > 0 && mid.fill < 1, 'barStyle fill: hollow / solid / blended');
+ok(solid.height > hollow.height && hollow.height <= 0.2, 'barStyle height: buried bars stay short');
+
 console.log(fails ? 'FAIL' : 'PASS');
 process.exit(fails ? 1 : 0);

@@ -116,3 +116,35 @@ export function bandBars(clip, id, mode, t) {
     ? { level: R[b], aud: aud(aR, b) }
     : { level: Math.max(L[b], R[b]), aud: Math.max(aud(aL, b), aud(aR, b)) }));
 }
+
+// ---- C13b: make the Two ears / My ear difference visible without turning the view ----
+export const MUFFLE_GAP = 0.15; // my-ear bubble looks muffled when two-ear clarity is at least this much higher
+export const LOOK_LEFT_TEXT = ' (look left)';
+export const BAR_DB_LO = -70; // band level (dB) of the shortest bar ...
+export const BAR_DB_HI = -30; // ... and the tallest
+export const BAR_BURIED = 0.35; // audibility below this: hollow short outline only
+export const BAR_AUDIBLE = 0.5; // audibility at or above this: solid amber
+
+/** True when this bubble should look muffled: My ear mode and two ears would be clearer by MUFFLE_GAP or more. */
+export function muffled(clip, id, mode, t) {
+  if (mode !== 'mine') return false;
+  const two = clarityAt(clip, id, 'two', t), mine = clarityAt(clip, id, 'mine', t);
+  return two !== null && mine !== null && two - mine >= MUFFLE_GAP;
+}
+
+/** Where a talker is relative to where we look. angleDeg: 0 = straight ahead, negative = left, positive = right. */
+export function dirLabel(angleDeg) {
+  const a = Math.abs(angleDeg);
+  if (a > 110) return 'behind you';
+  if (a < 25) return 'ahead';
+  return angleDeg < 0 ? 'on your left' : 'on your right';
+}
+
+/** One bar for the bubble strip: height 0..1 (level), fill 0..1 (0 = hollow outline, 1 = solid amber). */
+export function barStyle(level, aud) {
+  const u = Math.min(1, Math.max(0, (level - BAR_DB_LO) / (BAR_DB_HI - BAR_DB_LO)));
+  const k = Math.min(1, Math.max(0, (aud - BAR_BURIED) / (BAR_AUDIBLE - BAR_BURIED)));
+  const short = 0.18;
+  const full = 0.3 + 0.7 * u;
+  return { height: short + (Math.max(short, full) - short) * k, fill: k };
+}

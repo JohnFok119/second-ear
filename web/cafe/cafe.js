@@ -7,7 +7,7 @@ import { buildPeople } from './people.js';
 import { activeAt } from './geo.js';
 import { createAudio } from './audio.js';
 import { createHearing } from './hearing.js';
-import { wordsLost, NOTE_TEXT } from './hearing-data.js';
+import { wordsLost, NOTE_TEXT, LOOK_LEFT_TEXT } from './hearing-data.js';
 import { createFirstPerson } from './firstperson.js';
 
 const FALLBACK_SRC = 'assets/cafe/fallback.jpg';
@@ -228,6 +228,7 @@ export async function mountCafe(root, opts = {}) {
         if (mode === 'overview') { overview.update(t); outdoor.updateView(camera); syncLive(); }
         else if (!fixedCam) firstPerson.update();
         hearing.update(t, earNow);
+        updateLook();
         pass.render(scene, camera);
       } catch (e) {
         console.error(e);
@@ -282,10 +283,24 @@ export async function mountCafe(root, opts = {}) {
       if (out) out.textContent = `${t.toFixed(1)} / ${DUR.toFixed(1)} s`;
     };
     let lastCaptionKey = null;
+    // "(look left)": added while the left talker talks and the view does not show them; once they have
+    // been on screen it stays off until they stop and start again
+    let lookHint = false, lookSeen = false;
+    function updateLook() {
+      const talking = activeAt(sceneData.sources, t).some((s) => s.id === 'talk_left');
+      const off = talking && gl3 && gl3.hearing.offscreen('talk_left');
+      if (!talking) lookSeen = false;
+      else if (!off) lookSeen = true;
+      const next = !!off && !lookSeen;
+      if (next !== lookHint) { lookHint = next; lastCaptionKey = null; syncCaption(); }
+    }
     const syncCaption = () => {
       // a voice whose words are lost for My ear gets a note after its label (clarity from the clip)
-      const labels = [...new Set(activeAt(sceneData.sources, t).map((s) => (
-        s.kind === 'voice' && wordsLost(clip, s.id, earNow, t) ? s.label + NOTE_TEXT : s.label)))];
+      const labels = [...new Set(activeAt(sceneData.sources, t).map((s) => {
+        let l = s.kind === 'voice' && wordsLost(clip, s.id, earNow, t) ? s.label + NOTE_TEXT : s.label;
+        if (s.id === 'talk_left' && lookHint) l += LOOK_LEFT_TEXT;
+        return l;
+      }))];
       const key = labels.join('|');
       if (key === lastCaptionKey) return;
       lastCaptionKey = key;

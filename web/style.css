@@ -237,15 +237,39 @@ main, .wrap { min-width:0; }
 .cafe-caption { min-height:1.6em; margin:8px 0 2px; font-weight:600; font-size:1.05rem; }
 /* word bubbles over the café canvas (hearing.js): cream pixel speech bubble with a tail */
 .cafe-bub-layer { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
-.cafe-bub-layer[hidden], .cafe-bub[hidden] { display:none; }
-.cafe-bub { position:absolute; transform:translate(-50%, calc(-100% - 12px)); max-width:22ch; box-sizing:content-box;
-  padding:6px 9px; background:#f6e9c8; color:#2a1d14; border:3px solid #2a1d14; border-radius:2px;
+.cafe-bub-layer[hidden], .cafe-bub[hidden], .cafe-bub-bars[hidden] { display:none; }
+.cafe-bub { --bg:#f6e9c8; --ink:#2a1d14; --e:0; position:absolute;
+  transform:translate(-50%, calc(-100% * (1 - 0.5 * var(--e)) - 12px * (1 - var(--e)))); max-width:22ch; box-sizing:content-box;
+  padding:6px 9px; background:var(--bg); color:var(--ink); border:3px solid #2a1d14; border-radius:2px;
   box-shadow:3px 3px 0 rgba(20,16,13,.55); font:700 14px/1.3 ui-monospace, Menlo, Consolas, monospace;
   letter-spacing:.04em; text-align:center; overflow-wrap:anywhere; white-space:normal; }
+.cafe-bub.edge { box-sizing:border-box; }
 .cafe-bub::after { content:''; position:absolute; left:calc(50% + var(--tail, 0px)); top:100%; width:0; height:0; margin-left:-7px;
   border:7px solid transparent; border-top:9px solid #2a1d14; border-bottom:0; }
 .cafe-bub::before { content:''; position:absolute; left:calc(50% + var(--tail, 0px)); top:100%; width:0; height:0; margin-left:-4px; margin-top:-3px; z-index:1;
-  border:4px solid transparent; border-top:6px solid #f6e9c8; border-bottom:0; }
+  border:4px solid transparent; border-top:6px solid var(--bg); border-bottom:0; }
+.cafe-bub.edge::after, .cafe-bub.edge::before { display:none; }
+.cafe-bub-t { display:block; }
+.cafe-bub-t:empty, .cafe-bub-l, .cafe-bub-ic, .cafe-bub-ar { display:none; }
+.cafe-bub.edge .cafe-bub-l { display:block; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75; margin-bottom:2px; }
+/* pitch-band strip inside the bubble: hollow outline = buried under the noise, solid amber = audible */
+.cafe-bub-bars { display:flex; align-items:flex-end; justify-content:center; gap:3px; height:22px; margin-top:5px; }
+.cafe-bub-t:empty + .cafe-bub-bars { margin-top:0; }
+.cafe-bub-bars i { display:block; width:9px; box-sizing:border-box; border:2px solid #2a1d14;
+  background:rgba(255,181,46,var(--f,0)); }
+/* pixel arrow pointing toward the off-screen talker */
+.cafe-bub.edge .cafe-bub-ar { display:block; position:absolute; top:50%; width:14px; height:18px; margin-top:-9px; background:#2a1d14; }
+.cafe-bub.edge-l .cafe-bub-ar { left:-19px; clip-path:polygon(0 50%, 100% 0, 100% 100%); }
+.cafe-bub.edge-r .cafe-bub-ar { right:-19px; clip-path:polygon(0 0, 100% 50%, 0 100%); }
+/* My ear, and two ears would hear this clearly: muffled look */
+.cafe-bub.muffled { --bg:#d9cdb2; --ink:#85766a;
+  background-image:radial-gradient(rgba(42,29,20,.28) 1px, transparent 1.3px), radial-gradient(rgba(255,255,255,.35) 1px, transparent 1.3px);
+  background-size:3px 3px, 3px 3px; background-position:0 0, 1px 1.5px; border-color:#5d4e42; }
+.cafe-bub.muffled .cafe-bub-t { filter:blur(.7px); }
+.cafe-bub.muffled .cafe-bub-ic { display:block; position:absolute; right:-9px; top:-11px; padding:2px; background:#f6e9c8; border:2px solid #2a1d14; line-height:0; }
+.cafe-bub.swap { animation:cafe-bub-swap 150ms ease-out; }
+@keyframes cafe-bub-swap { from { opacity:.15; filter:blur(2px); } to { opacity:1; filter:none; } }
+@media (prefers-reduced-motion: reduce) { .cafe-bub.swap { animation:none; } }
 .cafe-ear-status { margin:6px 0; }
 .cafe-legend p { margin:6px 0; }
 .cafe-live { font-weight:600; }
