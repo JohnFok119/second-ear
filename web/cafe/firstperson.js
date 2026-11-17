@@ -1,4 +1,5 @@
 // Seated first-person look. Camera at (0, EAR_Y, 0). Yaw 0 looks along -Z; positive yaw turns LEFT.
+// Yaw is not limited (a full 360 turn, wrapped to stay small); pitch is limited.
 import { EAR_Y } from './geo.js';
 
 const DEG = Math.PI / 180;
@@ -9,7 +10,7 @@ export function clampLook(yaw, pitch, yawLimit, pitchLimit) {
 }
 
 export function createFirstPerson(camera, dom, opts = {}) {
-  const yawLimit = opts.yawLimit ?? 110;     // degrees
+  const yawLimit = opts.yawLimit ?? Infinity; // degrees (Infinity = turn all the way round)
   const pitchLimit = opts.pitchLimit ?? 35;  // degrees
   const defaultPitch = opts.pitch ?? -6;     // degrees
   const keyStep = opts.keyStep ?? 5;         // degrees per arrow press
@@ -96,6 +97,7 @@ export function createFirstPerson(camera, dom, opts = {}) {
       const dt = lastNow === null ? 0 : Math.min((now - lastNow) / 1000, 0.25);
       lastNow = now;
       const a = 1 - Math.exp(-damping * dt); // frame-rate independent
+      if (Math.abs(tYaw) > 360) { const k = Math.round(tYaw / 360) * 360; tYaw -= k; yaw -= k; } // wrap, easing is unchanged
       yaw += (tYaw - yaw) * a;
       pitch += (tPitch - pitch) * a;
       apply();

@@ -26,18 +26,27 @@ never autoplays (audio needs a click), so `play=0` is the default behaviour.
 
 `index.html` is one scrolling page with three sections: `#problem` (text, human numbers, a
 "hear it with my ear" player and a drag-the-sound toy; code in `problem.js`), `#showcase` (the pixel
-café, below) and `#how` (pipeline diagram, ML work cards, model card). Numbers that will change after
+café, now the full-screen hero at the very top) and `#how` (pipeline diagram, ML work cards, model card). Numbers that will change after
 retraining sit in `data-pending="c5"` elements with an "updated soon" tag. The "Hear it with my ear"
 player needs headphones and simply silences the left channel; it is a simulation, not a model of real
 hearing.
 
 ## Showcase: the pixel café
 
-`#showcase` holds one mount, `<div id="cafe-root">`. `cafe/site.js` calls `mountCafe(root)` from
+**Landing hero.** The café is the first thing on `index.html`: `<section class="cafe-hero" id="showcase">` is
+100vh/100dvh, and the title, caption, controls (Play, scrubber, View, Listen as, Sound) and a "scroll for how it
+works" cue are overlaid on it (dark palette, 14 px minimum, two rows under 1000 px). It starts silent and alive
+on load, driven by a visual clock (`performance.now`, looping 0..30 s); the first tap on Play or Sound starts the
+audio at the current time and from then `audio.time()` is the clock. The audio loops seamlessly (`loop: true` in
+`createAudio`), so scene, bubbles and captions loop with it. With `prefers-reduced-motion` nothing auto-runs:
+the still frame is shown with Play. The seat view turns a full 360 degrees (arrow keys too; pitch stays at 35
+degrees); edge bubbles say "behind you" for a talker at your back.
+
+`#showcase` (the hero) holds one mount, `<div id="cafe-root">`. `cafe/site.js` calls `mountCafe(root)` from
 `cafe/cafe.js`, which builds all its own DOM inside that root (every id and class starts with `cafe-`;
-styles are in `style.css` under `.cafe-root`). The `<details id="advanced">` below it still loads the
+styles are in `style.css` under `.cafe-root`). The `<details id="advanced">` (in its own section further down) still loads the
 earlier full viewer (`main.js` and friends) through `advanced.js`, only when opened or with `?advanced=1`;
-`?focus=1` (also in `advanced.js`) hides the other sections for headless screenshots.
+`?focus=1` (also in `advanced.js`) hides the sections below the hero for headless screenshots.
 
 Modules in `cafe/` (plain ES modules, three.js from the importmap, no build step):
 

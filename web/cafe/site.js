@@ -1,4 +1,4 @@
-// Mounts the pixel café into the showcase section of index.html. cafe.js never throws out of here:
+// Mounts the pixel café into the full-screen landing hero of index.html. cafe.js never throws out of here:
 // a failure inside it (data, WebGL, three.js CDN) already falls back to the still image.
 const root = document.getElementById('cafe-root');
 if (root) {

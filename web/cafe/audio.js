@@ -3,7 +3,8 @@
 
 const RAMP_S = 0.02; // gain ramp time constant base (about 20 ms)
 
-export function createAudio(url) {
+export function createAudio(url, opts = {}) {
+  const loopLen = opts.loop ? (opts.loopLen || 0) : 0; // seconds; 0 = play once and stop at the end
   let ctx = null;
   let buffer = null;
   let split = null, merge = null;
@@ -75,6 +76,11 @@ export function createAudio(url) {
     stopSource();
     const node = ctx.createBufferSource();
     node.buffer = buffer;
+    if (loopLen) { // seamless loop: the node wraps to 0 by itself, so no gap and no onEnd
+      node.loop = true;
+      node.loopStart = 0;
+      node.loopEnd = Math.min(buffer.duration, loopLen);
+    }
     node.connect(split);
     node.onended = () => {
       if (src !== node) return; // replaced by seek or stopped by pause
@@ -92,7 +98,9 @@ export function createAudio(url) {
   function time() {
     if (!buffer) return 0;
     if (!isPlaying) return pausedAt;
-    return clampT(startOffset + (ctx.currentTime - startCtxTime));
+    const raw = startOffset + (ctx.currentTime - startCtxTime);
+    if (loopLen) return raw % Math.min(buffer.duration, loopLen);
+    return clampT(raw);
   }
 
   api.ready = ready;
@@ -113,7 +121,8 @@ export function createAudio(url) {
   };
   api.seek = function seek(t) {
     if (!buffer) return;
-    const tt = clampT(t);
+    let tt = clampT(t);
+    if (loopLen && tt >= Math.min(buffer.duration, loopLen)) tt = 0; // looping: the end is the start
     if (isPlaying) {
       if (tt >= buffer.duration) { // seeking to the very end: stop cleanly and fire onEnd
         stopSource();

@@ -81,5 +81,5 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 ## Captain, 2026-11-17: café is the landing page
 - "The animation is perfect"; the rest of the site is not what Johnny has in mind (redesign waits for his direction).
 - Loop the café; make it the full-screen first view; 360 degree look from the seat.
-- [ ] **pixel-cafe-C17 Café landing.** Full-screen hero, alive on load (silent visual clock), sound on first tap, seamless loop,
+- [x] **pixel-cafe-C17 Café landing.** Full-screen hero, alive on load (silent visual clock), sound on first tap, seamless loop,
   360 yaw. *Done when:* landing shots desktop + phone, seat facing 180, tests pass, no sideways scroll at 390 px.

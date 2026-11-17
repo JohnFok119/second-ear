@@ -6,18 +6,51 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 ASSETS = WEB / "assets" / "cafe"
 
 
-def _showcase_section() -> str:
+def _hero_section() -> str:
     html = (WEB / "index.html").read_text(encoding="utf-8")
-    m = re.search(r'<section class="story" id="showcase">.*?</section>', html, re.DOTALL)
-    assert m, "index.html has no #showcase section"
+    m = re.search(r'<section class="cafe-hero" id="showcase"[^>]*>.*?</section>', html, re.DOTALL)
+    assert m, "index.html has no .cafe-hero #showcase section"
     return m.group(0)
 
 
-def test_showcase_has_cafe_mount():
-    section = _showcase_section()
-    assert 'id="cafe-root"' in section
-    assert "Sit in my seat at the café" in section
-    assert 'id="advanced"' in section
+def test_cafe_is_the_first_section():
+    html = (WEB / "index.html").read_text(encoding="utf-8")
+    body = html[html.index("<body>"):]
+    first = re.search(r"<(section|header|main|nav|div)[ >]", body)
+    assert first and first.group(1) == "section"
+    assert body.index('class="cafe-hero"') < body.index('<header class="hero">')
+    assert body.index('class="cafe-hero"') < body.index('id="problem"')
+    assert 'id="cafe-root"' in _hero_section()
+    # the old heading above the café is gone; the advanced viewer still exists, below the hero
+    assert "Sit in my seat at the café</h2>" not in html
+    assert body.index('id="advanced"') > body.index('id="cafe-root"')
+
+
+def test_hero_css_fills_the_viewport():
+    css = (WEB / "style.css").read_text(encoding="utf-8")
+    m = re.search(r"section\.cafe-hero\s*\{([^}]*)\}", css)
+    assert m, "no section.cafe-hero rule"
+    rule = m.group(1)
+    assert "100vh" in rule and "100dvh" in rule
+    assert rule.index("100vh") < rule.index("100dvh")  # vh first, dvh overrides where supported
+
+
+def test_cafe_template_has_the_controls():
+    js = (WEB / "cafe" / "cafe.js").read_text(encoding="utf-8")
+    for ident in ("cafe-play", "cafe-time", "cafe-mode-seat", "cafe-mode-over", "cafe-ear-two", "cafe-ear-mine",
+                  "cafe-sound", "cafe-caption", "cafe-legend", "cafe-cue"):
+        assert ident in js, ident
+    assert "I'm deaf in my left ear. Sit in my seat." in js
+    assert "Scroll for how it works" in js
+    assert "prefers-reduced-motion" in js
+    assert "loop: true" in js
+    assert "Infinity" in (WEB / "cafe" / "firstperson.js").read_text(encoding="utf-8")
+
+
+def test_no_webgl_fallback_still_wired():
+    js = (WEB / "cafe" / "cafe.js").read_text(encoding="utf-8")
+    assert "FALLBACK_SRC" in js and "enterFallback" in js and "nowebgl" in js
+    assert (ASSETS / "fallback.jpg").exists()
 
 
 def test_no_showcase_js_script_tag():

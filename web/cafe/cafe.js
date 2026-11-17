@@ -14,42 +14,58 @@ const FALLBACK_SRC = 'assets/cafe/fallback.jpg';
 const FALLBACK_ALT = "A pixel-art café seen from Johnny's seat: a friend sits across a small round table, with the door on the left and the counter behind.";
 
 const TEMPLATE = `
-<div class="cafe-stage" role="img" aria-label="A warm pixel-art café seen from Johnny's seat">
-  <div class="cafe-hint">Drag to look around</div>
+<div class="cafe-stage" role="group" aria-label="A warm pixel-art café seen from Johnny's seat">
   <div class="cafe-fps" hidden></div>
-</div>
-<p class="cafe-caption" aria-live="polite">Quiet café</p>
-<div class="cafe-controls">
-  <button id="cafe-play" class="bigbtn" type="button">&#9654; Play</button>
-  <input id="cafe-time" class="cafe-time" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time in the clip">
-  <output id="cafe-time-out" class="cafe-time-out" for="cafe-time">0.0 / 30.0 s</output>
-</div>
-<div class="cafe-controls cafe-view-row">
-  <span class="cafe-lbl" id="cafe-mode-lbl">View:</span>
-  <div class="seg" role="group" aria-labelledby="cafe-mode-lbl">
-    <button type="button" id="cafe-mode-seat" aria-pressed="true">Sit in my seat</button>
-    <button type="button" id="cafe-mode-over" aria-pressed="false">See from above</button>
+  <div class="cafe-top">
+    <div class="cafe-intro">
+      <p class="cafe-title">Second Ear</p>
+      <p class="cafe-tag">I'm deaf in my left ear. Sit in my seat.</p>
+    </div>
+    <div class="cafe-legend" hidden>
+      <p class="cafe-live" aria-live="polite"></p>
+      <details class="cafe-keybox">
+        <summary>What the markers mean</summary>
+        <ul class="cafe-key">
+          <li><i class="cafe-sw cafe-sw-two"></i> Teal: two ears</li>
+          <li><i class="cafe-sw cafe-sw-one"></i> Pink: one ear (right)</li>
+          <li><i class="cafe-sw cafe-sw-truth"></i> Yellow ring: where the sound really was</li>
+          <li><i class="cafe-sw cafe-sw-fill"></i> Filled: within 20&deg; of a real sound. Hollow with an x: a miss</li>
+        </ul>
+        <p class="cafe-clipline"></p>
+      </details>
+    </div>
+  </div>
+  <div class="cafe-bottom">
+    <div class="cafe-hint">Drag to look around, all the way round</div>
+    <p class="cafe-caption" aria-live="polite">Quiet café</p>
+    <div class="cafe-bar">
+      <div class="cafe-controls cafe-row1">
+        <button id="cafe-play" class="bigbtn" type="button">&#9654; Play</button>
+        <input id="cafe-time" class="cafe-time" type="range" min="0" max="30" step="0.05" value="0" aria-label="Time in the clip">
+        <output id="cafe-time-out" class="cafe-time-out" for="cafe-time">0.0 / 30.0 s</output>
+      </div>
+      <div class="cafe-controls cafe-row2">
+        <span class="cafe-view-row">
+          <span class="cafe-lbl" id="cafe-mode-lbl">View:</span>
+          <span class="seg" role="group" aria-labelledby="cafe-mode-lbl">
+            <button type="button" id="cafe-mode-seat" aria-pressed="true">Sit in my seat</button>
+            <button type="button" id="cafe-mode-over" aria-pressed="false">See from above</button>
+          </span>
+        </span>
+        <span class="cafe-ear-row">
+          <span class="cafe-lbl" id="cafe-listen-lbl">Listen as:</span>
+          <span class="seg" role="group" aria-labelledby="cafe-listen-lbl">
+            <button type="button" id="cafe-ear-two" aria-pressed="true">Two ears</button>
+            <button type="button" id="cafe-ear-mine" aria-pressed="false">My ear</button>
+          </span>
+        </span>
+        <button type="button" id="cafe-sound" class="cafe-sound" aria-pressed="false">Sound: off</button>
+      </div>
+      <p class="cafe-ear-status" aria-live="polite">Two ears: both sides play normally. Headphones work best.</p>
+    </div>
+    <p class="cafe-cue"><span>Computer-made café, not a recording.</span> <a href="#problem">Scroll for how it works &darr;</a></p>
   </div>
 </div>
-<div class="cafe-legend" hidden>
-  <ul class="cafe-key">
-    <li><i class="cafe-sw cafe-sw-two"></i> Teal: two ears</li>
-    <li><i class="cafe-sw cafe-sw-one"></i> Pink: one ear (right)</li>
-    <li><i class="cafe-sw cafe-sw-truth"></i> Yellow ring: where the sound really was</li>
-    <li><i class="cafe-sw cafe-sw-fill"></i> Filled: within 20&deg; of a real sound. Hollow with an x: a miss</li>
-  </ul>
-  <p class="cafe-live" aria-live="polite"></p>
-  <p class="cafe-clipline"></p>
-</div>
-<div class="cafe-controls">
-  <span class="cafe-lbl" id="cafe-listen-lbl">Listen as:</span>
-  <div class="seg" role="group" aria-labelledby="cafe-listen-lbl">
-    <button type="button" id="cafe-ear-two" aria-pressed="true">Two ears</button>
-    <button type="button" id="cafe-ear-mine" aria-pressed="false">My ear</button>
-  </div>
-</div>
-<p class="cafe-ear-status" aria-live="polite">Two ears: both sides play normally.</p>
-<p class="small">Use headphones.</p>
 `;
 
 function webglAvailable() {
@@ -82,6 +98,7 @@ export async function mountCafe(root, opts = {}) {
   const yawDeg = parseFloat(q.get('yaw') || '0') || 0; // seat camera yaw, + = turn left
   const earParam = q.get('ear') === 'mine' ? 'mine' : 'two';
   const forceNoGl = q.get('nowebgl') === '1';
+  const reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const showFps = new URLSearchParams(location.search).get('fps') === '1';
   const DUR = 30;
   let earNow = earParam; // 'two' | 'mine', follows the Listen as toggle (also in ?still=1 captures, where there is no audio)
@@ -100,6 +117,8 @@ export async function mountCafe(root, opts = {}) {
   const earStatus = $('.cafe-ear-status');
   const caption = $('.cafe-caption');
   const hint = $('.cafe-hint');
+  const soundBtn = $('#cafe-sound');
+  const keybox = $('.cafe-keybox');
   const modeSeat = $('#cafe-mode-seat');
   const modeOver = $('#cafe-mode-over');
   const modeRow = $('.cafe-view-row');
@@ -205,7 +224,7 @@ export async function mountCafe(root, opts = {}) {
     }
 
     // never touch audio in still (capture) mode
-    const audio = still ? null : createAudio('clips/cafe_v4.mp3');
+    const audio = still ? null : createAudio('clips/cafe_v4.mp3', { loop: true, loopLen: DUR });
 
     function resize() {
       if (!gl3) return;
@@ -262,10 +281,11 @@ export async function mountCafe(root, opts = {}) {
       if (modeSeat) modeSeat.setAttribute('aria-pressed', String(!over));
       if (modeOver) modeOver.setAttribute('aria-pressed', String(over));
       if (legend) legend.hidden = !over;
+      if (over && keybox) keybox.open = stage.clientWidth >= 700; // phone: the key starts folded
       setRoofHidden(over);
       if (over) { firstPerson.disable(); overview.enable(); camera.fov = wide() ? 45 : 62; camera.updateProjectionMatrix(); syncLive(); }
       else { overview.disable(); camera.fov = wide() ? 70 : 80; camera.updateProjectionMatrix(); firstPerson.enable(); }
-      if (hint) hint.textContent = over ? 'Drag to orbit, pinch to zoom' : 'Drag to look around';
+      if (hint) hint.textContent = over ? 'Drag to orbit, pinch to zoom' : 'Drag to look around, all the way round';
       stage.setAttribute('aria-label', over ? 'The café seen from above, with sound markers' : "A warm pixel-art café seen from Johnny's seat");
       if (!still) draw();
     };
@@ -275,6 +295,7 @@ export async function mountCafe(root, opts = {}) {
       if (modeSeat) modeSeat.setAttribute('aria-pressed', 'false');
       if (modeOver) modeOver.setAttribute('aria-pressed', 'true');
       if (legend) legend.hidden = false;
+      if (keybox) keybox.open = stage.clientWidth >= 700;
       if (hint) hint.textContent = 'Drag to orbit, pinch to zoom';
     }
 
@@ -306,10 +327,53 @@ export async function mountCafe(root, opts = {}) {
       lastCaptionKey = key;
       if (caption) caption.textContent = labels.length ? labels.join(' · ') : 'Quiet café';
     };
-    const setPlayLabel = (playing) => {
-      if (!playBtn) return;
-      playBtn.textContent = playing ? '⏸ Pause' : '▶ Play';
+    // ---------- clock ----------
+    // Two clocks, one scene. Silent: t runs from performance.now (vBase + elapsed, wrapped to 0..DUR).
+    // After the first Play / Sound tap the audio is the clock (audio.time(), which loops by itself).
+    // People, door, walkers and bubbles are pure functions of t, so they follow either clock.
+    let running = false;            // the scene is advancing (silent or with sound)
+    let vBase = t, vStart = 0;      // silent clock: t at vStart (a performance.now stamp)
+    let soundOn = false;            // the visitor wants sound
+    let soundTouched = false;       // the visitor has used Play / Sound at least once
+    const restartVisual = () => { vBase = t; vStart = performance.now(); };
+    function tick() {
+      if (audio && audio.playing()) t = audio.time();
+      else if (running) t = (vBase + (performance.now() - vStart) / 1000) % DUR;
+    }
+    const setLabels = () => {
+      if (playBtn) playBtn.textContent = running ? '⏸ Pause' : '▶ Play';
+      if (soundBtn) {
+        soundBtn.textContent = soundOn ? 'Sound: on' : 'Sound: off';
+        soundBtn.setAttribute('aria-pressed', String(soundOn));
+      }
     };
+    async function startSound() {
+      if (!audio) return;
+      try { await audio.ready; } catch (e) { console.error(e); return; }
+      tick();
+      audio.seek(t);
+      audio.play(); // resumes the AudioContext; this runs inside the tap that called us
+      soundOn = true; soundTouched = true; running = true;
+      setLabels(); kick();
+      window.dispatchEvent(new CustomEvent('secondear:play', { detail: 'cafe' }));
+    }
+    function silence() { // sound off, the scene keeps going on the silent clock
+      tick();
+      if (audio && audio.playing()) audio.pause();
+      soundOn = false;
+      restartVisual();
+      setLabels();
+    }
+    function pauseAll() {
+      tick();
+      if (audio && audio.playing()) audio.pause();
+      running = false;
+      setLabels();
+    }
+    function resumeAll() {
+      if (audio && (soundOn || !soundTouched)) { startSound(); return; }
+      running = true; restartVisual(); setLabels(); kick();
+    }
     const setEar = (m) => {
       const mine = m === 'mine';
       earNow = mine ? 'mine' : 'two';
@@ -319,7 +383,7 @@ export async function mountCafe(root, opts = {}) {
       if (earStatus) {
         earStatus.textContent = mine
           ? 'My ear: only the right side reaches you, on both sides, like Johnny hears.'
-          : 'Two ears: both sides play normally.';
+          : 'Two ears: both sides play normally. Headphones work best.';
       }
       if (audio) audio.setEar(mine ? 'mine' : 'two');
     };
@@ -329,29 +393,20 @@ export async function mountCafe(root, opts = {}) {
     if (slider) {
       slider.addEventListener('input', () => {
         t = parseFloat(slider.value) || 0;
-        if (audio) audio.seek(t);
+        if (audio && audio.playing()) audio.seek(t);
+        restartVisual();
         sync(); syncCaption();
         if (!still) draw();
       });
     }
     if (audio) {
-      audio.onEnd(() => { t = DUR; sync(); syncCaption(); setPlayLabel(false); });
-      if (playBtn) {
-        playBtn.addEventListener('click', async () => {
-          if (audio.playing()) { audio.pause(); setPlayLabel(false); return; }
-          try { await audio.ready; } catch (e) { console.error(e); return; }
-          if (t >= DUR - 0.05) t = 0;
-          audio.seek(t);
-          audio.play();
-          setPlayLabel(true);
-          kick();
-          window.dispatchEvent(new CustomEvent('secondear:play', { detail: 'cafe' }));
-        });
-        // Another player on the page (section 1) started: pause the café so sounds never overlap.
-        window.addEventListener('secondear:play', (e) => {
-          if (e.detail !== 'cafe' && audio.playing()) { audio.pause(); setPlayLabel(false); }
-        });
-      }
+      if (playBtn) playBtn.addEventListener('click', () => { if (running) pauseAll(); else resumeAll(); });
+      if (soundBtn) soundBtn.addEventListener('click', () => { if (soundOn) silence(); else startSound(); });
+      // Another player on the page (section 1) started: silence the café so sounds never overlap.
+      window.addEventListener('secondear:play', (e) => { if (e.detail !== 'cafe' && soundOn) silence(); });
+    } else {
+      if (playBtn) playBtn.hidden = true;
+      if (soundBtn) soundBtn.hidden = true;
     }
     if (earTwo) earTwo.addEventListener('click', () => onEar('two'));
     if (earMine) earMine.addEventListener('click', () => onEar('mine'));
@@ -360,7 +415,7 @@ export async function mountCafe(root, opts = {}) {
       gl3.renderer.domElement.addEventListener('pointermove', (e) => { if (e.buttons) hide(); });
       gl3.renderer.domElement.addEventListener('keydown', hide);
     }
-    sync(); syncCaption(); setPlayLabel(false);
+    sync(); syncCaption(); setLabels();
     draw();
 
     // ---------- frame-rate counter: rendered frames of the last 2 s ----------
@@ -391,7 +446,7 @@ export async function mountCafe(root, opts = {}) {
     function frame(now) {
       rafId = 0;
       if (!shouldRun()) return;
-      if (audio && audio.playing()) { t = audio.time(); sync(); syncCaption(); }
+      tick(); sync(); syncCaption();
       if (gl3) { draw(); if (gl3) recordFrame(now); }
       rafId = requestAnimationFrame(frame);
     }
@@ -419,14 +474,15 @@ export async function mountCafe(root, opts = {}) {
       if ('IntersectionObserver' in window) {
         new IntersectionObserver((entries) => {
           onScreen = entries[entries.length - 1].isIntersecting;
-          if (onScreen && audio && audio.playing()) { t = audio.time(); sync(); syncCaption(); }
+          if (onScreen) { tick(); sync(); syncCaption(); }
           kick();
         }).observe(stage);
       }
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && audio && audio.playing()) { t = audio.time(); sync(); syncCaption(); }
+        if (!document.hidden) { tick(); sync(); syncCaption(); }
         kick();
       });
+      if (!reduced) { running = true; restartVisual(); setLabels(); } // alive on load, silent, looping
       kick();
       afterPresent(markReady);
     }
@@ -456,7 +512,7 @@ export async function mountCafe(root, opts = {}) {
     };
     return {
       scene: gl3 && gl3.scene, camera: gl3 && gl3.camera, world: gl3 && gl3.world, clip,
-      setTime: (v) => { t = v; if (audio) audio.seek(v); sync(); syncCaption(); draw(); },
+      setTime: (v) => { t = v; if (audio && audio.playing()) audio.seek(v); restartVisual(); sync(); syncCaption(); draw(); },
     };
   } catch (e) {
     console.error(e);
