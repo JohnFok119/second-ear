@@ -54,3 +54,26 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
   sky, silent passers-by on the sidewalk (pure function of t); visible through the open door and the windows; overview still
   readable; phone still usable. *Done when:* screenshots (seat: ahead, left window, door open; overview) desktop + phone, no
   console errors, fps noted.
+
+## Captain, 2026-11-16 (after merging PR #4): show what one ear loses
+- Johnny: with one ear he hears a voice on his left but cannot make out the words; right and front are fine. The café
+  must show that visually, not only for people with headphones. Go for: clear English voices, a measured clarity score,
+  word bubbles, floor bars, caption. Colab allowed if needed. Consider a sound-direction ring like a game's visual audio
+  aid (Fortnite "visualize sound effects"), original design.
+- Branch `cafe-clarity` off main; same standing go (commit per verified chunk, push branch, PR, no merge).
+
+- [ ] **pixel-cafe-C11 Clear English voices.** Swap `talk_front` and `talk_left` to clear English speech with a known
+  transcript and a licence the site allows (public domain, CC0 or CC BY); Johnny approves each download. Re-render the
+  clip (v4), re-run both models, new `web/clips/cafe_v4.json` + mp3; update CREDITS. *Done when:* clip renders, tests pass,
+  new scores printed.
+- [ ] **pixel-cafe-C12 Clarity score.** `scripts/clarity_cafe.py`: per talker, per 0.1 s frame, per mode (two ears = better
+  ear per band, my ear = right ear only), a simplified Speech Intelligibility Index from the source's own stem vs everything
+  else (octave bands, band importance weights), plus per-band levels for the floor bars; word timings for the transcripts.
+  Into the clip JSON. *Done when:* tests pass; the left talker's my-ear clarity is clearly below its two-ear clarity.
+- [ ] **pixel-cafe-C13 Word bubbles + caption.** Real words above each talker, letters dropped by the measured clarity
+  (deterministic), caption says what you can and cannot make out. *Done when:* screenshots both modes at the left talk.
+- [ ] **pixel-cafe-C14 Floor bars.** Pitch-band bars under each talker from C12; in my-ear mode the left talker's high bars
+  collapse. *Done when:* screenshots both modes.
+- [ ] **pixel-cafe-C15 Sound ring (optional, Johnny to confirm).** A ring around the view centre showing where the active
+  mode's model thinks sounds are (two-ear vs one-ear guesses), optional "show the answer" ticks. *Done when:* screenshots.
+- [ ] **pixel-cafe-C16 Ship.** W4 café numbers updated from v4, README, screenshots + recording, PR.
