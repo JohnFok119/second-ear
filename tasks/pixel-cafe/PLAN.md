@@ -77,3 +77,9 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 - [ ] **pixel-cafe-C15 Sound ring (optional, Johnny to confirm).** A ring around the view centre showing where the active
   mode's model thinks sounds are (two-ear vs one-ear guesses), optional "show the answer" ticks. *Done when:* screenshots.
 - [ ] **pixel-cafe-C16 Ship.** W4 café numbers updated from v4, README, screenshots + recording, PR.
+
+## Captain, 2026-11-17: café is the landing page
+- "The animation is perfect"; the rest of the site is not what Johnny has in mind (redesign waits for his direction).
+- Loop the café; make it the full-screen first view; 360 degree look from the seat.
+- [ ] **pixel-cafe-C17 Café landing.** Full-screen hero, alive on load (silent visual clock), sound on first tap, seamless loop,
+  360 yaw. *Done when:* landing shots desktop + phone, seat facing 180, tests pass, no sideways scroll at 390 px.
