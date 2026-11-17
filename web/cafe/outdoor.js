@@ -147,7 +147,7 @@ export async function buildOutdoor(THREE, scene, opts = {}) {
       bucketAdd(k, clean(p.geo, m, {
         textured: p.textured && !isSway,
         color: leaf && TURQ(p.color) ? colorOf(leaf) : p.color,
-        boost: k === 'neigh' ? 1.7 : 1,
+        boost: k.startsWith('neigh') ? 1.7 : 1,
         sway: isSway ? { base: y, h: (box.max.y - box.min.y) * sy, phase: swayPhase } : null,
       }));
     }
@@ -170,14 +170,14 @@ export async function buildOutdoor(THREE, scene, opts = {}) {
     } else vcAdd(g, hex);
   };
   // vertical quad (kerb faces), facing +X / -X / +Z / -Z
-  const wallQuad = (facing, pos, a0, a1, y0, y1, hex) => {
+  const wallQuad = (facing, pos, a0, a1, y0, y1, hex, key = 'vc') => {
     const g = new THREE.PlaneGeometry(a1 - a0, y1 - y0);
     const rot = { '+x': Math.PI / 2, '-x': -Math.PI / 2, '+z': 0, '-z': Math.PI }[facing];
     g.rotateY(rot);
     const am = (a0 + a1) / 2, ym = (y0 + y1) / 2;
     if (facing === '+x' || facing === '-x') g.translate(pos, ym, am);
     else g.translate(am, ym, pos);
-    vcAdd(g, hex);
+    vcAdd(g, hex, key);
   };
   const boxAdd = (w, h, d, x, y, z, hex, key = 'vc') => {
     const g = new THREE.BoxGeometry(w, h, d);
@@ -251,27 +251,38 @@ export async function buildOutdoor(THREE, scene, opts = {}) {
 
   // ---------- buildings ----------
   // Kenney buildings face +Z (checked in the screenshots); yaw turns the front toward the street.
-  const rows = []; // for the overview cut-down
-  function row({ pool, from, to, axis, face, bucket = null, seedBase, heights, gap = 0.25, setback = 0 }) {
+  // Every building near the café gets its own mesh and a bounding box (`blockers`), so the overview can hide the ones
+  // that stand between its camera and the café room (see updateView).
+  const blockers = []; // { bucket, box, h, onlyOverview }
+  let bldN = 0;
+  function row({ pool, from, to, axis, face, neigh = false, seedBase, heights, gap = 0.25, setback = 0, tall = false }) {
     // axis 'x': buildings in a line along x, facade on the line z = face.z facing face.dir (+1 = +Z, -1 = -Z)
     // axis 'z': a line along z, facade at x = face.x facing face.dir (+1 = +X, -1 = -X)
+    // tall: real-size neighbours, 6-9 m high and 5-8 m wide (width held to that range by a mild stretch)
     let cursor = from;
     const dir = to > from ? 1 : -1;
     let i = 0;
     while ((to - cursor) * dir > 4) {
       const key = pool[Math.floor(hash(i + seedBase, 3) * pool.length)];
-      const h = heights[Math.floor(hash(i + seedBase, 5) * heights.length)];
-      const s = sizeOf(key, { h });
+      let spec;
+      if (tall) {
+        const raw = pieces.get(key).box.getSize(new THREE.Vector3());
+        const h = 6 + hash(i + seedBase, 5) * 3;
+        spec = { w: clamp(raw.x / raw.y * h, 5, 8), h };
+      } else spec = { h: heights[Math.floor(hash(i + seedBase, 5) * heights.length)] };
+      const s = sizeOf(key, spec);
       const w = s.raw.x * s.sx, d = s.raw.z * s.sz;
       const mid = cursor + dir * w / 2;
       const off = d / 2 + setback;
-      if (axis === 'x') {
-        const z = face.z - face.dir * off;
-        put(key, { h }, mid, z, { yaw: face.dir > 0 ? 0 : Math.PI, bucket });
-      } else {
-        const x = face.x - face.dir * off;
-        put(key, { h }, x, mid, { yaw: face.dir > 0 ? Math.PI / 2 : -Math.PI / 2, bucket });
-      }
+      const px = axis === 'x' ? mid : face.x - face.dir * off;
+      const pz = axis === 'x' ? face.z - face.dir * off : mid;
+      const hw = (axis === 'x' ? w : d) / 2, hd = (axis === 'x' ? d : w) / 2;
+      const near = Math.hypot(px - 0.9, pz - 0.1) < 34; // could stand between the overview camera and the café
+      const folder = key.split('/')[0];
+      const bucket = neigh ? `neigh:${bldN}` : near ? `tex:${folder}:b${bldN}` : null;
+      if (bucket) blockers.push({ bucket, x0: px - hw, x1: px + hw, z0: pz - hd, z1: pz + hd, h: spec.h, onlyOverview: neigh });
+      bldN++;
+      put(key, spec, px, pz, { yaw: axis === 'x' ? (face.dir > 0 ? 0 : Math.PI) : (face.dir > 0 ? Math.PI / 2 : -Math.PI / 2), bucket });
       cursor += dir * (w + gap);
       i++;
     }
@@ -285,11 +296,34 @@ export async function buildOutdoor(THREE, scene, opts = {}) {
   // far side of street B: houses with a little front yard further south, shops near the crossing
   row({ pool: COMMERCIAL, from: -15.2, to: 6, axis: 'z', face: { x: WALK_B.far, dir: 1 }, seedBase: 80, heights: SHOP_H });
   row({ pool: HOUSES, from: 6.3, to: far, axis: 'z', face: { x: WALK_B.far, dir: 1 }, seedBase: 120, heights: HOUSE_H, setback: 1.6 });
-  // neighbours continuing the café's own row (kept in their own mesh so the overview can cut them down)
-  // one-storey shops like the café itself (so they never hide the dollhouse); only drawn in the overview
-  const LOW = ['k', 'e', 'i', 'h'].map((k) => `commercial/commercial_building-${k}`), LOW_H = [2.6, 2.4, 2.8, 2.5];
-  row({ pool: LOW, from: 6.0, to: far - 8, axis: 'x', face: { z: WALK_A.near, dir: -1 }, bucket: 'neigh', seedBase: 160, heights: LOW_H });
-  row({ pool: LOW, from: 6.2, to: far - 8, axis: 'z', face: { x: WALK_B.near, dir: -1 }, bucket: 'neigh', seedBase: 200, heights: LOW_H });
+  // neighbours continuing the café's own row, at real size (2-3 storeys); each in its own mesh, drawn only in the overview
+  // (from the seat the café walls hide them), where the ones in the way of the camera are taken away
+  const NEIGH = ['a', 'g', 'h', 'i', 'k'].map((k) => `commercial/commercial_building-${k}`);
+  row({ pool: NEIGH, from: 6.0, to: far - 8, axis: 'x', face: { z: WALK_A.near, dir: -1 }, neigh: true, tall: true, seedBase: 160 });
+  row({ pool: NEIGH, from: 6.2, to: far - 8, axis: 'z', face: { x: WALK_B.near, dir: -1 }, neigh: true, tall: true, seedBase: 200 });
+
+  // the café's own upper storey (outside faces only, y 2.8 up, so nothing of it shows from inside); hidden in the overview
+  {
+    const UP = 3.2, TOP = 2.8 + UP, WALLC = 0xe9d6ab, TEAL = 0x2f6b62, GLASS = 0x41525c;
+    wallQuad('-z', CZ0, CX0, CX1, 2.8, TOP, WALLC, 'upper'); // front (toward street A)
+    wallQuad('-x', CX0, CZ0, CZ1, 2.8, TOP, WALLC, 'upper'); // left (toward street B)
+    wallQuad('+z', CZ1, CX0, CX1, 2.8, TOP, WALLC, 'upper'); // back
+    wallQuad('+x', CX1, CZ0, CZ1, 2.8, TOP, WALLC, 'upper'); // right
+    const roof = new THREE.PlaneGeometry(CX1 - CX0, CZ1 - CZ0);
+    roof.rotateX(-Math.PI / 2); roof.translate((CX0 + CX1) / 2, TOP, (CZ0 + CZ1) / 2);
+    vcAdd(roof, 0xb9a98a, 'upper');
+    wallQuad('-z', CZ0 - 0.01, CX0, CX1, 2.8, 3.25, TEAL, 'upper'); // sign band over the shopfront
+    wallQuad('-x', CX0 - 0.01, CZ0, CZ1, 2.8, 3.25, TEAL, 'upper');
+    for (let x = CX0 + 1.5; x < CX1 - 0.9; x += 2.0) { // windows, front
+      wallQuad('-z', CZ0 - 0.02, x - 0.55, x + 0.55, 3.6, 5.1, GLASS, 'upper');
+      boxAdd(1.3, 0.08, 0.25, x, 3.56, CZ0 - 0.1, 0xd8c8a4, 'upper');
+    }
+    for (let z = CZ0 + 1.4; z < CZ1 - 0.9; z += 2.0) { // windows, left
+      wallQuad('-x', CX0 - 0.02, z - 0.55, z + 0.55, 3.6, 5.1, GLASS, 'upper');
+      boxAdd(0.25, 0.08, 1.3, CX0 - 0.1, 3.56, z, 0xd8c8a4, 'upper');
+    }
+    boxAdd(CX1 - CX0 + 0.5, 0.22, CZ1 - CZ0 + 0.5, (CX0 + CX1) / 2, TOP + 0.11, (CZ0 + CZ1) / 2, 0xd8c8a4, 'upper'); // cornice
+  }
 
   // ---------- sidewalk furniture ----------
   const treeKinds = ['nature/nature_tree_default', 'nature/nature_tree_fat', 'nature/nature_tree_oak'];
@@ -393,7 +427,7 @@ export async function buildOutdoor(THREE, scene, opts = {}) {
   // ---------- turn the buckets into meshes ----------
   const uT = { value: 0 };
   const makeMaterial = (key) => {
-    if (key === 'vc' || key === 'yard') return new THREE.MeshBasicMaterial({ vertexColors: true });
+    if (key === 'vc' || key === 'yard' || key === 'upper') return new THREE.MeshBasicMaterial({ vertexColors: true });
     if (key === 'sway' || key.startsWith('sway:')) {
       const m = new THREE.MeshBasicMaterial({ vertexColors: true });
       m.onBeforeCompile = (sh) => {
@@ -411,7 +445,7 @@ export async function buildOutdoor(THREE, scene, opts = {}) {
   };
   const meshes = {}; // base key -> meshes
   for (const [key, cells] of buckets) {
-    const mat = makeMaterial(key === 'neigh' ? 'tex:commercial' : key);
+    const mat = makeMaterial(key.startsWith('neigh') ? 'tex:commercial' : key);
     meshes[key] = [];
     for (const [cell, geos] of cells) {
       const mesh = new THREE.Mesh(mergeGeometries(geos, false), mat);
@@ -534,10 +568,27 @@ export async function buildOutdoor(THREE, scene, opts = {}) {
   }
   update(0);
 
-  // overview only: the café's low neighbours and fenced back yards (neither can be seen from the seat, walls are opaque)
+  // overview only: the café's neighbours and fenced back yards (neither can be seen from the seat, walls are opaque)
   nearProps.forEach((p) => { p.mesh = (meshes[p.key] || [])[0]; });
+  blockers.forEach((b) => { b.meshes = meshes[b.bucket] || []; });
   let overviewOn = false;
-  // overview: a tree or lamp standing between the camera and the café room is hidden (per frame, from the camera position)
+  // does the segment from (ax, ay, az) to (bx, by, bz) cross the box? (slab test)
+  function segHitsBox(ax, ay, az, bx, by, bz, x0, x1, y1, z0, z1) {
+    let t0 = 0, t1 = 1;
+    const slab = (a, d, lo, hi) => {
+      if (Math.abs(d) < 1e-9) return a >= lo && a <= hi;
+      let u = (lo - a) / d, v = (hi - a) / d;
+      if (u > v) { const k = u; u = v; v = k; }
+      t0 = Math.max(t0, u); t1 = Math.min(t1, v);
+      return t0 <= t1;
+    };
+    return slab(ax, bx - ax, x0, x1) && slab(ay, by - ay, 0, y1) && slab(az, bz - az, z0, z1);
+  }
+  // points the camera must be able to see: the room centre, its corners (pulled in a little) and the seat
+  const SEE = [[0.9, 0.3, 0.1], [-3.4, 0.3, -3.0], [5.2, 0.3, -3.0], [-3.4, 0.3, 4.4], [5.2, 0.3, 4.4], [0, 0.3, 0], [0.9, 1.5, 0.1]];
+  const PAD = 0.4; // keeps a building whose corner grazes the view out of the frame too
+  // overview, per frame from the camera position: a tree or lamp standing between the camera and the café room is hidden;
+  // so is any building (neighbour or across the street) whose padded box the camera-to-room segments cross
   function updateView(camera) {
     const cx = camera.position.x, cy = camera.position.y, cz = camera.position.z;
     const tx = 0.9, tz = 0.1; // room centre
@@ -553,10 +604,20 @@ export async function buildOutdoor(THREE, scene, opts = {}) {
       }
       p.mesh.visible = !hide;
     }
+    for (const b of blockers) {
+      let hide = false;
+      if (overviewOn) {
+        for (const [px, py, pz] of SEE) {
+          if (segHitsBox(cx, cy, cz, px, py, pz, b.x0 - PAD, b.x1 + PAD, b.h + 0.5, b.z0 - PAD, b.z1 + PAD)) { hide = true; break; }
+        }
+      }
+      for (const m of b.meshes) m.visible = b.onlyOverview ? overviewOn && !hide : !hide;
+    }
   }
   function setOverview(on) {
     overviewOn = on;
-    (meshes.neigh || []).forEach((m) => { m.visible = on; });
+    blockers.forEach((b) => b.meshes.forEach((m) => { m.visible = b.onlyOverview ? on : true; }));
+    (meshes.upper || []).forEach((m) => { m.visible = !on; }); // the café's own upper storey would cover the cutaway
     (meshes.yard || []).forEach((m) => { m.visible = on; });
   }
   setOverview(false);
