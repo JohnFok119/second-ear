@@ -56,6 +56,7 @@ def main() -> int:
     ap.add_argument("--fov", type=float, default=None, help="with --cam free: field of view")
     ap.add_argument("--noroof", action="store_true", help="with --cam free: hide the ceiling")
     ap.add_argument("--yaw", type=float, default=0.0, help="seat camera yaw in degrees, + = turn left")
+    ap.add_argument("--ear", default=None, choices=["two", "mine"], help="passed through as ?ear= (Listen as)")
     ap.add_argument("--page", default="cafe", choices=["cafe", "index"], help="cafe.html (default) or the real site")
     ap.add_argument("--nowebgl", action="store_true", help="force the no-WebGL fallback (cafe.html only)")
     ap.add_argument("--stats", action="store_true", help="print draw calls, triangles and ms per frame (no screenshot)")
@@ -68,7 +69,7 @@ def main() -> int:
         url = f"http://127.0.0.1:{PORT}/index.html?focus=1#showcase"
     else:
         query = (f"still=1&t={a.t}&cam={a.cam}" + (f"&mode={a.mode}" if a.mode else "")
-                 + (f"&yaw={a.yaw}" if a.yaw else "") + ("&nowebgl=1" if a.nowebgl else "")
+                 + (f"&yaw={a.yaw}" if a.yaw else "") + (f"&ear={a.ear}" if a.ear else "") + ("&nowebgl=1" if a.nowebgl else "")
                  + ("&stats=1" if a.stats else "")
                  + (f"&pos={a.pos}" if a.pos else "") + (f"&look={a.look}" if a.look else "")
                  + (f"&fov={a.fov}" if a.fov else "") + ("&roof=0" if a.noroof else ""))

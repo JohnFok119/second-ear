@@ -66,13 +66,13 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
   transcript and a licence the site allows (public domain, CC0 or CC BY); Johnny approves each download. Re-render the
   clip (v4), re-run both models, new `web/clips/cafe_v4.json` + mp3; update CREDITS. *Done when:* clip renders, tests pass,
   new scores printed.
-- [ ] **pixel-cafe-C12 Clarity score.** `scripts/clarity_cafe.py`: per talker, per 0.1 s frame, per mode (two ears = better
+- [x] **pixel-cafe-C12 Clarity score.** `scripts/clarity_cafe.py`: per talker, per 0.1 s frame, per mode (two ears = better
   ear per band, my ear = right ear only), a simplified Speech Intelligibility Index from the source's own stem vs everything
   else (octave bands, band importance weights), plus per-band levels for the floor bars; word timings for the transcripts.
   Into the clip JSON. *Done when:* tests pass; the left talker's my-ear clarity is clearly below its two-ear clarity.
-- [ ] **pixel-cafe-C13 Word bubbles + caption.** Real words above each talker, letters dropped by the measured clarity
+- [x] **pixel-cafe-C13 Word bubbles + caption.** Real words above each talker, letters dropped by the measured clarity
   (deterministic), caption says what you can and cannot make out. *Done when:* screenshots both modes at the left talk.
-- [ ] **pixel-cafe-C14 Floor bars.** Pitch-band bars under each talker from C12; in my-ear mode the left talker's high bars
+- [x] **pixel-cafe-C14 Floor bars.** Pitch-band bars under each talker from C12; in my-ear mode the left talker's high bars
   collapse. *Done when:* screenshots both modes.
 - [ ] **pixel-cafe-C15 Sound ring (optional, Johnny to confirm).** A ring around the view centre showing where the active
   mode's model thinks sounds are (two-ear vs one-ear guesses), optional "show the answer" ticks. *Done when:* screenshots.

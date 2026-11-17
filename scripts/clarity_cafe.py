@@ -65,7 +65,7 @@ def clarity_from_powers(stem_p: np.ndarray, rest_p: np.ndarray) -> dict:
     w = np.array([BAND_WEIGHTS[f] for f in BANDS_HZ])[:, None]
     my = (w * aud[1]).sum(axis=0)
     two = (w * np.maximum(aud[0], aud[1])).sum(axis=0)
-    return {"snr_db": snr, "two": two, "my": my}
+    return {"snr_db": snr, "aud": aud, "two": two, "my": my}
 
 
 def active_mask(intervals: list, n_frames: int, fps: int = FPS) -> np.ndarray:
@@ -89,11 +89,18 @@ def talker_entry(stem_p, rest_p, intervals, kind, fps: int = FPS) -> tuple[dict,
             for f in range(n_frames)
         ]
 
+    def auds(ear):
+        return [
+            [round(float(res["aud"][ear, b, f]), 3) for b in range(len(BANDS_HZ))] if act[f] else None
+            for f in range(n_frames)
+        ]
+
     entry = {
         "kind": kind,
         "two": series(res["two"]),
         "my": series(res["my"]),
         "levels_db": {"left": levels(0), "right": levels(1)},
+        "aud": {"left": auds(0), "right": auds(1)},
     }
     return entry, {**res, "active": act}
 
@@ -171,7 +178,7 @@ def main() -> None:
     base = json.dumps(data, separators=(",", ":"))
     if "clarity" not in json.loads(text) and base != text:
         raise SystemExit("error: clip JSON does not round-trip byte for byte; not writing")
-    data["clarity"] = clarity
+    data["clarity"] = clarity  # other keys (words, words_method, ...) are kept untouched
     out = json.dumps(data, separators=(",", ":"))
     clip_path.write_text(out, encoding="utf-8")
     print(summary(raw, clarity))

@@ -6,6 +6,8 @@ import { createPixelPass } from './pixel.js';
 import { buildPeople } from './people.js';
 import { activeAt } from './geo.js';
 import { createAudio } from './audio.js';
+import { createHearing } from './hearing.js';
+import { wordsLost, NOTE_TEXT } from './hearing-data.js';
 import { createFirstPerson } from './firstperson.js';
 
 const FALLBACK_SRC = 'assets/cafe/fallback.jpg';
@@ -82,6 +84,7 @@ export async function mountCafe(root, opts = {}) {
   const forceNoGl = q.get('nowebgl') === '1';
   const showFps = new URLSearchParams(location.search).get('fps') === '1';
   const DUR = 30;
+  let earNow = earParam; // 'two' | 'mine', follows the Listen as toggle (also in ?still=1 captures, where there is no audio)
   let t = Math.min(DUR, Math.max(0, parseFloat(q.get('t') || '0') || 0));
 
   // ---------- DOM (all inside root) ----------
@@ -161,6 +164,7 @@ export async function mountCafe(root, opts = {}) {
       scene.add(people.group);
       const pass = createPixelPass(THREE, renderer, { height: 320 });
       const camera = new THREE.PerspectiveCamera(70, 1.6, 0.1, 400);
+      const hearing = createHearing(THREE, root, scene, camera, clip, sceneData, people); // word bubbles + floor bars
       const firstPerson = createFirstPerson(camera, renderer.domElement);
       // parts that block the view from above: ceiling, beams, outside, back-wall upper cabinets
       const upperCabinets = world.group.children.filter((o) => o.position.y === 1.5 && o.position.z > 4);
@@ -172,7 +176,7 @@ export async function mountCafe(root, opts = {}) {
       };
       const overview = createOverview(THREE, camera, renderer.domElement, clip, sceneData);
       scene.add(overview.group);
-      gl3 = { THREE, renderer, scene, camera, world, outdoor, people, pass, firstPerson, overview, setRoofHidden };
+      gl3 = { THREE, renderer, scene, camera, world, outdoor, people, hearing, pass, firstPerson, overview, setRoofHidden };
       renderer.domElement.setAttribute('aria-hidden', 'true');
       if (camMode === 'free' && startMode !== 'overview') {
         const nums = (k, d) => (q.get(k) ? q.get(k).split(',').map(Number) : d);
@@ -217,12 +221,13 @@ export async function mountCafe(root, opts = {}) {
     function draw() {
       if (!gl3) return;
       try {
-        const { world, outdoor, people, overview, firstPerson, pass, scene, camera } = gl3;
+        const { world, outdoor, people, hearing, overview, firstPerson, pass, scene, camera } = gl3;
         world.update(t);
         outdoor.update(t);
         people.update(t, camera);
         if (mode === 'overview') { overview.update(t); outdoor.updateView(camera); syncLive(); }
         else if (!fixedCam) firstPerson.update();
+        hearing.update(t, earNow);
         pass.render(scene, camera);
       } catch (e) {
         console.error(e);
@@ -278,7 +283,9 @@ export async function mountCafe(root, opts = {}) {
     };
     let lastCaptionKey = null;
     const syncCaption = () => {
-      const labels = [...new Set(activeAt(sceneData.sources, t).map((s) => s.label))];
+      // a voice whose words are lost for My ear gets a note after its label (clarity from the clip)
+      const labels = [...new Set(activeAt(sceneData.sources, t).map((s) => (
+        s.kind === 'voice' && wordsLost(clip, s.id, earNow, t) ? s.label + NOTE_TEXT : s.label)))];
       const key = labels.join('|');
       if (key === lastCaptionKey) return;
       lastCaptionKey = key;
@@ -290,6 +297,8 @@ export async function mountCafe(root, opts = {}) {
     };
     const setEar = (m) => {
       const mine = m === 'mine';
+      earNow = mine ? 'mine' : 'two';
+      lastCaptionKey = null;
       if (earTwo) earTwo.setAttribute('aria-pressed', String(!mine));
       if (earMine) earMine.setAttribute('aria-pressed', String(mine));
       if (earStatus) {
@@ -300,6 +309,7 @@ export async function mountCafe(root, opts = {}) {
       if (audio) audio.setEar(mine ? 'mine' : 'two');
     };
     setEar(earParam);
+    const onEar = (m) => { setEar(m); syncCaption(); if (!still) draw(); };
 
     if (slider) {
       slider.addEventListener('input', () => {
@@ -328,8 +338,8 @@ export async function mountCafe(root, opts = {}) {
         });
       }
     }
-    if (earTwo) earTwo.addEventListener('click', () => setEar('two'));
-    if (earMine) earMine.addEventListener('click', () => setEar('mine'));
+    if (earTwo) earTwo.addEventListener('click', () => onEar('two'));
+    if (earMine) earMine.addEventListener('click', () => onEar('mine'));
     if (hint && gl3) {
       const hide = () => { hint.classList.add('gone'); };
       gl3.renderer.domElement.addEventListener('pointermove', (e) => { if (e.buttons) hide(); });

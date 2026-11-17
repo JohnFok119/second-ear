@@ -235,6 +235,17 @@ main, .wrap { min-width:0; }
 .cafe-time-out { min-width:7.5em; text-align:right; font-variant-numeric:tabular-nums; }
 .cafe-lbl { font-weight:600; }
 .cafe-caption { min-height:1.6em; margin:8px 0 2px; font-weight:600; font-size:1.05rem; }
+/* word bubbles over the café canvas (hearing.js): cream pixel speech bubble with a tail */
+.cafe-bub-layer { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.cafe-bub-layer[hidden], .cafe-bub[hidden] { display:none; }
+.cafe-bub { position:absolute; transform:translate(-50%, calc(-100% - 12px)); max-width:22ch; box-sizing:content-box;
+  padding:6px 9px; background:#f6e9c8; color:#2a1d14; border:3px solid #2a1d14; border-radius:2px;
+  box-shadow:3px 3px 0 rgba(20,16,13,.55); font:700 14px/1.3 ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing:.04em; text-align:center; overflow-wrap:anywhere; white-space:normal; }
+.cafe-bub::after { content:''; position:absolute; left:calc(50% + var(--tail, 0px)); top:100%; width:0; height:0; margin-left:-7px;
+  border:7px solid transparent; border-top:9px solid #2a1d14; border-bottom:0; }
+.cafe-bub::before { content:''; position:absolute; left:calc(50% + var(--tail, 0px)); top:100%; width:0; height:0; margin-left:-4px; margin-top:-3px; z-index:1;
+  border:4px solid transparent; border-top:6px solid #f6e9c8; border-bottom:0; }
 .cafe-ear-status { margin:6px 0; }
 .cafe-legend p { margin:6px 0; }
 .cafe-live { font-weight:600; }

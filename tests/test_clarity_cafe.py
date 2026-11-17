@@ -53,6 +53,14 @@ def test_null_outside_intervals():
     assert entry["levels_db"]["left"][0] is None and len(entry["levels_db"]["right"][1]) == NB
 
 
+def test_aud_per_ear_per_band():
+    entry, _ = cc.talker_entry(_p(30, 0), _p(0, 0), [[0.1, 0.3]], "voice")
+    assert entry["aud"]["left"][0] is None and entry["aud"]["right"][4] is None
+    assert len(entry["aud"]["left"][1]) == NB
+    assert entry["aud"]["left"][1] == [1.0] * NB  # 30 dB above the rest
+    assert entry["aud"]["right"][1] == [0.5] * NB  # equal power
+
+
 def test_band_powers_find_tone_band():
     fs = 16000
     t = np.arange(fs * 2) / fs
