@@ -83,3 +83,8 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md). Replaces W3 in the root `PLAN.md`.
 - Loop the café; make it the full-screen first view; 360 degree look from the seat.
 - [x] **pixel-cafe-C17 Café landing.** Full-screen hero, alive on load (silent visual clock), sound on first tap, seamless loop,
   360 yaw. *Done when:* landing shots desktop + phone, seat facing 180, tests pass, no sideways scroll at 390 px.
+
+## Captain, 2026-11-21: Vercel link, more environments later
+- Resume link is https://second-ear-web.vercel.app (Johnny's own deploy; serves `main`, checked equal to fb530ad). `cafe-clarity` is not on it yet.
+- Later, not now: Johnny will probably want more environments beyond the café (relayed by the job-pilot session, not yet said here first-hand). Keep the scene code easy to add a second place to.
+- Next: finish refining the website (direction from Johnny).
